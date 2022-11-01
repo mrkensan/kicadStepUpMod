@@ -23,8 +23,9 @@ from kicadStepUptools import KicadPCB,SexpList
 
 __kicad_parser_version__ = '1.1.6'
 # https://github.com/realthunder/fcad_pcb/issues/20#issuecomment-586042341
-print('kicad_parser_version '+__kicad_parser_version__)
 
+def getKiCadParserVersion():
+    return __kicad_parser_version__
 
 try:  #maui
   basestring
@@ -45,14 +46,20 @@ def updateGui():
 class FCADLogger:
     def __init__(self, tag):
         self.tag = tag
-        self.levels = { 'error':0, 'warning':1, 'info':2,
-                'log':3, 'trace':4 }
+        self.levels = { 'error':0, 'warning':1, 'info':2,'log':3, 'trace':4 }
+        self.names = { 0:'error', 1:'warning', 2:'info', 3:'log', 4:'trace'}
 
     def _isEnabledFor(self,level):
         return FreeCAD.getLogLevel(self.tag) >= level
 
     def isEnabledFor(self,level):
         return self._isEnabledFor(self.levels[level])
+
+    def GetEffectiveLevel(self):
+        return FreeCAD.getLogLevel(self.tag)
+        
+    def GetEffectiveName(self):
+        return self.names[FreeCAD.getLogLevel(self.tag)]    
 
     def trace(self,msg):
         if self._isEnabledFor(4):
@@ -401,17 +408,19 @@ class KicadFcad:
         if not os.path.isfile(filename):
             raise ValueError("file not found");
         self.filename = filename
+        
+        # Methods in this parser use this to build PCB & Features
+		# Here they are set all to "black"
+		# As these are used they are set to desired color
+		#
         self.colors = {
-                'board':makeColor("0x3A6629"),
-                'pad':{0:makeColor(219,188,126)},
-                'zone':{0:makeColor(200,117,51)},
-                'track':{0:makeColor(200,117,51)},
-                'copper':{0:makeColor(200,117,51)},
+                'board':makeColor("0x000000"),
+                'pad':{0:makeColor("0x000000")},
+                'zone':{0:makeColor("0x000000")},
+                'track':{0:makeColor("0x000000")},
+                'copper':{0:makeColor("0x000000")},
         }
-        #'pad':{0:makeColor(204,204,204)}, 'pad':{0:makeColor(102,70,0)}, 'pad':{0:makeColor(179,68,21)},
-        #'zone':{0:makeColor(0,80,0)}, 'zone':{0:makeColor(199,144,28)},
-        #'track':{0:makeColor(0,120,0)},
-        self.layer_type = 0
+
 
         for key,value in dict.items(kwds): #iteritems(kwds):  #maui
             if not hasattr(self,key):
@@ -420,16 +429,20 @@ class KicadFcad:
 
         self.pcb = KicadPCB.load(self.filename)
 
-        # This will be override by setLayer. It's here just to make syntax
-        # checker happy
-        self.layer = 'F.Cu'
+        # This will be override by setLayer.
+        # It's here just to make syntax checker happy
+        self.layer = "Top"
+        self.layer_type = 0
+        
+        # This is removed because the user can see this in Settings now.
+        #print('kicad_parser_version '+__kicad_parser_version__+' Initialized')
+###
 
-        self.setLayer(self.layer_type)
 
+    # ****************************************************
     # Layer number or name may be used
     # Layer must be present in PCB file
     def setLayer(self,layer):
-        print("Setting to Layer: ",layer)
         try:
             layer = int(layer)
         except:
@@ -438,6 +451,7 @@ class KicadFcad:
                 # if layer in self.pcb.layers[layer_type][0]:
                     self.layer = layer
                     self.layer_type = int(layer_type)
+                    print("Selecting PCB Layer: ", self.layer)
                     return
             raise KeyError('layer {} not found'.format(layer))
         else:
@@ -445,8 +459,7 @@ class KicadFcad:
                 raise KeyError('layer {} not found'.format(layer))
             self.layer_type = layer
             self.layer = self.pcb.layers[str(layer)][0]
-            return
-
+            print("Selecting PCB Layer: ", self.layer)
 
 
     def _log(self,msg,*arg,**kargs):
@@ -1051,7 +1064,8 @@ class KicadFcad:
     def makePads(self,shape_type='face',thickness=0.05,holes=False,
             fit_arcs=True,prefix=''):
 
-        self._pushLog('making pads...',prefix=prefix)
+        self._pushLog(prefix=prefix)
+        self._pushLog('making pads...')
 
         def _wire(obj,name,label=None,fill=False):
             #return self._makeWires(obj,name,fill=fill,label=label)
@@ -1195,6 +1209,9 @@ class KicadFcad:
                     thickness=0.05,holes=False,prefix=''):
 
         self._pushLog('making tracks...',prefix=prefix)
+        print("shape_type= ", shape_type)		#KK Del
+        print("thickness= ", thickness)			#KK Del
+        print("holes= ", holes)					#KK Del
 
         width = 0
         def _line(edges,offset=0,fill=False):
@@ -1389,8 +1406,6 @@ class KicadFcad:
                     holes=False, minSize= 0, z=0, prefix='',fuse=False):
 
         self._pushLog('making copper layer {}...',self.layer,prefix=prefix)
-
-        holes = []
         holes = self._cutHoles(None,holes,None,None,False,minSize)
         #_cutHoles(self,objs,holes,name,label=None,fit_arcs=False,
         #            minSize=0,maxSize=0,oval=True,npth=0,offset=0.0)
@@ -1410,18 +1425,18 @@ class KicadFcad:
                               ('Tracks',0.5*thickness),
                               ('Zones',0)):
 
-            obj = getattr(self,'make{}'.format(name))(fit_arcs=sub_fit_arcs, holes=holes, shape_type=shape_type, prefix=None, thickness=thickness)
+            obj = getattr(self,'make{}'.format(name))(fit_arcs=sub_fit_arcs,
+                        holes=holes,shape_type=shape_type,prefix=None,
+                        thickness=thickness)
             if not obj:
                 continue
             if shape_type=='solid':
                 ofs = offset if self.layer.startswith('F.') else -offset
                 self._place(obj,Vector(0,0,ofs))
             objs.append(obj)
-            
-        print(objs)
 
         if shape_type=='solid':
-            self._log("makeing solid")
+            self._log("making solid")
             obj = self._makeCompound(objs,'copper')
             self._log("done solid")
         else:

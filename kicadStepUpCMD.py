@@ -509,11 +509,6 @@ class ksuTools:
                      'ToolTip' : "Activate the main\nkicad StepUp Tools Dialog"}
  
     def IsActive(self):
-        #if FreeCAD.ActiveDocument == None:
-        #    return False
-        #else:
-        #    return True
-        #import kicadStepUptools
         import os, sys
         return True
  
@@ -634,31 +629,27 @@ class ksuToolsOpenBoard:
     def GetResources(self):
         return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'importBoard.svg') , # the name of a svg file available in the resources
                      'MenuText': "ksu Load Board" ,
-                     'ToolTip' : "Load KiCad PCB Board and Parts"}
+                     'ToolTip' : "Load KiCad PCB and Parts"}
  
     def IsActive(self):
-        #if FreeCAD.ActiveDocument == None:
-        #    return False
-        #else:
-        #    return True
-        #import kicadStepUptools
         return True
  
     def Activated(self):
-        # do something here...
+        from pcb_colors import GetCuWeight
         import kicadStepUptools
-        #if not kicadStepUptools.checkInstance():
-        #    reload( kicadStepUptools )
         if reload_Gui:
             reload_lib( kicadStepUptools )
-        #from kicadStepUptools import onPushPCB
-        #FreeCAD.Console.PrintWarning( 'active :)\n' )
-        kicadStepUptools.onLoadBoard()
-        # ppcb=kicadStepUptools.KSUWidget
-        # ppcb.onPushPCB()
-    
-        #onPushPCB()
-        #import kicadStepUptools
+
+        # User Preferences are queried here to determine import parameters
+        prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUpGui")
+        pcb_load_models = bool(prefs.GetInt('PCBA_Import_Mode'))
+        try:
+            pcb_copper_pref = prefs.GetInt('Tracks_Cu_Weight')
+        except:
+            pcb_copper_pref = 0  # Surface Only (no Thickness)
+        copper_thk, copper_name = GetCuWeight(pcb_copper_pref)
+        
+        kicadStepUptools.onLoadBoard(load_models=pcb_load_models, model_z_offset=copper_thk)
 
 
 FreeCADGui.addCommand('ksuToolsOpenBoard',ksuToolsOpenBoard())
@@ -673,11 +664,6 @@ class ksuToolsLoadFootprint:
                      'ToolTip' : "Load KiCad PCB FootPrint"}
  
     def IsActive(self):
-        #if FreeCAD.ActiveDocument == None:
-        #    return False
-        #else:
-        #    return True
-        #import kicadStepUptools
         return True
  
     def Activated(self):
@@ -705,11 +691,6 @@ class ksuToolsExportModel:
                      'ToolTip' : "Export 3D Model to KiCad"}
  
     def IsActive(self):
-        #if FreeCAD.ActiveDocument == None:
-        #    return False
-        #else:
-        #    return True
-        #import kicadStepUptools
         return True
  
     def Activated(self):
@@ -754,11 +735,6 @@ class ksuToolsImport3DStep:
                      'ToolTip' : "Import 3D Step Model"}
  
     def IsActive(self):
-        #if FreeCAD.ActiveDocument == None:
-        #    return False
-        #else:
-        #    return True
-        #import kicadStepUptools
         return True
  
     def Activated(self):
@@ -784,11 +760,6 @@ class ksuToolsExport3DStep:
                      'ToolTip' : "Export selected objects to Step Model"}
  
     def IsActive(self):
-        #if FreeCAD.ActiveDocument == None:
-        #    return False
-        #else:
-        #    return True
-        #import kicadStepUptools
         return True
  
     def Activated(self):
@@ -814,11 +785,6 @@ class ksuToolsMakeUnion:
                      'ToolTip' : "Make a Union of selected objects"}
  
     def IsActive(self):
-        #if FreeCAD.ActiveDocument == None:
-        #    return False
-        #else:
-        #    return True
-        #import kicadStepUptools
         return True
  
     def Activated(self):
@@ -844,11 +810,6 @@ class ksuToolsMakeCompound:
                      'ToolTip' : "Make a Compound of selected objects"}
  
     def IsActive(self):
-        #if FreeCAD.ActiveDocument == None:
-        #    return False
-        #else:
-        #    return True
-        #import kicadStepUptools
         return True
  
     def Activated(self):
@@ -874,11 +835,6 @@ class ksuToolsPushPCB:
                      'ToolTip' : "Push Sketch to PCB Edge"}
  
     def IsActive(self):
-        #if FreeCAD.ActiveDocument == None:
-        #    return False
-        #else:
-        #    return True
-        #import kicadStepUptools
         return True
  
     def Activated(self):
@@ -909,11 +865,6 @@ class ksuToolsPullPCB:
                      'ToolTip' : "Pull Sketch from PCB Edge"}
  
     def IsActive(self):
-        #if FreeCAD.ActiveDocument == None:
-        #    return False
-        #else:
-        #    return True
-        #import kicadStepUptools
         return True
  
     def Activated(self):
@@ -945,11 +896,6 @@ class ksuToolsPushMoved:
                      'ToolTip' : "Push 3D moved model(s) to PCB"}
  
     def IsActive(self):
-        #if FreeCAD.ActiveDocument == None:
-        #    return False
-        #else:
-        #    return True
-        #import kicadStepUptools
         return True
  
     def Activated(self):
@@ -979,11 +925,6 @@ class ksuToolsPullMoved:
                      'ToolTip' : "Pull 3D model(s) placement from PCB"}
  
     def IsActive(self):
-        #if FreeCAD.ActiveDocument == None:
-        #    return False
-        #else:
-        #    return True
-        #import kicadStepUptools
         return True
  
     def Activated(self):
@@ -1149,11 +1090,6 @@ class ksuToolsSync3DModels:
                      'ToolTip' : "Sync 3D model(s) Ref & TimeStamps\nof the Selected 3D model with kicad PCB"}
  
     def IsActive(self):
-        #if FreeCAD.ActiveDocument == None:
-        #    return False
-        #else:
-        #    return True
-        #import kicadStepUptools
         return True
  
     def Activated(self):

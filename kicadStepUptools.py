@@ -492,6 +492,10 @@ import io
 #from codecs import open #maui to verify
 import unicodedata
 
+from  pcb_colors import *
+import logging
+logger = logging.getLogger(__name__)
+
 pythonopen = builtin.open # to distinguish python built-in open function from the one declared here
 
 ## Constant definitions
@@ -521,7 +525,9 @@ global textEdit_dim_base, textEdit_dim_hide #textEdit dimensions for hiding show
 global warning_nbr, original_filename, edge_width, load_sketch, grid_orig, dvm, pt_osx, pt_lnx, dqd, running_time
 global addConstraints, precision, conv_offs, maxRadius, pad_nbr, use_pypro, accept_spline, maxDegree, maxSegments
 global zfit
+global mmPerInch
 
+mmPerInch = 25.4
 zfit = False
 
 maxRadius = 500.0 # 500mm maxRadius of arc from bspline
@@ -683,9 +689,9 @@ try:
     import PartOMagic
     import PartOMagic.Gui.Observer as Observer
     disable_PoM_Observer = True
-    FreeCAD.Console.PrintWarning("PoM present\n")
+    logger.info("Part-o-magic is present")
 except:
-    FreeCAD.Console.PrintWarning("PoM not present\n")
+    logger.info("Part-o-magic not present")
 
 ##
 def say_inline(msg):
@@ -714,16 +720,16 @@ if 'LinkView' in dir(FreeCADGui):
     if prefs.GetBool('asm3_linkGroups'):
         use_LinkGroups = True
         use_Links=True #False
-        sayw('using \'LinkGroups\' and \'Links\'')
+        logger.info('using \'LinkGroups\' and \'Links\'')
     elif prefs.GetBool('asm3_links'):
         use_Links=True #False
-        sayw('using \'Part\' container and \'Links\'')
+        logger.info('using \'Part\' container and \'Links\'')
     else:
         use_LinkGroups = False
-        sayw('using \'Part\' container')
+        logger.info('using \'Part\' container')
 else:
     use_LinkGroups = False
-    sayw('using \'Part\' container')
+    logger.info('using \'Part\' container')
 #
 global FC_export_min_version
 FC_export_min_version="11670"  #11670 latest JM
@@ -793,7 +799,6 @@ the list-based representation
 '''
 
 import re
-import logging
 import traceback
 import bisect
 from collections import OrderedDict
@@ -804,8 +809,6 @@ __license__ = "MIT"
 __version__ = "1.0.0"
 __email__ = "realthunder.dev@gmail.com"
 __status__ = "Prototype"
-
-logger = logging.getLogger(__name__)
 
 class SexpValueDict(OrderedDict):
     '''Dictionary for holding named and un-named values
@@ -1637,7 +1640,7 @@ class KicadPCB(SexpParser):
         #    return KicadPCB(parseSexp(f.read()))
         #print 'ciao'
         if sys.version_info[0] == 2: #if py2:
-            print('py2')
+            #print('py2')
             py2=True
             with builtin.open(filename, 'r') as f: #py3 #test parser
                 #return KicadPCB(parseSexp(f.read())) # maui
@@ -1645,7 +1648,7 @@ class KicadPCB(SexpParser):
                 return KicadPCB(parseSexp(f.read().replace('\\"','_'))) # maui replacing  \" with _ to avoid wrong parsing  test py3
         else:
             py2=False
-            print('py3')
+            #print('py3')
             with builtin.open(filename, 'rb') as f: #py3 #test parser
                 #return KicadPCB(parseSexp(f.read())) # maui
                 #return KicadPCB(parseSexp(f.read().replace('\\"','_').replace("\\'",'_'))) # maui replacing  \" and \' with _ to avoid wrong parsing
@@ -1665,7 +1668,7 @@ def getFCversion():
     return FC_majorV,FC_minorV,FC_git_Nbr
 
 FC_majorV,FC_minorV,FC_git_Nbr=getFCversion()
-FreeCAD.Console.PrintWarning('FC Version '+str(FC_majorV)+str(FC_minorV)+"-"+str(FC_git_Nbr)+'\n')    
+logger.info('FC Version '+str(FC_majorV)+str(FC_minorV)+"-"+str(FC_git_Nbr))    
 if FC_majorV == 0 and FC_minorV == 17:
     if FC_git_Nbr >= int(FC_export_min_version):
         use_AppPart=True
@@ -2221,7 +2224,7 @@ def tabify():
         KSUWidget.showMaximized()
         KSUWidget.activateWindow()
         KSUWidget.raise_()
-        say( "Tabified done !")               
+        logger.info( "Tabified done !")               
         ksu_tab = t.findChild(QtGui.QDockWidget, "kicadStepUp") #"kicad StepUp 3D tools")
         if ksu_tab:
             #say ("ksu tab ->"+ksu_tab.objectName())
@@ -2593,12 +2596,23 @@ def open(filename,insert=None):
     #onLoadBoard_cmd(filename)
     global original_filename
     ext = os.path.splitext(os.path.basename(filename))[1]
-    sayw("kicad StepUp version "+str(___ver___))
+    logger.info("kicad StepUp version "+str(___ver___))
     #say("tolerance on vertex = "+str(edge_tolerance))
     say("tolerance on vertex applied")
     if ext==".kicad_pcb":
         original_filename=filename
-        onLoadBoard(filename,None,insert)
+        
+        # User Preferences are queried here to determine import parameters
+        prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUpGui")
+        pcb_load_models = bool(prefs.GetInt('PCBA_Import_Mode'))
+        try:
+            pcb_copper_pref = prefs.GetInt('Tracks_Cu_Weight')
+        except:
+            pcb_copper_pref = 0  # Surface Only (no Thickness)
+        copper_thk, copper_name = GetCuWeight(pcb_copper_pref)
+        
+        onLoadBoard(filename, load_models=pcb_load_models, insert=insert, model_z_offset=copper_thk)
+        
         # zf= Timer (1.0,ZoomFitThread)
         # zf.start()
     #elif ext==".emn":
@@ -3687,14 +3701,16 @@ def exportStep(objs, ffPathName):
 
 home = expanduser("~")
 #QtGui.QMessageBox.information(None,"info ...","your home path is \r\n"+ home+"\r\n")
-sayw("kicad StepUp version "+str(___ver___))
+logLevelName = logging.getLevelName(logger.getEffectiveLevel())
+sayw("kicad StepUp version "+str(___ver___)+" (Logging Level = "+str(logger.getEffectiveLevel())+")")
+
 #say("tolerance on vertex = "+str(edge_tolerance))
-say("tolerance on vertex applied")
+logger.info("tolerance on vertex applied")
 if apply_light==True:
-    say("applying Lights")
+    logger.info("applying Lights")
 if apply_reflex==True:
-    say("applying Materials to Shapes")
-say("your home path is "+ home)
+    logger.info("applying Materials to Shapes")
+logger.info("your home path is "+ home)
 fname_ksu=home+os.sep+'ksu-config.ini'
 ksu_config_fname=fname_ksu
 
@@ -3876,23 +3892,21 @@ def cfg_read_all():
         prefs.SetString('prefix3d_1',make_string(default_prefix3d))
         models3D_prefix = prefs.GetString('prefix3d_1')
     models3D_prefix2 = prefs.GetString('prefix3d_2')
-    light_green = [0.20,0.60,0.40] # std Green
-    blue = [0.13,0.40,0.73] # Deep Sea Blue
-    red = [1.0,0.16,0.0] # Ferrari Red
-    purple = [0.498,0.090,0.424] # oshpark purple #6D0A8E
-    darkgreen = [0.180,0.373,0.275] # (45,95,70)
-    darkblue = [0.211,0.305,0.455] # (54,79,116)
-    lightblue = [0.0,0.298,1.0] # (0,76,255)
-    yellow = [0.98,0.98,0.34] #sunshine yellow
-    black = [0.18,0.18,0.18] #slick black
-    white = [0.973,0.973,0.941] #[0.98,0.92,0.84] #antique white
-    pcb_color_values = [light_green,blue,red,purple,darkgreen,darkblue,lightblue,yellow,black,white]
-    pcb_color_pos = prefs.GetInt('pcb_color')
-    pcb_color = pcb_color_values [pcb_color_pos]
-    col = []
-    col.append(pcb_color[0]);col.append(pcb_color[1]);col.append(pcb_color[2])
-    colr=col[0];colg=col[1];colb=col[2]
-    #print(colr,colg,colb)
+    
+    # ***************************************************
+    # Set color of PCB Object
+    #   Read color from user preferences
+    #
+    try:
+        pcb_color_pref = prefs.GetInt('pcb_color')
+    except:
+        pcb_color_pref = 0  # Green
+    
+    pcb_color, trk_color, slk_color, color_name = GetPcbColors(pcb_color_pref)
+    color_vect = ColorToFreeCad(pcb_color)
+    colr=color_vect[0];colg=color_vect[1];colb=color_vect[2]
+    msg = "PCB Colors (based on Prefs for '"+color_name+"'):\n\tPCB Color = "+pcb_color+"\n\tTrack Color = "+trk_color+"\n\tSilk Color = "+slk_color
+    logger.info(msg)
     try:
         min_drill_size = float(prefs.GetString('drill_size'))
     except:
@@ -3944,7 +3958,7 @@ def cfg_read_all():
         allow_compound = 'Hierarchy' #full hierarchy allowed
         if 'LinkView' not in dir(FreeCADGui):
             allow_compound = 'True' #old Standard
-            sayw('Links not allowed... \nfalling from Hierarchy to Compound')
+            logger.info('LinkView not present... \nfalling from Hierarchy to Compound')
     elif m3D_loading_mode == 1:
         allow_compound = 'Simplified'
     elif m3D_loading_mode == 2:
@@ -4316,10 +4330,10 @@ def Display_info(blacklisted_models):
     say("kicad pcb pos: ("+"{0:.2f}".format(real_board_pos_x)+";"+"{0:.2f}".format(real_board_pos_y)+";"+"{0:.2f}".format(0)+")")      
     say("pcb dimensions: ("+"{0:.2f}".format(pcb_bbx.XLength)+";"+"{0:.2f}".format(pcb_bbx.YLength)+";"+"{0:.2f}".format(pcb_bbx.ZLength)+")")          
 
-    if (show_messages==True):
-        QtGui.QApplication.restoreOverrideCursor()
-        #RotateXYZGuiClass().setGeometry(25, 250, 500, 500)
-        reply = QtGui.QMessageBox.information(None,"Info ...",msg)
+    #if (show_messages==True):
+    #    QtGui.QApplication.restoreOverrideCursor()
+    #    reply = QtGui.QMessageBox.information(None,"Info ...",msg)
+
     if apply_light==True:
         # attach a light to every visible scene graph
         for obj in FreeCAD.ActiveDocument.Objects:
@@ -5027,7 +5041,7 @@ def check_wrl_transparency(step_module):
                 sayerr('wrz transparency NOT supported')
     return step_transparency
 ##
-def Load_models(pcbThickness,modules):
+def Load_models(pcbThickness, modules, model_z_offst):
     global off_x, off_y, volume_minimum, height_minimum, bbox_all, bbox_list
     global whitelisted_model_elements, models3D_prefix, models3D_prefix2, last_pcb_path, full_placement
     global allow_compound, compound_found, bklist, force_transparency, warning_nbr, use_AppPart
@@ -5227,43 +5241,43 @@ def Load_models(pcbThickness,modules):
                 if not createScaledObjs:
                     module_path='not-found'
                     step_module=step_module.replace(u'"', u'')  # name with spaces
-                    # sayerr(step_module+' TEST')
-                    #step_module=step_module.replace('"', '')  # name with spaces
-                    #step_module=step_module.decode("utf-8").replace(u'"', u'')  # name with spaces
-                    #step_module=step_module.encode("utf-8")
-                    #sayw(models3D_prefix+step_module)
-                    # removing 'backslash' for unicode_escape
-                    ## new utf-8 test
+                        # sayerr(step_module+' TEST')
+                        #step_module=step_module.replace('"', '')  # name with spaces
+                        #step_module=step_module.decode("utf-8").replace(u'"', u'')  # name with spaces
+                        #step_module=step_module.encode("utf-8")
+                        #sayw(models3D_prefix+step_module)
+                        # removing 'backslash' for unicode_escape
+                        ## new utf-8 test
                     models3D_prefix = re.sub("\\\\", "/", models3D_prefix)
                     models3D_prefix_U = models3D_prefix
-                    #if isinstance(models3D_prefix, str):
-                    #    models3D_prefix_U = models3D_prefix.decode('unicode_escape')
-                    #else:
-                    #    models3D_prefix_U = models3D_prefix
+                        #if isinstance(models3D_prefix, str):
+                        #    models3D_prefix_U = models3D_prefix.decode('unicode_escape')
+                        #else:
+                        #    models3D_prefix_U = models3D_prefix
                     step_module = re.sub("\\\\", "/", step_module)
-                    #if isinstance(step_module, str):
-                    #    step_module = step_module.decode('unicode_escape')
-                    #else:
-                    #    step_module = step_module.encode('utf-8')
-                    #utf_path=os.path.join(models3D_prefix,step_module)
-                    #print(type(step_module))  #maui test py3
+                        #if isinstance(step_module, str):
+                        #    step_module = step_module.decode('unicode_escape')
+                        #else:
+                        #    step_module = step_module.encode('utf-8')
+                        #utf_path=os.path.join(models3D_prefix,step_module)
+                        #print(type(step_module))  #maui test py3
                     utf_path=os.path.join(make_unicode(models3D_prefix_U),make_unicode(step_module))
-                    #sayw(utf_path)
-                    #utf_path=os.path.join(models3D_prefix,step_module)
-                    ##adding 2nd 3Dprefix support to step
-                    #utf_path2=os.path.join(models3D_prefix2,step_module)
-                    ## new utf-8 test
+                        #sayw(utf_path)
+                        #utf_path=os.path.join(models3D_prefix,step_module)
+                        ##adding 2nd 3Dprefix support to step
+                        #utf_path2=os.path.join(models3D_prefix2,step_module)
+                        ## new utf-8 test
                     models3D_prefix2 = re.sub("\\\\", "/", models3D_prefix2)
-                    #if isinstance(models3D_prefix2, str):
-                    #    models3D_prefix2_U = models3D_prefix2.decode('unicode_escape')
-                    #else:
-                    #    models3D_prefix2_U = models3D_prefix2
+                        #if isinstance(models3D_prefix2, str):
+                        #    models3D_prefix2_U = models3D_prefix2.decode('unicode_escape')
+                        #else:
+                        #    models3D_prefix2_U = models3D_prefix2
                     models3D_prefix2_U = models3D_prefix2
                     utf_path2=os.path.join(make_unicode(models3D_prefix2_U),make_unicode(step_module)) # utf-8 chars
-                    #print(utf_path)
-                    #print(utf_path2)
-                    #print(step_module)
-                    #.step
+                        #print(utf_path)
+                        #print(utf_path2)
+                        #print(step_module)
+                        #.step
                     if os.path.exists(utf_path):
                         #module_path=models3D_prefix+step_module
                         module_path=utf_path
@@ -5295,15 +5309,15 @@ def Load_models(pcbThickness,modules):
                                 utf_path2=utf_path2[:-rel_pos+1]+u'STEP'
                                 if os.path.exists(utf_path2):
                                     module_path=utf_path2
-                    #adding .stp support
-                    #if isinstance(step_module2, str):
-                    #    step_module = step_module2.decode('unicode_escape')
+                        #adding .stp support
+                        #if isinstance(step_module2, str):
+                        #    step_module = step_module2.decode('unicode_escape')
                     utf_path=os.path.join(make_unicode(models3D_prefix_U),make_unicode(step_module2))
                     utf_path2=os.path.join(make_unicode(models3D_prefix2_U),make_unicode(step_module2))
-                    #sayerr(step_module2)
-                    #sayerr(utf_path)
-                    #sayerr(utf_path2)
-                    ## new utf-8 test
+                        #sayerr(step_module2)
+                        #sayerr(utf_path)
+                        #sayerr(utf_path2)
+                        ## new utf-8 test
                     if (module_path=='not-found'):
                         if os.path.exists(utf_path):
                         #if os.path.exists(models3D_prefix+step_module2) and (module_path=='not-found'):
@@ -5461,14 +5475,14 @@ def Load_models(pcbThickness,modules):
                                     module_path=utf_path2
                 else:
                     scale_vrml=modules[i][8]
-                    #sayw(scale_vrml)
-                    #scale_val=scale_vrml.split(" ")
+                        #sayw(scale_vrml)
+                        #scale_val=scale_vrml.split(" ")
                     scale_val=scale_vrml
-                    #sayw(scale_val)
+                        #sayw(scale_val)
                     createScaledBBox(model_name,scale_val)
                     module_path='internal shape'
                 if module_path!='not-found' and module_path!='internal shape':
-                    #FreeCADGui.Selection.removeSelection(FreeCAD.activeDocument().ActiveObject)  mauitemp volume diff
+                        #FreeCADGui.Selection.removeSelection(FreeCAD.activeDocument().ActiveObject)  mauitemp volume diff
                     say("opening "+ module_path)
                     mod_cnt+=1
                     doc1=FreeCAD.ActiveDocument
@@ -5481,11 +5495,11 @@ def Load_models(pcbThickness,modules):
                         Links_available = True
                     if model_name not in loaded_models:
                         loaded_models.append(model_name)
-                        #sayw(module_path)
-                        #make_unicode(module_path)
-                        #module_path_n = re.sub("/", "\\\\", module_path)
-                        #sayerr(module_path_n)
-                        #ImportGui.insert(module_path_n,FreeCAD.ActiveDocument.Name)
+                            #sayw(module_path)
+                            #make_unicode(module_path)
+                            #module_path_n = re.sub("/", "\\\\", module_path)
+                            #sayerr(module_path_n)
+                            #ImportGui.insert(module_path_n,FreeCAD.ActiveDocument.Name)
                         try: #tobefixed HERE
                             # support for stpZ files
                             if module_path.lower().endswith('stpz'):
@@ -5536,8 +5550,8 @@ def Load_models(pcbThickness,modules):
                                 myObj.ViewObject.Proxy = 0 # this is mandatory unless we code the ViewProvider too
                                 myObj.Shape = newStep.Shape
                                 newStep.Label = 'old'
-                                #myObj.Label = impLabel
-                                #print(modules[i][10]);print(modules[i][11])
+                                    #myObj.Label = impLabel
+                                    #print(modules[i][10]);print(modules[i][11])
                                 myObj.addProperty("App::PropertyString","TimeStamp")
                                 myObj.TimeStamp=str(modules[i][10])
                                 myObj.addProperty("App::PropertyString","Reference")
@@ -5597,8 +5611,8 @@ def Load_models(pcbThickness,modules):
                                     newobj.Label = myReference + '_'+ impLabel + '_' + myTimeStamp + myModelNbr
                                 else:
                                     newobj.Label = 'REF_'+impLabel + '_'  + myTimeStamp + myModelNbr
-                        ##addProperty mod
-                        #newobj=reset_prop_shapes(FreeCAD.ActiveDocument.ActiveObject,FreeCAD.ActiveDocument, FreeCAD,FreeCADGui)
+                            ##addProperty mod
+                            #newobj=reset_prop_shapes(FreeCAD.ActiveDocument.ActiveObject,FreeCAD.ActiveDocument, FreeCAD,FreeCADGui)
                         elif allow_compound == 'Hierarchy' and mp_found:
                             newobj = newStep
                             #tobefixed
@@ -5662,25 +5676,25 @@ def Load_models(pcbThickness,modules):
                     pos_y=modules[i][2]-off_y
                     rot=modules[i][3]
                     step_layer=modules[i][4]
-                    #wrl_off_x=modules[i][6]
-                    #rotz_vrml_norm=modules[i][7][0].replace("(xyz ","")
-                    #rotz_vrml_norm=modules[i][7].replace("(xyz ","")
-                    #say("rotz_vrml_norm ");sayw(rotz_vrml_norm)
+                        #wrl_off_x=modules[i][6]
+                        #rotz_vrml_norm=modules[i][7][0].replace("(xyz ","")
+                        #rotz_vrml_norm=modules[i][7].replace("(xyz ","")
+                        #say("rotz_vrml_norm ");sayw(rotz_vrml_norm)
                     wrl_rot=modules[i][7]
-                    #sayerr(wrl_rot);sayw(float(wrl_rot[0]));stop
+                        #sayerr(wrl_rot);sayw(float(wrl_rot[0]));stop
                     pos_vrml=modules[i][6]
                     wrl_pos=pos_vrml
-                    #sayerr(wrl_pos);sayw(float(wrl_pos[0]));stop
+                        #sayerr(wrl_pos);sayw(float(wrl_pos[0]));stop
                     isVirtual=modules[i][9]
-                    #if show_debug:
-                    #    sayw(wrl_rot)
-                    #    sayerr(modules[i])
-                    #wrl_pos=pos_vrml[0].split(" ")
-                    #wrl_pos=pos_vrml.split(" ")
-                    #say(rotz_vrml_norm)
-                    #sayw("wrl rot ");sayw(wrl_rot)
-                    #say("wrl pos ");sayw(wrl_pos)                   
-                    #say (str(rot))
+                        #if show_debug:
+                        #    sayw(wrl_rot)
+                        #    sayerr(modules[i])
+                        #wrl_pos=pos_vrml[0].split(" ")
+                        #wrl_pos=pos_vrml.split(" ")
+                        #say(rotz_vrml_norm)
+                        #sayw("wrl rot ");sayw(wrl_rot)
+                        #say("wrl pos ");sayw(wrl_pos)                   
+                        #say (str(rot))
                     for j in range(len(loaded_models)):
                         if loaded_models[j]==model_name:
                             #say (str(i)+" i")
@@ -5689,14 +5703,14 @@ def Load_models(pcbThickness,modules):
                         if use_cache:
                             #mod_cnt+=1
                             sayw('copying from cache')
-                            ##impPart=copy_objs(loaded_model_objs[idxO],FreeCAD.ActiveDocument, FreeCAD,FreeCADGui)
-                            ### FreeCAD.ActiveDocument.addObject('Part::Feature',loaded_model_objs[idxO].Label).Shape=loaded_model_objs[idxO].Shape
-                            ### #FreeCAD.ActiveDocument.ActiveObject.Label=obj.Label
-                            ### FreeCADGui.ActiveDocument.ActiveObject.ShapeColor=Gui.ActiveDocument.getObject(loaded_model_objs[idxO].Name).ShapeColor
-                            ### FreeCADGui.ActiveDocument.ActiveObject.LineColor=Gui.ActiveDocument.getObject(loaded_model_objs[idxO].Name).LineColor
-                            ### FreeCADGui.ActiveDocument.ActiveObject.PointColor=Gui.ActiveDocument.getObject(loaded_model_objs[idxO].Name).PointColor
-                            ### FreeCADGui.ActiveDocument.ActiveObject.DiffuseColor=Gui.ActiveDocument.getObject(loaded_model_objs[idxO].Name).DiffuseColor
-                            ### FreeCAD.ActiveDocument.recompute()
+                                ##impPart=copy_objs(loaded_model_objs[idxO],FreeCAD.ActiveDocument, FreeCAD,FreeCADGui)
+                                ### FreeCAD.ActiveDocument.addObject('Part::Feature',loaded_model_objs[idxO].Label).Shape=loaded_model_objs[idxO].Shape
+                                ### #FreeCAD.ActiveDocument.ActiveObject.Label=obj.Label
+                                ### FreeCADGui.ActiveDocument.ActiveObject.ShapeColor=Gui.ActiveDocument.getObject(loaded_model_objs[idxO].Name).ShapeColor
+                                ### FreeCADGui.ActiveDocument.ActiveObject.LineColor=Gui.ActiveDocument.getObject(loaded_model_objs[idxO].Name).LineColor
+                                ### FreeCADGui.ActiveDocument.ActiveObject.PointColor=Gui.ActiveDocument.getObject(loaded_model_objs[idxO].Name).PointColor
+                                ### FreeCADGui.ActiveDocument.ActiveObject.DiffuseColor=Gui.ActiveDocument.getObject(loaded_model_objs[idxO].Name).DiffuseColor
+                                ### FreeCAD.ActiveDocument.recompute()
                             try: # Links ATM don't support added proprierties
                                 if use_Links and links_imp_mode == 'links_allowed':
                                     o = loaded_model_objs[idxO]
@@ -5747,14 +5761,14 @@ def Load_models(pcbThickness,modules):
                             ##
                             #impPart=reset_prop_shapes2(impPart,FreeCAD.ActiveDocument, FreeCAD,FreeCADGui)
                             ##resetting placement properties
-                            impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x,pos_y,-pcbThickness),FreeCAD.Rotation(FreeCAD.Vector(0,1,0),180))
+                            impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x,pos_y,-pcbThickness),FreeCAD.Rotation(FreeCAD.Vector(0,1,0),180)) #KK Do we need to fix Z?
                             #obj.Placement = impPart.Placement
                             if use_Links and links_imp_mode == 'links_allowed':
                                 shape=Part.getShape(o)
                             else:
                                 shape=impPart.Shape.copy()
                             shape.Placement=impPart.Placement;
-                            shape.rotate((pos_x,pos_y,0),(0,0,1),rot)
+                            shape.rotate((pos_x,pos_y,0),(0,0,1),rot) #KK Do we need to fix Z?
                             impPart.Placement=shape.Placement
                             #impPart.Label = impPart.Label + '_ch_'
                             #sayerr('caching')
@@ -5777,15 +5791,23 @@ def Load_models(pcbThickness,modules):
                         #sayw(step_layer);
                         #sayw(str(myPart.Shape.Volume))
                         #sayw(str(myPart.Shape.BoundBox.ZLength))
+                                                                       
                         if step_layer == 'Top':
                             if full_placement:
-                                ## new placement wip
-                                #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0]),pos_y+float(wrl_pos[1]),0+float(wrl_pos[2])),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),rot))
-                                #                                                                                                                                                         (yaw z, pitch y, roll x) 
-                                #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*25.4,pos_y+float(wrl_pos[1])*25.4,0+float(wrl_pos[2])*25.4),FreeCAD.Rotation(-float(wrl_rot[2]),-float(wrl_rot[1]),-float(wrl_rot[0])))
-                                ##impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*25.4,pos_y+float(wrl_pos[1])*25.4,0+float(wrl_pos[2])*25.4),FreeCAD.Rotation(rot,-float(wrl_rot[1]),-float(wrl_rot[0]))) #rot is already rot fp -rot wrl
-                                #say("rot z top ");sayw(wrl_rot);sayw(rot)
-                                impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*25.4,pos_y+float(wrl_pos[1])*25.4,0+float(wrl_pos[2])*25.4),FreeCAD.Rotation(-float(wrl_rot[2]),-float(wrl_rot[1]),-float(wrl_rot[0]))) #rot is already rot fp -rot wrl
+                                    ## new placement wip
+                                    #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0]),pos_y+float(wrl_pos[1]),0+float(wrl_pos[2])),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),rot))
+                                    #                                                                                                                                                         (yaw z, pitch y, roll x) 
+                                    #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*mmPerInch,pos_y+float(wrl_pos[1])*mmPerInch,0+float(wrl_pos[2])*mmPerInch),FreeCAD.Rotation(-float(wrl_rot[2]),-float(wrl_rot[1]),-float(wrl_rot[0])))
+                                    ##impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*mmPerInch,pos_y+float(wrl_pos[1])*mmPerInch,0+float(wrl_pos[2])*mmPerInch),FreeCAD.Rotation(rot,-float(wrl_rot[1]),-float(wrl_rot[0]))) #rot is already rot fp -rot wrl
+                                    #say("rot z top ");sayw(wrl_rot);sayw(rot)
+                                pos_z = model_z_offst
+                                impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*mmPerInch, \
+                                                                                     pos_y+float(wrl_pos[1])*mmPerInch, \
+                                                                                     pos_z+float(wrl_pos[2])*mmPerInch),\
+                                                                    FreeCAD.Rotation(-float(wrl_rot[2]), \
+                                                                                     -float(wrl_rot[1]), \
+                                                                                     -float(wrl_rot[0]))) #rot is already rot fp -rot wrl
+
                                 if impPart.TypeId=='App::Link' or impPart.TypeId=='App::LinkPython':
                                     shape=Part.getShape(o)
                                 elif impPart.TypeId=='App::Part': #tobefixed
@@ -5793,20 +5815,22 @@ def Load_models(pcbThickness,modules):
                                 else:
                                     shape=impPart.Shape.copy()
                                 shape.Placement=impPart.Placement;
-                                shape.rotate((pos_x,pos_y,0),(0,0,1),rot+float(wrl_rot[2]))
+                                shape.rotate((pos_x,pos_y,0),(0,0,1),rot+float(wrl_rot[2])) #KK Do we need to fix Z? I think we're rotating around Z, so doesn't matter.
                                 impPart.Placement=shape.Placement;
                                 ##TBChecked
                                 if force_transparency:
                                     FreeCADGui.ActiveDocument.ActiveObject.Transparency=70
                                 ##TBChecked
                             else:
-                                impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x,pos_y,0),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),rot))
+                                pos_z = model_z_offst
+                                impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x,pos_y,pos_z),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),rot))
+                                
                             FreeCADGui.Selection.addSelection(impPart)
-                            ## to evaluate to add App::Part hierarchy
-                            # App.activeDocument().Tip = App.activeDocument().addObject('App::Part','Part')
-                            # App.activeDocument().Part.Label = 'Part'
-                            # Gui.activeView().setActiveObject('part', App.activeDocument().Part)
-                            # App.ActiveDocument.recompute()
+                                ## to evaluate to add App::Part hierarchy
+                                # App.activeDocument().Tip = App.activeDocument().addObject('App::Part','Part')
+                                # App.activeDocument().Part.Label = 'Part'
+                                # Gui.activeView().setActiveObject('part', App.activeDocument().Part)
+                                # App.ActiveDocument.recompute()
                             if isVirtual == 0:
                                 if use_AppPart and not use_LinkGroups: #layer Top                                  
                                     FreeCAD.ActiveDocument.getObject(top_name).addObject(impPart)
@@ -5830,36 +5854,44 @@ def Load_models(pcbThickness,modules):
                                     FreeCAD.ActiveDocument.getObject(stepV_name).addObject(impPart)
                                 virtual_nbr+=1
                         ###
-                        else:
-                        #Bottom
-                        #Bottom
-                            #impPart=reset_prop_shapes2(impPart,FreeCAD.ActiveDocument, FreeCAD,FreeCADGui)
+                        else: #step_layer == 'Bottom'
+                            
+                                #impPart=reset_prop_shapes2(impPart,FreeCAD.ActiveDocument, FreeCAD,FreeCADGui)
                             if full_placement:
-                                #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x,pos_y,-pcbThickness),FreeCAD.Rotation(FreeCAD.Vector(0,1,0),180))
-                                ## new placement wip
-                                #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[1])*25.4,pos_y+float(wrl_pos[0])*25.4,-pcbThickness-float(wrl_pos[2])*25.4),FreeCAD.Rotation(-float(wrl_rot[2])-rot+180,-float(wrl_rot[1])+180,-float(wrl_rot[0])))
-                                ##impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[1])*25.4,pos_y+float(wrl_pos[0])*25.4,-pcbThickness-float(wrl_pos[2])*25.4),FreeCAD.Rotation(-rot+180,-float(wrl_rot[1])+180,-float(wrl_rot[0])))  #rot is already rot fp -rot wrl
-                                impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*25.4,pos_y+float(wrl_pos[1])*25.4,+pcbThickness+float(wrl_pos[2])*25.4),FreeCAD.Rotation(-float(wrl_rot[2]),-float(wrl_rot[1]),-float(wrl_rot[0]))) #rot is already rot fp -rot wrl
+                                    #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x,pos_y,-pcbThickness),FreeCAD.Rotation(FreeCAD.Vector(0,1,0),180))
+                                    ## new placement wip
+                                    #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[1])*mmPerInch,pos_y+float(wrl_pos[0])*mmPerInch,-pcbThickness-float(wrl_pos[2])*mmPerInch),FreeCAD.Rotation(-float(wrl_rot[2])-rot+180,-float(wrl_rot[1])+180,-float(wrl_rot[0])))
+                                    ##impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[1])*mmPerInch,pos_y+float(wrl_pos[0])*mmPerInch,-pcbThickness-float(wrl_pos[2])*mmPerInch),FreeCAD.Rotation(-rot+180,-float(wrl_rot[1])+180,-float(wrl_rot[0])))  #rot is already rot fp -rot wrl
+                                pos_z = model_z_offst + pcbThickness
+                                impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*mmPerInch, \
+                                                                                     pos_y+float(wrl_pos[1])*mmPerInch, \
+                                                                                     pos_z+float(wrl_pos[2])*mmPerInch), \
+                                                                    FreeCAD.Rotation(-float(wrl_rot[2]), \
+                                                                                     -float(wrl_rot[1]), \
+                                                                                     -float(wrl_rot[0]))) #rot is already rot fp -rot wrl
+
                                 if impPart.TypeId=='App::Link' or impPart.TypeId=='App::LinkPython':
                                     shape=Part.getShape(o)
                                 else:
                                     shape=impPart.Shape.copy()
                                 shape.Placement=impPart.Placement;
-                                shape.rotate((pos_x,pos_y,0),(0,0,1),180+rot+float(wrl_rot[2]))
+                                shape.rotate((pos_x,pos_y,0),(0,0,1),180+rot+float(wrl_rot[2])) #KK Do we need to fix Z? I think we're rotating around Z, so doesn't matter.
                                 impPart.Placement=shape.Placement;
                                 if impPart.TypeId=='App::Link' or impPart.TypeId=='App::LinkPython':
                                     shape=Part.getShape(o)
                                 else:
                                     shape=impPart.Shape.copy()
                                 shape.Placement=impPart.Placement;
-                                shape.rotate((pos_x,pos_y,0),(0,1,0),180)
+                                shape.rotate((pos_x,pos_y,0),(0,1,0),180) #KK Do we need to fix Z? I think we're rotating around Z, so doesn't matter.
                                 impPart.Placement=shape.Placement;
                                 if force_transparency:
                                     FreeCADGui.ActiveDocument.ActiveObject.Transparency=60
-                                #say("rot z bot ");sayw(wrl_rot);sayw(rot)
-                                #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*25.4,pos_y+float(wrl_pos[1])*25.4,-pcbThickness+float(wrl_pos[2])*25.4),FreeCAD.Rotation(FreeCAD.Vector(0,1,0),180))
+                                    #say("rot z bot ");sayw(wrl_rot);sayw(rot)
+                                    #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*mmPerInch,pos_y+float(wrl_pos[1])*mmPerInch,-pcbThickness+float(wrl_pos[2])*mmPerInch),FreeCAD.Rotation(FreeCAD.Vector(0,1,0),180))
                             else:
-                                impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x,pos_y,-pcbThickness),FreeCAD.Rotation(FreeCAD.Vector(0,1,0),180))
+                                pos_z = model_z_offst + pcbThickness
+                                impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x, pos_y, -pos_z), \
+                                                    FreeCAD.Rotation(FreeCAD.Vector(0,1,0),180))
                             #obj.Placement = impPart.Placement
                                 if impPart.TypeId=='App::Link' or impPart.TypeId=='App::LinkPython':
                                     shape=Part.getShape(o)
@@ -5867,9 +5899,10 @@ def Load_models(pcbThickness,modules):
                                     shape=impPart.Shape.copy()
                                 shape.Placement=impPart.Placement;
                             #if not full_placement:
-                                #shape.rotate((pos_x+float(wrl_pos[0])*25.4,pos_y+float(wrl_pos[1])*25.4,-pcbThickness+float(wrl_pos[2])*25.4),FreeCAD.Rotation(-float(wrl_rot[2]),-float(wrl_rot[1])+180,-float(wrl_rot[0])))
+                                #shape.rotate((pos_x+float(wrl_pos[0])*mmPerInch,pos_y+float(wrl_pos[1])*mmPerInch,-pcbThickness+float(wrl_pos[2])*mmPerInch),FreeCAD.Rotation(-float(wrl_rot[2]),-float(wrl_rot[1])+180,-float(wrl_rot[0])))
                             #else:
-                                shape.rotate((pos_x,pos_y,-pcbThickness),(0,0,1),-rot+180)
+                                pos_z = model_z_offst + pcbThickness
+                                shape.rotate((pos_x,pos_y,-pos_z),(0,0,1),-rot+180) #KK This seems like a bug, Z should just be zero here.
                                 impPart.Placement=shape.Placement
                             FreeCADGui.Selection.addSelection(impPart)
                             FreeCAD.ActiveDocument.getObject(impPart.Name)
@@ -5939,20 +5972,30 @@ def Load_models(pcbThickness,modules):
                                 ## new placement wip
                                 #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0]),pos_y+float(wrl_pos[1]),0+float(wrl_pos[2])),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),rot))
                                 #                                                                                                                                                         (yaw z, pitch y, roll x) 
-                                #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*25.4,pos_y+float(wrl_pos[1])*25.4,0+float(wrl_pos[2])*25.4),FreeCAD.Rotation(-float(wrl_rot[2]),-float(wrl_rot[1]),-float(wrl_rot[0])))
-                                #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*25.4,pos_y+float(wrl_pos[1])*25.4,0+float(wrl_pos[2])*25.4),FreeCAD.Rotation(rot,-float(wrl_rot[1]),-float(wrl_rot[0]))) #rot is already rot fp -rot wrl
-                                #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*25.4,pos_y+float(wrl_pos[1])*25.4,0+float(wrl_pos[2])*25.4),FreeCAD.Rotation(rot,-float(wrl_rot[1]),-float(wrl_rot[0]))) #rot is already rot fp -rot wrl
-                                impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*25.4,pos_y+float(wrl_pos[1])*25.4,0+float(wrl_pos[2])*25.4),FreeCAD.Rotation(-float(wrl_rot[2]),-float(wrl_rot[1]),-float(wrl_rot[0]))) #rot is already rot fp -rot wrl
+                                #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*mmPerInch,pos_y+float(wrl_pos[1])*mmPerInch,0+float(wrl_pos[2])*mmPerInch),FreeCAD.Rotation(-float(wrl_rot[2]),-float(wrl_rot[1]),-float(wrl_rot[0])))
+                                #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*mmPerInch,pos_y+float(wrl_pos[1])*mmPerInch,0+float(wrl_pos[2])*mmPerInch),FreeCAD.Rotation(rot,-float(wrl_rot[1]),-float(wrl_rot[0]))) #rot is already rot fp -rot wrl
+                                #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*mmPerInch,pos_y+float(wrl_pos[1])*mmPerInch,0+float(wrl_pos[2])*mmPerInch),FreeCAD.Rotation(rot,-float(wrl_rot[1]),-float(wrl_rot[0]))) #rot is already rot fp -rot wrl
+                                pos_z = model_z_offst
+                                impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*mmPerInch, \
+                                                                                     pos_y+float(wrl_pos[1])*mmPerInch, \
+                                                                                     pos_z+float(wrl_pos[2])*mmPerInch),\
+                                                                    FreeCAD.Rotation(-float(wrl_rot[2]), \
+                                                                                     -float(wrl_rot[1]), \
+                                                                                     -float(wrl_rot[0]))) #rot is already rot fp -rot wrl
+
                                 shape=impPart.Shape.copy()
                                 shape.Placement=impPart.Placement;
-                                shape.rotate((pos_x,pos_y,0),(0,0,1),rot+float(wrl_rot[2]))
+                                shape.rotate((pos_x,pos_y,0),(0,0,1),rot+float(wrl_rot[2])) #KK Do we need to fix Z? I think we're rotating around Z, so doesn't matter.
                                 impPart.Placement=shape.Placement;
                                 if force_transparency:
                                     FreeCADGui.ActiveDocument.ActiveObject.Transparency=100
                                 ##TBChecked shapes
                                 #say("rot z top ");sayw(wrl_rot);sayw(rot)
                             else:
-                                impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x,pos_y,0),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),rot))
+                                pos_z = model_z_offst
+                                impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x,pos_y,pos_z), \
+                                                     FreeCAD.Rotation(FreeCAD.Vector(0,0,1),rot)) #KK Do we need to fix Z?
+                            
                             FreeCADGui.Selection.addSelection(impPart)
                             if use_AppPart: #Top
                                 FreeCAD.ActiveDocument.getObject(top_name).addObject(impPart)
@@ -5966,37 +6009,48 @@ def Load_models(pcbThickness,modules):
                             if full_placement:
                                 #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x,pos_y,-pcbThickness),FreeCAD.Rotation(FreeCAD.Vector(0,1,0),180))
                                 ## new placement wip
-                                #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[1])*25.4,pos_y+float(wrl_pos[0])*25.4,-pcbThickness-float(wrl_pos[2])*25.4),FreeCAD.Rotation(-float(wrl_rot[2])-rot+180,-float(wrl_rot[1])+180,-float(wrl_rot[0])))
-                                # impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[1])*25.4,pos_y+float(wrl_pos[0])*25.4,-pcbThickness),FreeCAD.Rotation(-float(wrl_rot[2])+180,-float(wrl_rot[1])+180,-float(wrl_rot[0])))  #rot is already rot fp -rot wrl
-                                # #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[1])*25.4,pos_y+float(wrl_pos[0])*25.4,-pcbThickness-float(wrl_pos[2])*25.4),FreeCAD.Rotation(float(wrl_rot[2]),-float(wrl_rot[1]),-float(wrl_rot[0]))) #rot is already rot fp -rot wrl
+                                #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[1])*mmPerInch,pos_y+float(wrl_pos[0])*mmPerInch,-pcbThickness-float(wrl_pos[2])*mmPerInch),FreeCAD.Rotation(-float(wrl_rot[2])-rot+180,-float(wrl_rot[1])+180,-float(wrl_rot[0])))
+                                # impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[1])*mmPerInch,pos_y+float(wrl_pos[0])*mmPerInch,-pcbThickness),FreeCAD.Rotation(-float(wrl_rot[2])+180,-float(wrl_rot[1])+180,-float(wrl_rot[0])))  #rot is already rot fp -rot wrl
+                                # #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[1])*mmPerInch,pos_y+float(wrl_pos[0])*mmPerInch,-pcbThickness-float(wrl_pos[2])*mmPerInch),FreeCAD.Rotation(float(wrl_rot[2]),-float(wrl_rot[1]),-float(wrl_rot[0]))) #rot is already rot fp -rot wrl
                                 # shape=impPart.Shape.copy()
                                 # shape.Placement=impPart.Placement;
-                                # shape.rotate((pos_x+float(wrl_pos[1])*25.4,pos_y+float(wrl_pos[0])*25.4,-pcbThickness-float(wrl_pos[2])*25.4),(0,0,1),-180+rot-float(wrl_rot[2]))
+                                # shape.rotate((pos_x+float(wrl_pos[1])*mmPerInch,pos_y+float(wrl_pos[0])*mmPerInch,-pcbThickness-float(wrl_pos[2])*mmPerInch),(0,0,1),-180+rot-float(wrl_rot[2]))
                                 # impPart.Placement=shape.Placement;
-                                #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[1])*25.4,pos_y+float(wrl_pos[0])*25.4,-pcbThickness-float(wrl_pos[2])*25.4),FreeCAD.Rotation(-float(wrl_rot[2])-rot+180,-float(wrl_rot[1])+180,-float(wrl_rot[0])))
-                                impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*25.4,pos_y+float(wrl_pos[1])*25.4,+pcbThickness+float(wrl_pos[2])*25.4),FreeCAD.Rotation(-float(wrl_rot[2]),-float(wrl_rot[1]),-float(wrl_rot[0]))) #rot is already rot fp -rot wrl
+                                #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[1])*mmPerInch,pos_y+float(wrl_pos[0])*mmPerInch,-pcbThickness-float(wrl_pos[2])*mmPerInch),FreeCAD.Rotation(-float(wrl_rot[2])-rot+180,-float(wrl_rot[1])+180,-float(wrl_rot[0])))
+
+                                pos_z = model_z_offst + pcbThickness #KK Still Broken
+                                impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*mmPerInch, \
+                                                                                     pos_y+float(wrl_pos[1])*mmPerInch, \
+                                                                                     +pos_z+float(wrl_pos[2])*mmPerInch), \
+                                                                    FreeCAD.Rotation(-float(wrl_rot[2]), \
+                                                                                     -float(wrl_rot[1]), \
+                                                                                     -float(wrl_rot[0]))) #rot is already rot fp -rot wrl
                                 shape=impPart.Shape.copy()
                                 shape.Placement=impPart.Placement;
-                                shape.rotate((pos_x,pos_y,0),(0,0,1),180+rot+float(wrl_rot[2]))
+                                shape.rotate((pos_x,pos_y,0),(0,0,1),180+rot+float(wrl_rot[2])) #KK Do we need to fix Z? I think we're rotating around Z, so doesn't matter.
                                 impPart.Placement=shape.Placement;
                                 shape=impPart.Shape.copy()
                                 shape.Placement=impPart.Placement;
-                                shape.rotate((pos_x,pos_y,0),(0,1,0),180)
+                                shape.rotate((pos_x,pos_y,0),(0,1,0),180) #KK This rotates around Y, do we need to fix Z?
                                 impPart.Placement=shape.Placement;
                                 if force_transparency:
                                     FreeCADGui.ActiveDocument.ActiveObject.Transparency=60
                                 ##TBChecked shapes
                                 #say("rot z bot ");sayw(wrl_rot);sayw(rot)
-                                #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*25.4,pos_y+float(wrl_pos[1])*25.4,-pcbThickness+float(wrl_pos[2])*25.4),FreeCAD.Rotation(FreeCAD.Vector(0,1,0),180))
+                                #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*mmPerInch,pos_y+float(wrl_pos[1])*mmPerInch,-pcbThickness+float(wrl_pos[2])*mmPerInch),FreeCAD.Rotation(FreeCAD.Vector(0,1,0),180))
                             else:
-                                impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x,pos_y,-pcbThickness),FreeCAD.Rotation(FreeCAD.Vector(0,1,0),180))
+                                pos_z = model_z_offst + pcbThickness 
+                                impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x,pos_y,-pos_z), \
+                                                     FreeCAD.Rotation(FreeCAD.Vector(0,1,0),180)) 
+                                                     
                             #obj.Placement = impPart.Placement
                                 shape=impPart.Shape.copy()
                                 shape.Placement=impPart.Placement;
                             #if not full_placement:
-                                #shape.rotate((pos_x+float(wrl_pos[0])*25.4,pos_y+float(wrl_pos[1])*25.4,-pcbThickness+float(wrl_pos[2])*25.4),FreeCAD.Rotation(-float(wrl_rot[2]),-float(wrl_rot[1])+180,-float(wrl_rot[0])))
+                                #shape.rotate((pos_x+float(wrl_pos[0])*mmPerInch,pos_y+float(wrl_pos[1])*mmPerInch,-pcbThickness+float(wrl_pos[2])*mmPerInch),FreeCAD.Rotation(-float(wrl_rot[2]),-float(wrl_rot[1])+180,-float(wrl_rot[0])))
                             #else:
-                                shape.rotate((pos_x,pos_y,-pcbThickness),(0,0,1),-rot+180)
+                                pos_z = model_z_offst + pcbThickness 
+                                shape.rotate((pos_x,pos_y,-pos_z),(0,0,1),-rot+180) 
                                 impPart.Placement=shape.Placement
                             FreeCADGui.Selection.addSelection(impPart)
                             FreeCAD.ActiveDocument.getObject(impPart.Name)
@@ -6132,7 +6186,7 @@ def LoadKicadBoard (board_fname):
     #except:
     #    FC_git_Nbr=0
     #FC_git_Nbr=(FreeCAD.Version()[2].strip(" (Git)"))
-    sayw('FC Version '+str(FC_majorV)+str(FC_minorV)+"-"+str(FC_git_Nbr))   
+    logger.info('FC Version '+str(FC_majorV)+str(FC_minorV)+"-"+str(FC_git_Nbr))   
     msg1="use ONLY FreeCAD STABLE version 0.15 or later\r\n"
     #msg1+="to generate your STEP and VRML models\r\nFC 016 dev version results are still unpredictable"
     msg1+="to generate your STEP and VRML models\r\n"
@@ -7054,7 +7108,7 @@ def onLoadFootprint(file_name=None):
         #FreeCAD.Console.PrintMessage(data)
         FC_majorV=int(float(FreeCAD.Version()[0]))
         FC_minorV=int(float(FreeCAD.Version()[1]))
-        say('FC Version '+str(FC_majorV)+str(FC_minorV))    
+        logger.info('FC Version '+str(FC_majorV)+str(FC_minorV))    
         if int(FC_majorV) <= 0 and int(FC_minorV) < 16:
             routineDrawFootPrint_old(content,name)
         else:
@@ -7112,7 +7166,7 @@ def check_requirements():
     #except:
     #    FC_git_Nbr=0
     #FC_git_Nbr=(FreeCAD.Version()[2].strip(" (Git)"))
-    sayw('FC Version '+str(FC_majorV)+str(FC_minorV)+"-"+str(FC_git_Nbr))   
+    logger.info('FC Version '+str(FC_majorV)+str(FC_minorV)+"-"+str(FC_git_Nbr))   
     msg1="use ONLY FreeCAD STABLE version 0.15 or later\r\n"
     #msg1+="to generate your STEP and VRML models\r\nFC 016 dev version results are still unpredictable"
     msg1+="to generate your STEP and VRML models\r\n"
@@ -7529,7 +7583,7 @@ def crc_gen(data):
     #print(data +u'_'+ hex(binascii.crc_hqx(content.encode('utf-8'), 0x0000))[2:])
     return u'_'+ make_unicode(hex(binascii.crc_hqx(content.encode('utf-8'), 0x0000))[2:])
 ##
-def onLoadBoard(file_name=None,load_models=None,insert=None):
+def onLoadBoard(file_name=None,load_models=None,insert=None,model_z_offset=0):
     #name=QtGui.QFileDialog.getOpenFileName(this,tr("Open Image"), "/home/jana", tr("Image Files (*.png *.jpg *.bmp)"))[0]
     #global module_3D_dir
     global test_flag, last_pcb_path, configParser, configFilePath, start_time
@@ -7545,10 +7599,17 @@ def onLoadBoard(file_name=None,load_models=None,insert=None):
     global conv_offs, zfit, fname_sfx
 
 
+    clear_console()
+    print("********** Starting Board Load ************")
+    print("file_name = ",file_name)
+    print("load_models = ",load_models)
+    print("model_z_offset = ",(model_z_offset * 1000)," microns")
+
     pull_sketch = False
     override_pcb = None
     keep_pcb_sketch = None
     SketchLayer = 'Edge.Cuts' #None
+
     if load_models is None:
         load_models = True
     if load_models == False:
@@ -7574,14 +7635,14 @@ def onLoadBoard(file_name=None,load_models=None,insert=None):
             print('Cancel')
     if pull_sketch or load_models:
         default_value='/'
-        clear_console()
-        #lastPcb_dir='C:/Cad/Progetti_K/ksu-test'
-        #say(lastPcb_dir+' last Pcb dir')
-        #print(make_string(last_pcb_path))
-        #print (make_unicode(last_pcb_path))
+            #lastPcb_dir='C:/Cad/Progetti_K/ksu-test'
+            #say(lastPcb_dir+' last Pcb dir')
+            #print(make_string(last_pcb_path))
+            #print (make_unicode(last_pcb_path))
         if not os.path.isdir(make_unicode(last_pcb_path)):
             last_pcb_path=u"./"
-        #say(last_pcb_path)
+            #say(last_pcb_path)
+
         if file_name is not None:
             #export_board_2step=True #for cmd line force exporting to STEP
             name=file_name
@@ -7879,6 +7940,11 @@ def onLoadBoard(file_name=None,load_models=None,insert=None):
                 if doc.getObject(sketch_name_sfx) in doc.Objects: #if 1: #try:
                     docG = FreeCADGui.ActiveDocument
                     docG.getObject(sketch_name_sfx).Visibility=True
+            elif not load_models:
+                if doc.getObject(sketch_name_sfx) in doc.Objects:
+                    docG = FreeCADGui.ActiveDocument
+                    docG.getObject(sketch_name_sfx).Visibility=False
+                
             if not pull_sketch or load_models:
                 if use_AppPart and not force_oldGroups and not use_LinkGroups:
                     #sayw("creating hierarchy")
@@ -8005,11 +8071,9 @@ def onLoadBoard(file_name=None,load_models=None,insert=None):
                 if load_sketch:
                     FreeCADGui.ActiveDocument.getObject(newname).Visibility=False # hidden Sketch
                 ##Load 3D models
-                #Load_models(pcbThickness,modules)
                 if (zfit):
                     FreeCADGui.SendMsgToActiveView("ViewFit")
-                #else:        
-                Load_models(pcbThickness,modules)
+                Load_models(pcbThickness,modules,model_z_offset)
         
                 #enable_ReadShapeCompoundMode=False
                 if enable_ReadShapeCompoundMode:
@@ -8102,10 +8166,11 @@ def onLoadBoard(file_name=None,load_models=None,insert=None):
             if len (FreeCAD.Version()) >= 5:
                 FCV_date = str(FreeCAD.Version()[4])
                 FCV_date = FCV_date[0:FCV_date.find(' ')]
-                say('FreeCAD build date: '+FCV_date)
+                msg='FreeCAD build date: '+FCV_date
+                logger.info(msg)
                 if FCV_date >= '2020/06/27':
                     STEP_UseAppPart_available = True #new STEP import export mode available
-                    say('STEP UseAppPart available')
+                    logger.info('STEP UseAppPart available')
             if hasattr(prefs, 'GetBools'):
                 if 'UseAppPart' in prefs.GetBools() and STEP_UseAppPart_available:
                     if not prefs.GetBool('UseAppPart') or prefs.GetBool('UseLegacyImporter') or not prefs.GetBool('UseBaseName')\
@@ -12249,8 +12314,7 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
     import PySide
     import FreeCAD, Part
     from PySide import QtGui, QtCore
-    
-    say("PCB Loader ")
+        
     ## NB use always float() to guarantee number not string!!!
     max_edges_admitted = 1500 # after this number, no sketcher would be created
     
@@ -12276,7 +12340,7 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
     PCBs = []
     #print (mypcb.general) #maui errorchecking
     totalHeight=float(mypcb.general.thickness)
-    say('pcb thickness '+str(totalHeight)+'mm')
+    say('pcb thickness '+str(totalHeight)+'mm'+' ('+str(round((totalHeight/mmPerInch),3))+'")')
     version=mypcb.version
     say('kicad_pcb version ' +str(version))
     if version < 3:
@@ -13745,6 +13809,16 @@ if len(args) >= 3:
     last_pcb_path = filePath
     print (last_pcb_path)
     #say(fullFileName)
+
+    # User Preferences are queried here to determine import parameters
+    prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUpGui")
+    pcb_load_models = bool(prefs.GetInt('PCBA_Import_Mode'))
+    try:
+        pcb_copper_pref = prefs.GetInt('Tracks_Cu_Weight')
+    except:
+        pcb_copper_pref = 0  # Surface Only (no Thickness)
+    copper_thk, copper_name = GetCuWeight(pcb_copper_pref)
+
     if os.path.exists(fullFileName):
         #say("opening "+ fullFileName)
         #cfgParsWrite(configFilePath)
@@ -13752,7 +13826,7 @@ if len(args) >= 3:
         pg = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUp")
         pg.SetString("last_pcb_path", make_string(last_pcb_path))
         original_filename=fullFileName
-        onLoadBoard(fullFileName)
+        onLoadBoard(fullFileName, load_models=pcb_load_models, model_z_offset=copper_thk)
     else:
         fullfilePath=filePath+os.sep+fname+".kicad_pcb"
         #say(fullfilePath)
@@ -13763,7 +13837,7 @@ if len(args) >= 3:
             pg = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUp")
             pg.SetString("last_pcb_path", make_string(last_pcb_path))
             original_filename=fullfilePath
-            onLoadBoard(fullfilePath)
+            onLoadBoard(fullfilePath, load_models=pcb_load_models, model_z_offset=copper_thk)
         else:
             filefound=False
         #    sayw("missing "+ fullfilePath)
@@ -14395,7 +14469,7 @@ class Ui_DockWidget(object):
             self.cb_expStep.setChecked(False)  # Check by default True or False
         else:
             self.cb_expStep.setChecked(True)  # Check by default True or False
-        say("export to STEP "+str(export_board_2step))
+        logger.info("export to STEP "+str(export_board_2step))
         if addVirtual==0:
             #export_board_2step=False
             self.cb_virtual.setChecked(False)  # Check by default True or False
@@ -14629,7 +14703,7 @@ class Ui_DockWidget(object):
 ##
     def onLoadFootprint_click(self):
         #self.setGeometry(25, 250, 500, 500)
-        sayw("kicad StepUp version "+str(___ver___))
+        logger.info("kicad StepUp version "+str(___ver___))
         #say("tolerance on vertex = "+str(edge_tolerance))
         say("tolerance on vertex applied")
         onLoadFootprint()
@@ -14769,17 +14843,27 @@ class Ui_DockWidget(object):
         #    self.label17.setText(" ")
         #    self.label18.setText(" ")
         #    self.label19.setText(" ")
+
     def onLoadBoard_click(self):
         #self.setGeometry(25, 250, 500, 500)
-        sayw("kicad StepUp version "+str(___ver___))
+        logger.info("kicad StepUp version "+str(___ver___))
         #say("tolerance on vertex = "+str(edge_tolerance))
         say("tolerance on vertex applied")
         #ini_content=read_ini_file()
         ini_content=cfg_read_all()
         self.textEdit.setText(ini_content)
         cfg_read_all()
-        #cfgParsRead(configFilePath)
-        onLoadBoard()
+        
+        # User Preferences are queried here to determine import parameters
+        prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUpGui")
+        pcb_load_models = bool(prefs.GetInt('PCBA_Import_Mode'))
+        try:
+            pcb_copper_pref = prefs.GetInt('Tracks_Cu_Weight')
+        except:
+            pcb_copper_pref = 0  # Surface Only (no Thickness)
+        copper_thk, copper_name = GetCuWeight(pcb_copper_pref)
+        
+        onLoadBoard(load_models=pcb_load_models, model_z_offset=copper_thk)
 ##    
     def on_cb_expStep_clicked(self):
         global export_board_2step
@@ -14844,7 +14928,7 @@ class Ui_DockWidget(object):
             self.textEdit.setToolTip("ksu config ini file\ncontent")
             centerOnScreen (KSUWidget)
             #say("your home path is "+ expanduser("~"))
-            sayw("kicad StepUp version "+str(___ver___))
+            logger.info("kicad StepUp version "+str(___ver___))
             #ini_content=read_ini_file()
             expanded_view=1
             #QtCore.QTimer.singleShot(10,self.onCfg)
@@ -14868,7 +14952,7 @@ class Ui_DockWidget(object):
             else:
                 dock_right()
                 KSUWidget.setVisibility=True
-            sayw("kicad StepUp version "+str(___ver___))
+            logger.info("kicad StepUp version "+str(___ver___))
             
 #    def onHide(self):
 #        global expanded_view
@@ -14995,7 +15079,7 @@ class Ui_DockWidget(object):
             self.textEdit.setToolTip("Help Start Guide")
             centerOnScreen (KSUWidget)
             #ini_content=read_ini_file()
-            sayw("kicad StepUp version "+str(___ver___))
+            logger.info("kicad StepUp version "+str(___ver___))
             help_txt="""<font color=GoldenRod><b>kicad StepUp version """+___ver___+"""</font></b><br>"""
             help_txt+="""<font color=black>"""
             help_txt+="""<b>Kicad StepUp</b> is a tool set to easily <b>collaborate between kicad pcb EDA</b> (board and 3D parts) as STEP models <b>and FreeCAD MCAD</b> modeler.<br>"""
@@ -15102,7 +15186,7 @@ class Ui_DockWidget(object):
             else:
                 dock_right()
                 KSUWidget.setVisibility=True
-            sayw("kicad StepUp version "+str(___ver___))
+            logger.info("kicad StepUp version "+str(___ver___))
             #self.textEdit.setStyleSheet(""); 
         #say('onHelp')
         #reply = QtGui.QMessageBox.question(None, "", "step file exists, overwrite?",QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
@@ -20090,7 +20174,7 @@ def pull3D2dsn(s,mdls,tsp,nMd,gof,pcbThickness):
                 #ang = float(rot)
                 #dummyshape.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x,pos_y,-pcbThickness),FreeCAD.Rotation(FreeCAD.Vector(0,1,0),180))
                 ##FreeCAD.ActiveDocument.getObject(s.Name).Placement.Rotation=FreeCAD.Rotation(FreeCAD.Vector(0,0,1),ang)
-                dummyshape.Placement=FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*25.4,pos_y+float(wrl_pos[1])*25.4,0+float(wrl_pos[2])*25.4),FreeCAD.Rotation(-float(wrl_rot[2]),-float(wrl_rot[1]),-float(wrl_rot[0]))) #rot is already rot fp -rot wrl
+                dummyshape.Placement=FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*mmPerInch,pos_y+float(wrl_pos[1])*mmPerInch,0+float(wrl_pos[2])*mmPerInch),FreeCAD.Rotation(-float(wrl_rot[2]),-float(wrl_rot[1]),-float(wrl_rot[0]))) #rot is already rot fp -rot wrl
                 dummyshape.rotate((pos_x,pos_y,0),(0,0,1),rot+float(wrl_rot[2]))
                 FreeCAD.ActiveDocument.getObject(s.Name).Placement=dummyshape.Placement
                 #bbpa=degrees(FreeCAD.ActiveDocument.getObject(s.Name).Placement.Rotation.Angle)
@@ -20100,7 +20184,7 @@ def pull3D2dsn(s,mdls,tsp,nMd,gof,pcbThickness):
                 #new_angle=bbpa+z_rot
             else:
                 #print('bottom')
-                dummyshape.Placement=FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*25.4,pos_y+float(wrl_pos[1])*25.4,+pcbThickness+float(wrl_pos[2])*25.4),FreeCAD.Rotation(-float(wrl_rot[2]),-float(wrl_rot[1]),-float(wrl_rot[0]))) #rot is already rot fp -rot wrl
+                dummyshape.Placement=FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*mmPerInch,pos_y+float(wrl_pos[1])*mmPerInch,+pcbThickness+float(wrl_pos[2])*mmPerInch),FreeCAD.Rotation(-float(wrl_rot[2]),-float(wrl_rot[1]),-float(wrl_rot[0]))) #rot is already rot fp -rot wrl
                 dummyshape.rotate((pos_x,pos_y,0),(0,0,1),180+rot+float(wrl_rot[2]))
                 dummyshape.rotate((pos_x,pos_y,0),(0,1,0),180)
                 FreeCAD.ActiveDocument.getObject(s.Name).Placement=dummyshape.Placement
@@ -20462,7 +20546,7 @@ if singleInstance():
 
     KSUWidget.activateWindow()
     KSUWidget.raise_()
-    sayw('done!')
+    logger.info('done!')
 
 
     #if (tabify_widg):

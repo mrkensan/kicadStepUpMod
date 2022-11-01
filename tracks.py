@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 #****************************************************************************
 
-global tracks_version
 tracks_version = '1.1'
 
 import kicad_parser
@@ -12,16 +11,18 @@ import PySide
 from PySide import QtGui, QtCore
 import sys,os
 import FreeCAD, FreeCADGui
-global start_time, last_pcb_path, min_drill_size
+from  pcb_colors import *
+
+logger = kicad_parser.FCADLogger('tracks')
+
 global FC_export_min_version
 FC_export_min_version="11670"  #11670 latest JM
-
 
 global use_AppPart, use_Links, use_LinkGroups
 use_AppPart=False # False
 use_Links=False
-
 use_LinkGroups = False
+
 if 'LinkView' in dir(FreeCADGui):
     prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUpGui")
     if prefs.GetBool('asm3_linkGroups'):
@@ -39,7 +40,6 @@ else:
     #print('using \'Part\' container')
 #
 def getFCversion():
-
     FC_majorV=int(float(FreeCAD.Version()[0]))
     FC_minorV=int(float(FreeCAD.Version()[1]))
     try:
@@ -49,7 +49,6 @@ def getFCversion():
     return FC_majorV,FC_minorV,FC_git_Nbr
 
 FC_majorV,FC_minorV,FC_git_Nbr=getFCversion()
-FreeCAD.Console.PrintWarning('FC Version '+str(FC_majorV)+str(FC_minorV)+"-"+str(FC_git_Nbr)+'\n')    
 if FC_majorV == 0 and FC_minorV == 17:
     if FC_git_Nbr >= int(FC_export_min_version):
         use_AppPart=True
@@ -63,32 +62,17 @@ if FC_majorV == 0 and FC_minorV > 17:
 
 current_milli_time = lambda: int(round(time.time() * 1000))
 
-def say_time():
+def get_run_time(start_time):
+    end_milli_time = current_milli_time()
+    running_time=(end_milli_time-start_time)/1000
+    return running_time
+
+def say_time(start_time):
     end_milli_time = current_milli_time()
     running_time=(end_milli_time-start_time)/1000
     msg="running time: "+str(running_time)+"sec"
     print(msg)
 ###
-#try:  #maui
-#  basestring
-#except NameError:
-#  basestring = str
-py2=False
-try:  ## maui py3
-    unicode = unicode
-except NameError:
-    # 'unicode' is undefined, must be Python 3
-    str = str
-    unicode = str
-    bytes = bytes
-    basestring = (str,bytes)
-else:
-    # 'unicode' exists, must be Python 2
-    str = str
-    unicode = unicode
-    bytes = str
-    basestring = basestring
-    py2=True
 
 def reload_lib(lib):
     if (sys.version_info > (3, 0)):
@@ -97,15 +81,14 @@ def reload_lib(lib):
     else:
         reload (lib)
 
+def getTracksVersion():
+    return tracks_version
+
 def crc_gen_t(data):
     import binascii
     import re
     
-    #data=u'Würfel'
     content=re.sub(r'[^\x00-\x7F]+','_', data)
-    #make_unicode(hex(binascii.crc_hqx(content.encode('utf-8'), 0x0000))[2:])
-    #hex(binascii.crc_hqx(content.encode('utf-8'), 0x0000))[2:].encode('utf-8')
-    #print(data +u'_'+ hex(binascii.crc_hqx(content.encode('utf-8'), 0x0000))[2:])
     return u'_'+ make_unicode_t(hex(binascii.crc_hqx(content.encode('utf-8'), 0x0000))[2:])
 ##
 
@@ -123,64 +106,25 @@ def make_unicode_t(input):
         else:
             return input
 
-def mkColor(*color):
-    if len(color)==1:
-        if isinstance(color[0],basestring):
-            if color[0].startswith('#'):
-                #color = color[0].replace('#','0x')
-                #color = int(color,0)
-                #print (color)
-                #r = float((color>>24)&0xFF)
-                #g = float((color>>16)&0xFF)
-                #b = float((color>>8)&0xFF)
-                color = color[0] #[1:]
-                #print(color[1:3])
-                r = int((color[1:3]), 16) #/255
-                g = int((color[3:5]), 16) #/255
-                b = int((color[5:7]), 16) #/255
-                #print(r,g,b);stop
-                #print(r,g,b)
-                #stop
-            else:
-                color = int(color[0],0)
-                r = float((color>>24)&0xFF)
-                g = float((color>>16)&0xFF)
-                b = float((color>>8)&0xFF)
-        else:
-            color = color[0]
-            r = float((color>>24)&0xFF)
-            g = float((color>>16)&0xFF)
-            b = float((color>>8)&0xFF)
-    else:
-        r,g,b = color
-    return (r/255.0,g/255.0,b/255.0)
-##
-#colors = {
-#           'board':makeColor("0x3A6629"),
-#           'pad':{0:makeColor(219,188,126)},
-#           'zone':{0:makeColor(200,117,51)},
-#           'track':{0:makeColor(200,117,51)},
-#           'copper':{0:makeColor(200,117,51)},
-#        }
 
 from kicadStepUptools import removesubtree, cfg_read_all
 from kicadStepUptools import KicadPCB, make_unicode, make_string
-#filename="C:/Cad/Progetti_K/ksu-test/pic_smart_switch.kicad_pcb"
-#filename="C:/Cad/Progetti_K/eth-32gpio/eth-32gpio.kicad_pcb"
+
+# *************************************************************************
+# Generate Copper Tracks for Top and Bottom Layers
+#
 def addtracks():
-    global start_time, last_pcb_path, min_drill_size
-    global use_LinkGroups, use_AppPart, tracks_version
+    global use_LinkGroups, use_AppPart
     import sys
+    TopLayer = 0
+    BotLayer = 31
     
-    # cfg_read_all() it doesn't work through different files
-    # print (min_drill_size)
+    #FreeCAD.Console.PrintMessage('tracks version: '+getTracksVersion()+'\n')
+    logger.info("***************** Generating Copper Layers *****************")
     
     # **********************************
     # User Selection of PCB File
-    #
-    FreeCAD.Console.PrintMessage('tracks version: '+tracks_version+'\n')
-    print("Something Different to test Print\n")
-    
+    #    
     Filter=""
     pg = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUp")
     last_pcb_path = pg.GetString("last_pcb_path")
@@ -189,9 +133,7 @@ def addtracks():
     fname, Filter = PySide.QtGui.QFileDialog.getOpenFileName(None, "Open File...",
             make_unicode(last_pcb_path), "*.kicad_pcb")
     path, name = os.path.split(fname)
-        #filename=os.path.splitext(name)[0]
     filename = fname
-        #importDXF.open(os.path.join(dirname,filename))
  
     # **********************************
     # Start the process if a file was selected
@@ -210,153 +152,164 @@ def addtracks():
         pg.SetString("last_pcb_path", make_string(last_pcb_path)) # py3 .decode("utf-8")
 
         # **********************************
-        # Set Track & Silk color based on PCB Color
+        # Read user prefs for board features
         #
         prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUpGui")
-        pcb_color_pos = prefs.GetInt('pcb_color')
-            #pcb_color_values = [light_green,blue,red,purple,darkgreen,darkblue,lightblue,yellow,black,white]
-        assign_col=['#41c382','#2474cf','#ff4000','#9a1a85','#3c7f5d','#426091','#005fff','#fff956','#4d4d4d','#f0f0f0']
-            #print(pcb_color_pos)
-        trk_col = (assign_col[pcb_color_pos])
-        if pcb_color_pos == 9:  # if Board color is BLACK
-            slk_col = '#2d2d2d' #   Silkscreen color is ???
-        else:
-            slk_col = '#f8f8f0' #   Otherwise, silkscreen color is ???
+
+        try:
+            pcb_color_pref = prefs.GetInt('pcb_color')
+        except:
+            pcb_color_pref = 0  # Green
+        
+        pcb_color, trk_color, slk_color, color_name = GetPcbColors(pcb_color_pref)
+        #print ("Tracks Stats: ", pcb_color, trk_color, slk_color, color_name)
+        
+        try:
+            minSizeDrill = float(prefs.GetString('drill_size')) # Match PCB Import Parameter
+        except:
+            minSizeDrill = 0.0  # Drill all holes found
+        
+        try:
+            pcb_pad_pref = prefs.GetInt('Tracks_Cu_Finish')
+        except:
+            pcb_pad_pref = 0  # Render Bare copper
+            
+        pad_thk, pad_color, pad_name = GetPadFinish(pcb_pad_pref)
+        
+        try:
+            pcb_copper_pref = prefs.GetInt('Tracks_Cu_Weight')
+        except:
+            pcb_copper_pref = 0  # Surface Only (no Thickness)
+            
+        copper_thk, copper_name = GetCuWeight(pcb_copper_pref)
+        
+        logger.info("PCB Fabrication Parameters:")
+        logger.info("         Mask Color: "+color_name)
+        logger.info("     Copper Finish: "+pad_name)
+        logger.info("    Copper Weight: "+copper_name)
+        logger.info(" ")
+        
 
         # **********************************
         # Load PCB from file
         #
         mypcb = KicadPCB.load(filename)
         pcbThickness = float(mypcb.general.thickness)
-            #print (mypcb.general.thickness)
-            #print(mypcb.layers)
-        deltaz = 0.010 # 10 micron offset for copper from board surface
+
+        deltaz = 0.015 # 10 micron offset for copper from board surface
 
         import kicad_parser; reload_lib(kicad_parser)
         pcb = kicad_parser.KicadFcad(filename)
-            #pcb.setLayer(LvlTopName)
-        minSizeDrill = 0.0  #0.8
-            #print(pcb.colors)
-            # https://www.seeedstudio.com/blog/2017/07/23/why-are-printed-circuit-boards-are-usually-green-in-colour/
-            # <span style="color: #105e7d;">deep-sea blue</span></strong>, <strong><span style="color: #ff2f00;">Ferrari red</span></strong>, <strong><span style="color: #ffcc00;">sunshine yellow</span></strong>, <strong>slick black</strong>, <span style="color: #999999;"><strong>pure white</strong></span> and of course <strong><span style="color: #339966;">good</span></strong> <strong><span style="color: #339966;">ol’ green</span>
-            # (r/255.0,g/255.0,b/255.0)
-        pcb_col = pcb.colors                    # Get KiCad Colors from PCB file
-            #zone_col = pcb_col['zone'][0]
-            #track_col = pcb_col['track'][0]
-        pcb_col['track'][0] = mkColor(trk_col)  # Set track color rendered in FreeCAD
-        pcb_col['zone'][0] = mkColor(trk_col)   # Set zone color rendered in FreeCAD
         
-            #pcb_col['track'][0] = mkColor('#147b9d')
-            #pcb_col['zone'][0] = mkColor('#147b9d')
+        
+        # Set colors rendered by kicad_parser when making copper features
             #pcb.colors = {
-            #   'board':mkColor("0x3A6629"),
-            #   'pad':{0:mkColor(219,188,126)},
-            #   'zone':{0:mkColor('#147b9d')},
-            #   'track':{0:mkColor(26,157,204)},
-            #   'copper':{0:mkColor(200,117,51)},
+            #   'board':ColorToFreeCad("0x3A6629"),
+            #   'pad':{0:ColorToFreeCad(219,188,126)},
+            #   'zone':{0:ColorToFreeCad('#147b9d')},
+            #   'track':{0:ColorToFreeCad(26,157,204)},
+            #   'copper':{0:ColorToFreeCad(200,117,51)},
             #}
-            #pcb.colors={'board':(1.,1.,1.),'pad':{0:(219/255,188/255,126/255)},'zone':{0:(0.,1.,0.)},'track':{0:(0.,1.,1.)},'copper':{0:(0.,1.,1.)},}  
+        pcb.colors['track'][0] = ColorToFreeCad(trk_color)  # Set track color rendered in kicad_parser
+        pcb.colors['zone'][0]  = ColorToFreeCad(trk_color)   # Set zone color rendered in kicad_parser
+        pcb.colors['pad'][0]  = ColorToFreeCad(pad_color)   # Set zone color rendered in kicad_parser
+        
 
         # **********************************
         # Generate Top Layer Copper
         #
-            #try:   #doing top tracks layer
-        pcb.setLayer("Top")
-        pcb.makeCopper(holes=True, minSize=minSizeDrill, shape_type='solid')
+        pcb.setLayer(TopLayer)
+        pcb.makePads(holes=True, shape_type='solid', prefix="Top Layer: ")
+        #def makePads(self, shape_type='face', thickness=0.05, holes=False, fit_arcs=True, prefix=''):
+
+
+        #pcb.makeCopper(holes=True, minSize=minSizeDrill, shape_type='face', prefix="Top Layer: ")
         doc=FreeCAD.ActiveDocument
 
         composed = doc.ActiveObject
         s = composed.Shape
         doc.addObject('Part::Feature','topTracks'+ftname_sfx).Shape=composed.Shape
         topTracks = doc.ActiveObject
+
+        if 1:
+    
+                #print (doc.ActiveObject.Label)
+                #print (topTracks.Label)
+    
+            docG=FreeCADGui.ActiveDocument
+            docG.ActiveObject.ShapeColor   = docG.getObject(composed.Name).ShapeColor
+            docG.ActiveObject.LineColor    = docG.getObject(composed.Name).LineColor
+            docG.ActiveObject.PointColor   = docG.getObject(composed.Name).PointColor
+            docG.ActiveObject.DiffuseColor = docG.getObject(composed.Name).DiffuseColor
+    
+            topTracks.Label="topTracks"+ftname_sfx
+            topTracks.Placement = FreeCAD.Placement(FreeCAD.Vector(0,0,deltaz),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),0))
+    
+            if len (doc.getObjectsByLabel('Pcb'+ftname_sfx)) >0:
+                topTracks.Placement = doc.getObject('Pcb'+ftname_sfx).Placement
+                topTracks.Placement.Base.z += (deltaz * 2)
+                if len (doc.getObjectsByLabel('Board_Geoms'+ftname_sfx)) > 0:
+                    if use_AppPart and not use_LinkGroups:
+                        doc.getObject('Board_Geoms'+ftname_sfx).addObject(topTracks)
+                    elif use_LinkGroups:
+                        doc.getObject('Board_Geoms'+ftname_sfx).ViewObject.dropObject(topTracks,None,'',[])
+
+            FreeCADGui.Selection.clearSelection()
+            FreeCADGui.Selection.addSelection(doc.getObject(composed.Name))
+
+        removesubtree(FreeCADGui.Selection.getSelection())
+        
+        msg = "Top Layer: Run Time: "+str(get_run_time(start_time))+" Sec"
+        logger.info(msg)
+        #say_time(start_time)
+
+        if 0:
+            # **********************************
+            # Generate Bot Layer Copper
+            #
+            pcb.setLayer(BotLayer)
+            pcb.makeCopper(holes=True, minSize=minSizeDrill)
+            composed = doc.ActiveObject
+            s = composed.Shape
+            doc.addObject('Part::Feature','botTracks'+ftname_sfx).Shape=composed.Shape
+            botTracks = doc.ActiveObject
             #print (doc.ActiveObject.Label)
             #print (topTracks.Label)
-
-        docG=FreeCADGui.ActiveDocument
-        docG.ActiveObject.ShapeColor   = docG.getObject(composed.Name).ShapeColor
-        docG.ActiveObject.LineColor    = docG.getObject(composed.Name).LineColor
-        docG.ActiveObject.PointColor   = docG.getObject(composed.Name).PointColor
-        docG.ActiveObject.DiffuseColor = docG.getObject(composed.Name).DiffuseColor
+            docG.ActiveObject.ShapeColor   = docG.getObject(composed.Name).ShapeColor
+            docG.ActiveObject.LineColor    = docG.getObject(composed.Name).LineColor
+            docG.ActiveObject.PointColor   = docG.getObject(composed.Name).PointColor
+            docG.ActiveObject.DiffuseColor = docG.getObject(composed.Name).DiffuseColor
             #doc.recompute()
             #doc.addObject('Part::Feature',"topTraks").Shape=s
-
-        topTracks.Label="topTracks"+ftname_sfx
-        topTracks.Placement = FreeCAD.Placement(FreeCAD.Vector(0,0,deltaz),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),0))
+            botTracks.Label="botTracks"+ftname_sfx
+            botTracks.Placement = FreeCAD.Placement(FreeCAD.Vector(0,0,-1.6-deltaz),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),0))            
             #if hasattr(doc.Pcb, 'Shape'):
-            #if len (doc.getObjectsByLabel('Pcb')) >0:
-
-        if len (doc.getObjectsByLabel('Pcb'+ftname_sfx)) >0:
-            topTracks.Placement = doc.getObject('Pcb'+ftname_sfx).Placement
-            topTracks.Placement.Base.z += (deltaz * 2)
-            if len (doc.getObjectsByLabel('Board_Geoms'+ftname_sfx)) > 0:
-                if use_AppPart and not use_LinkGroups:
-                    doc.getObject('Board_Geoms'+ftname_sfx).addObject(topTracks)
-                elif use_LinkGroups:
-                    doc.getObject('Board_Geoms'+ftname_sfx).ViewObject.dropObject(topTracks,None,'',[])
-        #topTracks.Placement = FreeCAD.Placement(FreeCAD.Vector(0,0,0.05),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),0))
-        ##docG.getObject(topTracks.Name).Transparency=40
-        if 0:
-            docG.getObject(topTracks.Name).ShapeColor = (0.78,0.46,0.20)
-        FreeCADGui.Selection.clearSelection()
-        FreeCADGui.Selection.addSelection(doc.getObject(composed.Name))
-        #stop
-        removesubtree(FreeCADGui.Selection.getSelection())
-        say_time()
-        #except Exception as e:
-        #    exc_type, exc_obj, exc_tb = sys.exc_info()
-        #    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        #    FreeCAD.Console.PrintError('error class: '+str(exc_type)+'\nfile name: '+str(fname)+'\nerror @line: '+str(exc_tb.tb_lineno)+'\nerror value: '+str(e.args[0])+'\n')
-
-
-        
-        # **********************************
-        # Generate Bot Layer Copper
-        #
-            #try:    #doing bot tracks layer
-            #pcb.setLayer(LvlBotName)
-        pcb.setLayer("Bottom")
-        pcb.makeCopper(holes=True, minSize=minSizeDrill)
-        composed = doc.ActiveObject
-        s = composed.Shape
-        doc.addObject('Part::Feature','botTracks'+ftname_sfx).Shape=composed.Shape
-        botTracks = doc.ActiveObject
-        #print (doc.ActiveObject.Label)
-        #print (topTracks.Label)
-        docG.ActiveObject.ShapeColor   = docG.getObject(composed.Name).ShapeColor
-        docG.ActiveObject.LineColor    = docG.getObject(composed.Name).LineColor
-        docG.ActiveObject.PointColor   = docG.getObject(composed.Name).PointColor
-        docG.ActiveObject.DiffuseColor = docG.getObject(composed.Name).DiffuseColor
-        #doc.recompute()
-        #doc.addObject('Part::Feature',"topTraks").Shape=s
-        botTracks.Label="botTracks"+ftname_sfx
-        botTracks.Placement = FreeCAD.Placement(FreeCAD.Vector(0,0,-1.6-deltaz),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),0))            
-        #if hasattr(doc.Pcb, 'Shape'):
-        ##docG.getObject(botTracks.Name).Transparency=40
-        if 0:
-            docG.getObject(botTracks.Name).ShapeColor = (0.78,0.46,0.20)
-        FreeCADGui.Selection.clearSelection()
-        FreeCADGui.Selection.addSelection(doc.getObject(composed.Name))
-        
-        removesubtree(FreeCADGui.Selection.getSelection())
-        #if hasattr(doc.Pcb, 'Shape'):
-        if len (doc.getObjectsByLabel('Pcb'+ftname_sfx)) > 0:
-            botTracks.Placement = doc.getObject('Pcb'+ftname_sfx).Placement
-            #botTracks.Placement = doc.Pcb.Placement
-            botTracks.Placement.Base.z-=pcbThickness+deltaz
-            if len (doc.getObjectsByLabel('Board_Geoms'+ftname_sfx)) > 0:
-                if use_AppPart and not use_LinkGroups:
-                    doc.getObject('Board_Geoms'+ftname_sfx).addObject(botTracks)
-                elif use_LinkGroups:
-                    doc.getObject('Board_Geoms'+ftname_sfx).ViewObject.dropObject(botTracks,None,'',[])
-        #botTracks = FreeCAD.ActiveDocument.ActiveObject
-        #botTracks.Label="botTracks"
-        #botTracks.Placement = FreeCAD.Placement(FreeCAD.Vector(0,0,-1.6),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),0))    
-        #docG.ActiveObject.Transparency=40
-        #except Exception as e:
-        #    exc_type, exc_obj, exc_tb = sys.exc_info()
-        #    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        #    FreeCAD.Console.PrintError('error class: '+str(exc_type)+'\nfile name: '+str(fname)+'\nerror @line: '+str(exc_tb.tb_lineno)+'\nerror value: '+str(e.args[0])+'\n')
-        say_time()
+            ##docG.getObject(botTracks.Name).Transparency=40
+            if 0:
+                docG.getObject(botTracks.Name).ShapeColor = (0.78,0.46,0.20)
+            FreeCADGui.Selection.clearSelection()
+            FreeCADGui.Selection.addSelection(doc.getObject(composed.Name))
+            
+            removesubtree(FreeCADGui.Selection.getSelection())
+            #if hasattr(doc.Pcb, 'Shape'):
+            if len (doc.getObjectsByLabel('Pcb'+ftname_sfx)) > 0:
+                botTracks.Placement = doc.getObject('Pcb'+ftname_sfx).Placement
+                #botTracks.Placement = doc.Pcb.Placement
+                botTracks.Placement.Base.z-=pcbThickness+deltaz
+                if len (doc.getObjectsByLabel('Board_Geoms'+ftname_sfx)) > 0:
+                    if use_AppPart and not use_LinkGroups:
+                        doc.getObject('Board_Geoms'+ftname_sfx).addObject(botTracks)
+                    elif use_LinkGroups:
+                        doc.getObject('Board_Geoms'+ftname_sfx).ViewObject.dropObject(botTracks,None,'',[])
+            #botTracks = FreeCAD.ActiveDocument.ActiveObject
+            #botTracks.Label="botTracks"
+            #botTracks.Placement = FreeCAD.Placement(FreeCAD.Vector(0,0,-1.6),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),0))    
+            #docG.ActiveObject.Transparency=40
+            #except Exception as e:
+            #    exc_type, exc_obj, exc_tb = sys.exc_info()
+            #    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            #    FreeCAD.Console.PrintError('error class: '+str(exc_type)+'\nfile name: '+str(fname)+'\nerror @line: '+str(exc_tb.tb_lineno)+'\nerror value: '+str(e.args[0])+'\n')
+            say_time(start_time)
         
         FreeCADGui.SendMsgToActiveView("ViewFit")
-        docG.activeView().viewAxonometric()
+        #docG.activeView().viewAxonometric()
