@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>540</width>
-    <height>815</height>
+    <height>750</height>
    </rect>
   </property>
   <property name="font">
@@ -55,17 +55,17 @@
         <x>0</x>
         <y>0</y>
         <width>535</width>
-        <height>205</height>
+        <height>280</height>
        </rect>
       </property>
       <property name="title">
-       <string>3D Prefix Working Folder</string>
+       <string>3D Prefix Paths</string>
       </property>
       <widget class="QWidget" name="verticalLayoutWidget">
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>80</y>
+         <y>75</y>
          <width>501</width>
          <height>46</height>
         </rect>
@@ -86,7 +86,7 @@
            </font>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;your &lt;span style=&quot; font-weight:600;&quot;&gt;ALIAS&lt;/span&gt; 3D&lt;/p&gt;&lt;p&gt;model prefix path&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Secondary 3D folder location&lt;/span&gt;&lt;/p&gt;&lt;p&gt;KiCad Variable: 'ALT3DMOD'&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>Secondary 3D folder location 'ALT3DMOD'</string>
@@ -117,7 +117,7 @@
            </font>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;secondary 3D folder location&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;'ALT3DMOD'&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Secondary 3D folder location&lt;/span&gt;&lt;/p&gt;&lt;p&gt;KiCad Variable: 'ALT3DMOD'&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="prefEntry" stdset="0">
            <cstring>prefix3d_2</cstring>
@@ -135,7 +135,7 @@
          <x>10</x>
          <y>20</y>
          <width>501</width>
-         <height>46</height>
+         <height>47</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -154,7 +154,7 @@
            </font>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;your &lt;span style=&quot; font-weight:600;&quot;&gt;KISYS3DMOD&lt;/span&gt; path&lt;/p&gt;&lt;p&gt;or 3D model &lt;span style=&quot; font-weight:600;&quot;&gt;main prefix path&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Main 3D folder location&lt;/span&gt;&lt;/p&gt;&lt;p&gt;KiCad Variable: 'KISYS3DMOD'&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>Main 3D folder location 'KISYS3DMOD'</string>
@@ -185,7 +185,7 @@
            </font>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;main 3D folder location&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;'KISYS3DMOD'&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Main 3D folder location&lt;/span&gt;&lt;/p&gt;&lt;p&gt;KiCad Variable: 'KISYS3DMOD'&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="prefEntry" stdset="0">
            <cstring>prefix3d_1</cstring>
@@ -201,9 +201,9 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>140</y>
+         <y>165</y>
          <width>501</width>
-         <height>46</height>
+         <height>47</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -222,7 +222,75 @@
            </font>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;your &lt;span style=&quot; font-weight:600;&quot;&gt;ALIAS&lt;/span&gt; 3D&lt;/p&gt;&lt;p&gt;model prefix path&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;KiCad Directory for above Macro Name&lt;/span&gt;&lt;br/&gt;(Set in Dir KiCad Preferences)&lt;/p&gt;&lt;p&gt;This is the path assigned to the above&lt;br/&gt;macro name in KiCad.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>3D Macro Directory Path</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Gui::PrefLineEdit" name="GuiPref_PCB_Comp_BB_3">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <weight>50</weight>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;KiCad Directory for above Macro Name&lt;/span&gt;&lt;br/&gt;(Set in Dir KiCad Preferences)&lt;/p&gt;&lt;p&gt;This is the path assigned to the above&lt;br/&gt;macro name in KiCad.&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>path_3d_macro</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/kicadStepUpGui</cstring>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="verticalLayoutWidget_4">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>220</y>
+         <width>501</width>
+         <height>46</height>
+        </rect>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <property name="leftMargin">
+         <number>10</number>
+        </property>
+        <property name="rightMargin">
+         <number>10</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="label_prefix3d_4">
+          <property name="font">
+           <font>
+            <weight>50</weight>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Last Opened KiCad PCB File&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>Last Opened PCB File Path</string>
@@ -230,7 +298,7 @@
          </widget>
         </item>
         <item>
-         <widget class="Gui::PrefFileChooser" name="alias_prefix_2" native="true">
+         <widget class="Gui::PrefFileChooser" name="alias_prefix_3" native="true">
           <property name="enabled">
            <bool>true</bool>
           </property>
@@ -253,7 +321,7 @@
            </font>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;secondary 3D folder location&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;'ALT3DMOD'&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Last Opened KiCad PCB File&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="prefEntry" stdset="0">
            <cstring>last_pcb_path</cstring>
@@ -265,14 +333,83 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="layoutWidget_13">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>135</y>
+         <width>315</width>
+         <height>24</height>
+        </rect>
+       </property>
+       <layout class="QHBoxLayout" name="horizontalLayout_8">
+        <item>
+         <widget class="QLabel" name="label_5">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="font">
+           <font>
+            <weight>50</weight>
+            <bold>false</bold>
+            <kerning>true</kerning>
+           </font>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Name KiCad Directory Macro&lt;/span&gt;&lt;br/&gt;(Set in Dir Preferences)&lt;/p&gt;&lt;p&gt;This Macro or Environment Variable might&lt;br/&gt;be used as the prefix to names of 3D Objects&lt;br/&gt;used in portable projects.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>3D Prefix Macro Name:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Gui::PrefLineEdit" name="GuiPref_PCB_Comp_BB_2">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <weight>50</weight>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Name KiCad Directory Macro&lt;/span&gt;&lt;br/&gt;(Set in Dir Preferences)&lt;/p&gt;&lt;p&gt;This Macro or Environment Variable might&lt;br/&gt;be used as the prefix to names of 3D Objects&lt;br/&gt;used in portable projects.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>name_3d_macro</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/kicadStepUpGui</cstring>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
      <widget class="QGroupBox" name="PCB_settings">
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>210</y>
+        <y>285</y>
         <width>535</width>
-        <height>315</height>
+        <height>285</height>
        </rect>
       </property>
       <property name="font">
@@ -377,17 +514,17 @@
           </item>
           <item>
            <property name="text">
-            <string>DarkGreen</string>
+            <string>Drab Green</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>DarkBlue</string>
+            <string>Dark Blue</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>LightBlue</string>
+            <string>Light Blue</string>
            </property>
           </item>
           <item>
@@ -595,9 +732,9 @@
       <widget class="QWidget" name="layoutWidget_5">
        <property name="geometry">
         <rect>
-         <x>10</x>
-         <y>185</y>
-         <width>490</width>
+         <x>285</x>
+         <y>155</y>
+         <width>215</width>
          <height>24</height>
         </rect>
        </property>
@@ -616,28 +753,21 @@
 '0.0' -&gt; all drills are loaded</string>
           </property>
           <property name="text">
-           <string>Minimum Drill-Size Allowed for PCB Holes: </string>
+           <string>Min Allowed Drill-Size: </string>
           </property>
          </widget>
         </item>
         <item>
-         <spacer name="horizontalSpacer_8">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
          <widget class="Gui::PrefLineEdit" name="GuiPref_PCB_Drill_Min">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="minimumSize">
            <size>
-            <width>150</width>
+            <width>0</width>
             <height>0</height>
            </size>
           </property>
@@ -663,13 +793,43 @@
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QLabel" name="label_7">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>25</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <weight>50</weight>
+            <bold>false</bold>
+            <kerning>true</kerning>
+           </font>
+          </property>
+          <property name="toolTip">
+           <string>minimum Edge Tolerance applied to PCB
+default '0.01mm'</string>
+          </property>
+          <property name="text">
+           <string>mm</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="layoutWidget_7">
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>215</y>
+         <y>185</y>
          <width>490</width>
          <height>24</height>
         </rect>
@@ -726,7 +886,7 @@
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>245</y>
+         <y>215</y>
          <width>490</width>
          <height>24</height>
         </rect>
@@ -782,9 +942,9 @@
       <widget class="QWidget" name="layoutWidget_9">
        <property name="geometry">
         <rect>
-         <x>9</x>
+         <x>10</x>
          <y>155</y>
-         <width>490</width>
+         <width>200</width>
          <height>24</height>
         </rect>
        </property>
@@ -803,28 +963,21 @@
 default '0.01mm'</string>
           </property>
           <property name="text">
-           <string>Minimum Edge Tolerance</string>
+           <string>Min Edge Tolerance:</string>
           </property>
          </widget>
         </item>
         <item>
-         <spacer name="horizontalSpacer_12">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
          <widget class="Gui::PrefLineEdit" name="GuiPref_PCB_Edge_Tol">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="maximumSize">
            <size>
-            <width>150</width>
+            <width>500</width>
             <height>16777215</height>
            </size>
           </property>
@@ -840,7 +993,7 @@ default '0.01mm'</string>
 default '0.01mm'</string>
           </property>
           <property name="text">
-           <string>0.01</string>
+           <string>0.075</string>
           </property>
           <property name="prefEntry" stdset="0">
            <cstring>edge_tolerance</cstring>
@@ -850,13 +1003,43 @@ default '0.01mm'</string>
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="QLabel" name="label_6">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>25</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <weight>50</weight>
+            <bold>false</bold>
+            <kerning>true</kerning>
+           </font>
+          </property>
+          <property name="toolTip">
+           <string>minimum Edge Tolerance applied to PCB
+default '0.01mm'</string>
+          </property>
+          <property name="text">
+           <string>mm</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
       <widget class="Gui::PrefCheckBox" name="GuiPref_PCB_Virtual_Models">
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>280</y>
+         <y>250</y>
          <width>175</width>
          <height>20</height>
         </rect>
@@ -889,7 +1072,7 @@ default '0.01mm'</string>
        <property name="geometry">
         <rect>
          <x>205</x>
-         <y>280</y>
+         <y>250</y>
          <width>296</width>
          <height>20</height>
         </rect>
@@ -1005,7 +1188,7 @@ default '0.01mm'</string>
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>530</y>
+        <y>575</y>
         <width>534</width>
         <height>155</height>
        </rect>
