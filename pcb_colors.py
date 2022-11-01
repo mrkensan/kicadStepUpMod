@@ -72,7 +72,7 @@ def GetCuWeight(n):
 def GetPadFinish(n):
     return {
         0 : (0.000, "#FCC9AC", "Bare Copper"),
-        1 : (0.004, "#D0B062", "ENIG (Gold)"),
+        1 : (0.004, "#D0B052", "ENIG (Gold)"),
         2 : (0.005, "#DBDCDC", "RoHS (Lead-Free)"),
         3 : (0.007, "#ADA89E", "HASL (63Pb / 37Sn)"),
         4 : (0.001, "#CBC9C6", "Immersion Silver"),
@@ -85,11 +85,11 @@ def GetPadFinish(n):
 #   Silkscreen color is "White" except for white boards, then "Black"
 def GetPcbColors(n):
     return {
-        0 : ("#A2161E", "#1CAA46", "#F8F8F0", "Light Green"),  # "#068631", "#1CAA46"
+        0 : ("#068631", "#1CAA46", "#F8F8F0", "Light Green"),
         1 : ("#164191", "#0861BD", "#F8F8F0", "Blue"),
-        2 : ("#068631", "#D42634", "#F8F8F0", "Red"),          # "#A2161E", "#D42634"
+        2 : ("#A2161E", "#D42634", "#F8F8F0", "Red"),
         3 : ("#542D70", "#8C4ba0", "#F8F8F0", "Purple"),
-        4 : ("#073825", "#1B6F49", "#F8F8F0", "Dark Green"),
+        4 : ("#5b610b", "#5c8a00", "#F8F8F0", "Drab Green"),    # (Dark Green) "#073825", "#1B6F49"
         5 : ("#1D355C", "#065391", "#F8F8F0", "Dark Blue"),
         6 : ("#0078B5", "#0091C8", "#F8F8F0", "Light Blue"),
         7 : ("#b19600", "#d39d1a", "#F8F8F0", "Yellow"),
