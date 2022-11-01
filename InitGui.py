@@ -127,12 +127,6 @@ class KiCadStepUpWB ( Workbench ):
         global pref_page
         pref_page = True # False #True #
         import FreeCADGui
-
-        # Add Demo items to Demo submenu
-        demoFiles = self.ListDemos()
-        for curFile in demoFiles:
-            FreeCADGui.addCommand(curFile, kicadStepUpCMD.ksuExcDemo(curFile))
-        
         
         # **********************************
         # Init the ToolBars
@@ -171,17 +165,25 @@ class KiCadStepUpWB ( Workbench ):
         # Add Menus to FreeCAD
         #        
         self.appendMenu("ksu Tools", ["ksuTools","ksuToolsEditPrefs"])
-        self.appendMenu("ksu PushPull", ["ksuToolsOpenBoard","ksuToolsPushPCB","ksuToolsPushMoved","ksuToolsSync3DModels","ksuToolsPullPCB","ksuToolsPullMoved",\
+        self.appendMenu("ksu PushPull", ["ksuToolsOpenBoard","ksuToolsPushPCB","ksuToolsPushMoved",\
+                        "ksuToolsSync3DModels","ksuToolsPullPCB","ksuToolsPullMoved",\
                         "Separator","ksuToolsGeneratePositions","ksuToolsComparePositions",\
                         "Separator","ksuRemoveTimeStamp","ksuRemoveSuffix",\
                         "Separator","ksuToolsLoadFootprint","ksuToolsFootprintGen"])
+
+        # Add active items for Demo submenu
+        demoFiles = self.ListDemos()
+        for curFile in demoFiles:
+            FreeCADGui.addCommand(curFile, kicadStepUpCMD.ksuExcDemo(curFile))
+        # Add Demo submenu
         self.appendMenu(["ksu Tools", "Demo"], demoFiles)
         
         # **********************************
         # Add Preference Tabs to FreeCAD
         #        
         if pref_page:
-            FreeCADGui.addPreferencePage(ksuWB_ui_path + '/ksu_prefs.ui',"kicadStepUpGui")
+            FreeCADGui.addPreferencePage(ksuWB_ui_path + '/ksu_prefs_general.ui',"kicadStepUpGui")
+            FreeCADGui.addPreferencePage(ksuWB_ui_path + '/ksu_prefs_import_export.ui',"kicadStepUpGui")
             FreeCADGui.addPreferencePage(kSU_MainPrefPage,"kicadStepUpGui")
 
         FreeCADGui.addIconPath(ksuWB_icons_path)
@@ -192,19 +194,33 @@ class KiCadStepUpWB ( Workbench ):
         Msg ("KiCadStepUpWB.Activated("+ksu_wb_version+")\n")
         from PySide import QtGui
         import time, sys, os, re
+        from time import strftime, localtime
         from os.path import expanduser
         import codecs #utf-8 config parser
         import FreeCAD, FreeCADGui
         
+        # **********************************
+        # Query Generic Workbench Preferences
+        #   Set defaults if empty
+        #        
         pg = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUp")
-        tnow = int(time.time())
         oneday = 86400
+
+        # Write the version every time so we can read it in settings
+        # Always gets overwritten after upgrade
+        pg.SetString("ksu_wb_version",ksu_wb_version)   
+        pg.SetString("mycommitsKWB", str(mycommitsKWB))
+        
         if pg.IsEmpty():
-            pg.SetBool("checkUpdates",1)
-            upd=True
-            pg.SetInt("updateDaysInterval",1)
-            pg.SetInt("lastCheck",tnow-2*oneday)
+            updates_enabled=True
+            pg.SetBool("checkUpdates",updates_enabled)
+            pg.SetString("updateDaysInterval","1")
+            last_check_time = int(time.time()) - (2*oneday)
+            last_check_text = strftime("%a, %d %b %Y %H:%M:%S", localtime(last_check_time))
+            pg.SetInt("lastCheck",last_check_time)
+            pg.SetString("lastCheckText",last_check_text)
             pg.SetInt("dockingMode",0)
+            
             interval=True
             FreeCAD.Console.PrintError('new \'check for updates\' feature added!!!\n')
             msg="""
@@ -216,7 +232,13 @@ class KiCadStepUpWB ( Workbench ):
             QtGui.QApplication.restoreOverrideCursor()
             reply = QtGui.QMessageBox.information(None,"Warning", msg)
         else:
-            upd=pg.GetBool("checkUpdates")
+            updates_enabled=pg.GetBool("checkUpdates")
+
+
+        # **********************************
+        # Query Functional Preferences
+        #   Set defaults if empty
+        #        
         prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUpGui")
         if prefs.IsEmpty():
         #if prefs.GetContents() is None:
@@ -247,6 +269,7 @@ class KiCadStepUpWB ( Workbench ):
                     else:
                         return input
             ##
+
             FreeCAD.Console.PrintError('Creating first time ksu preferences\n')
             #prefs.SetString('prefix3d_1',make_string(default_prefix3d))
             prefs.SetInt('pcb_color',0)
@@ -347,18 +370,21 @@ class KiCadStepUpWB ( Workbench ):
             reply = QtGui.QMessageBox.information(None,"Warning", msg)
             # FreeCADGui.runCommand("Std_DlgPreferences") it cannot launched here until InitGui has run!!!
         ##
-        time_interval = pg.GetInt("updateDaysInterval")
+        time_interval = int(pg.GetString("updateDaysInterval"))
         if time_interval <= 0:
             time_interval = 1
-            pg.SetInt("updateDaysInterval",1)
+            pg.SetString("updateDaysInterval","1")
         nowTimeCheck = int(time.time())
         lastTimeCheck = pg.GetInt("lastCheck")
-        #print (nowTimeCheck - lastTimeCheck)/(oneday*time_interval)
-        if time_interval <= 0 or ((nowTimeCheck - lastTimeCheck)/(oneday*time_interval) >= 1):
+
+        if ((nowTimeCheck - lastTimeCheck)/(oneday*time_interval) >= 1):
             interval = True
-            pg.SetInt("lastCheck",tnow)
+            pg.SetInt("lastCheck",nowTimeCheck)
+            last_check_text = strftime("%a, %d %b %Y %H:%M:%S", localtime(nowTimeCheck))
+            pg.SetString("lastCheckText",last_check_text)
         else:
             interval = False
+
         def check_updates(url, commit_nbr):
             import re, sys
             resp_ok = False
@@ -436,7 +462,7 @@ class KiCadStepUpWB ( Workbench ):
                     FreeCAD.Console.PrintMessage('the WB is Up to Date\n')
                 #<li class="commits">
         ##
-        if upd and interval:
+        if updates_enabled and interval:
             check_updates(myurlKWB, mycommitsKWB)
  
     def Deactivated(self):
@@ -458,7 +484,6 @@ class KiCadStepUpWB ( Workbench ):
                 if not entry.name.startswith('.') and entry.is_file():
                     dirs.append(entry.name)
         dirs.sort()
-
         return dirs
     ##
 
