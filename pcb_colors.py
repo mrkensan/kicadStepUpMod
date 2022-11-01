@@ -71,7 +71,7 @@ def GetCuWeight(n):
 # https://www.epectec.com/downloads/Surface-Finishes.pdf
 def GetPadFinish(n):
     return {
-        0 : (0.005, "#FCC9AC", "Bare Copper"),
+        0 : (0.000, "#FCC9AC", "Bare Copper"),
         1 : (0.004, "#D0B062", "ENIG (Gold)"),
         2 : (0.005, "#DBDCDC", "RoHS (Lead-Free)"),
         3 : (0.007, "#ADA89E", "HASL (63Pb / 37Sn)"),
@@ -87,7 +87,7 @@ def GetPcbColors(n):
     return {
         0 : ("#A2161E", "#1CAA46", "#F8F8F0", "Light Green"),  # "#068631", "#1CAA46"
         1 : ("#164191", "#0861BD", "#F8F8F0", "Blue"),
-        2 : ("#068631", "#1CAA46", "#F8F8F0", "Red"),          # "#A2161E", "#D42634"
+        2 : ("#068631", "#D42634", "#F8F8F0", "Red"),          # "#A2161E", "#D42634"
         3 : ("#542D70", "#8C4ba0", "#F8F8F0", "Purple"),
         4 : ("#073825", "#1B6F49", "#F8F8F0", "Dark Green"),
         5 : ("#1D355C", "#065391", "#F8F8F0", "Dark Blue"),
