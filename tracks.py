@@ -230,13 +230,6 @@ def addtracks():
         pcbThickness = float(mypcb.general.thickness)
             #print (mypcb.general.thickness)
             #print(mypcb.layers)
-        Top_lvl=0;Bot_lvl=31
-            #for lynbr in mypcb.layers: #getting layers name
-            #    if float(lynbr) == Top_lvl:
-            #        LvlTopName=(mypcb.layers['{0}'.format(str(lynbr))][0])
-            #    if float(lynbr) == Bot_lvl:
-            #        LvlBotName=(mypcb.layers['{0}'.format(str(lynbr))][0])
-            #print(LvlTopName,'  ',LvlBotName)
         deltaz = 0.010 # 10 micron offset for copper from board surface
 
         import kicad_parser; reload_lib(kicad_parser)
@@ -268,7 +261,7 @@ def addtracks():
         # Generate Top Layer Copper
         #
             #try:   #doing top tracks layer
-        pcb.setLayer(Top_lvl)
+        pcb.setLayer("Top")
         pcb.makeCopper(holes=True, minSize=minSizeDrill, shape_type='solid')
         doc=FreeCAD.ActiveDocument
 
@@ -317,11 +310,11 @@ def addtracks():
 
         
         # **********************************
-        # Generate Top Layer Copper
+        # Generate Bot Layer Copper
         #
             #try:    #doing bot tracks layer
             #pcb.setLayer(LvlBotName)
-        pcb.setLayer(Bot_lvl)
+        pcb.setLayer("Bottom")
         pcb.makeCopper(holes=True, minSize=minSizeDrill)
         composed = doc.ActiveObject
         s = composed.Shape
