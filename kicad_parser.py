@@ -426,9 +426,10 @@ class KicadFcad:
 
         self.setLayer(self.layer_type)
 
+    # Layer number or name may be used
+    # Layer must be present in PCB file
     def setLayer(self,layer):
-        #print(layer)
-        # print(self.pcb.layers)
+        print("Setting to Layer: ",layer)
         try:
             layer = int(layer)
         except:
@@ -444,6 +445,8 @@ class KicadFcad:
                 raise KeyError('layer {} not found'.format(layer))
             self.layer_type = layer
             self.layer = self.pcb.layers[str(layer)][0]
+            return
+
 
 
     def _log(self,msg,*arg,**kargs):
@@ -1386,6 +1389,8 @@ class KicadFcad:
                     holes=False, minSize= 0, z=0, prefix='',fuse=False):
 
         self._pushLog('making copper layer {}...',self.layer,prefix=prefix)
+
+        holes = []
         holes = self._cutHoles(None,holes,None,None,False,minSize)
         #_cutHoles(self,objs,holes,name,label=None,fit_arcs=False,
         #            minSize=0,maxSize=0,oval=True,npth=0,offset=0.0)
@@ -1405,15 +1410,15 @@ class KicadFcad:
                               ('Tracks',0.5*thickness),
                               ('Zones',0)):
 
-            obj = getattr(self,'make{}'.format(name))(fit_arcs=sub_fit_arcs,
-                        holes=holes,shape_type=shape_type,prefix=None,
-                        thickness=thickness)
+            obj = getattr(self,'make{}'.format(name))(fit_arcs=sub_fit_arcs, holes=holes, shape_type=shape_type, prefix=None, thickness=thickness)
             if not obj:
                 continue
             if shape_type=='solid':
                 ofs = offset if self.layer.startswith('F.') else -offset
                 self._place(obj,Vector(0,0,ofs))
             objs.append(obj)
+            
+        print(objs)
 
         if shape_type=='solid':
             self._log("makeing solid")
