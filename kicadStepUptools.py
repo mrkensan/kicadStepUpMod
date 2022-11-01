@@ -4055,8 +4055,8 @@ def get_time():
     
     end_milli_time = current_milli_time()
     running_time=(end_milli_time-start_time)/1000
-    #msg="running time: "+str(running_time)+"sec"
-    #say(msg)
+    msg="running time: "+str(running_time)+"sec"
+    say(msg)
 ###
 
 def reset_prop(obj,doc,App,Gui):
@@ -4753,7 +4753,7 @@ def Export2MCAD(blacklisted_model_elements):
     else:
         say("Board Placed @ "+"{0:.2f}".format(new_pos_x)+";"+"{0:.2f}".format(new_pos_y)+";0.0")
     say("kicad pcb pos: ("+"{0:.2f}".format(real_board_pos_x)+";"+"{0:.2f}".format(real_board_pos_y)+";"+"{0:.2f}".format(0)+")")    
-    say_time()
+    #say_time()
     if (show_messages==True):
         QtGui.QApplication.restoreOverrideCursor()
         #RotateXYZGuiClass().setGeometry(25, 250, 500, 500)
@@ -5761,14 +5761,14 @@ def Load_models(pcbThickness, modules, model_z_offst):
                             ##
                             #impPart=reset_prop_shapes2(impPart,FreeCAD.ActiveDocument, FreeCAD,FreeCADGui)
                             ##resetting placement properties
-                            impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x,pos_y,-pcbThickness),FreeCAD.Rotation(FreeCAD.Vector(0,1,0),180)) #KK Do we need to fix Z?
+                            impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x,pos_y,-pcbThickness),FreeCAD.Rotation(FreeCAD.Vector(0,1,0),180))
                             #obj.Placement = impPart.Placement
                             if use_Links and links_imp_mode == 'links_allowed':
                                 shape=Part.getShape(o)
                             else:
                                 shape=impPart.Shape.copy()
                             shape.Placement=impPart.Placement;
-                            shape.rotate((pos_x,pos_y,0),(0,0,1),rot) #KK Do we need to fix Z?
+                            shape.rotate((pos_x,pos_y,0),(0,0,1),rot)
                             impPart.Placement=shape.Placement
                             #impPart.Label = impPart.Label + '_ch_'
                             #sayerr('caching')
@@ -5815,7 +5815,7 @@ def Load_models(pcbThickness, modules, model_z_offst):
                                 else:
                                     shape=impPart.Shape.copy()
                                 shape.Placement=impPart.Placement;
-                                shape.rotate((pos_x,pos_y,0),(0,0,1),rot+float(wrl_rot[2])) #KK Do we need to fix Z? I think we're rotating around Z, so doesn't matter.
+                                shape.rotate((pos_x,pos_y,0),(0,0,1),rot+float(wrl_rot[2]))
                                 impPart.Placement=shape.Placement;
                                 ##TBChecked
                                 if force_transparency:
@@ -5875,14 +5875,14 @@ def Load_models(pcbThickness, modules, model_z_offst):
                                 else:
                                     shape=impPart.Shape.copy()
                                 shape.Placement=impPart.Placement;
-                                shape.rotate((pos_x,pos_y,0),(0,0,1),180+rot+float(wrl_rot[2])) #KK Do we need to fix Z? I think we're rotating around Z, so doesn't matter.
+                                shape.rotate((pos_x,pos_y,0),(0,0,1),180+rot+float(wrl_rot[2]))
                                 impPart.Placement=shape.Placement;
                                 if impPart.TypeId=='App::Link' or impPart.TypeId=='App::LinkPython':
                                     shape=Part.getShape(o)
                                 else:
                                     shape=impPart.Shape.copy()
                                 shape.Placement=impPart.Placement;
-                                shape.rotate((pos_x,pos_y,0),(0,1,0),180) #KK Do we need to fix Z? I think we're rotating around Z, so doesn't matter.
+                                shape.rotate((pos_x,pos_y,0),(0,1,0),180)
                                 impPart.Placement=shape.Placement;
                                 if force_transparency:
                                     FreeCADGui.ActiveDocument.ActiveObject.Transparency=60
@@ -5902,7 +5902,7 @@ def Load_models(pcbThickness, modules, model_z_offst):
                                 #shape.rotate((pos_x+float(wrl_pos[0])*mmPerInch,pos_y+float(wrl_pos[1])*mmPerInch,-pcbThickness+float(wrl_pos[2])*mmPerInch),FreeCAD.Rotation(-float(wrl_rot[2]),-float(wrl_rot[1])+180,-float(wrl_rot[0])))
                             #else:
                                 pos_z = model_z_offst + pcbThickness
-                                shape.rotate((pos_x,pos_y,-pos_z),(0,0,1),-rot+180) #KK This seems like a bug, Z should just be zero here.
+                                shape.rotate((pos_x,pos_y,-pos_z),(0,0,1),-rot+180)
                                 impPart.Placement=shape.Placement
                             FreeCADGui.Selection.addSelection(impPart)
                             FreeCAD.ActiveDocument.getObject(impPart.Name)
@@ -5985,7 +5985,7 @@ def Load_models(pcbThickness, modules, model_z_offst):
 
                                 shape=impPart.Shape.copy()
                                 shape.Placement=impPart.Placement;
-                                shape.rotate((pos_x,pos_y,0),(0,0,1),rot+float(wrl_rot[2])) #KK Do we need to fix Z? I think we're rotating around Z, so doesn't matter.
+                                shape.rotate((pos_x,pos_y,0),(0,0,1),rot+float(wrl_rot[2]))
                                 impPart.Placement=shape.Placement;
                                 if force_transparency:
                                     FreeCADGui.ActiveDocument.ActiveObject.Transparency=100
@@ -5994,7 +5994,7 @@ def Load_models(pcbThickness, modules, model_z_offst):
                             else:
                                 pos_z = model_z_offst
                                 impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x,pos_y,pos_z), \
-                                                     FreeCAD.Rotation(FreeCAD.Vector(0,0,1),rot)) #KK Do we need to fix Z?
+                                                     FreeCAD.Rotation(FreeCAD.Vector(0,0,1),rot))
                             
                             FreeCADGui.Selection.addSelection(impPart)
                             if use_AppPart: #Top
@@ -6018,7 +6018,7 @@ def Load_models(pcbThickness, modules, model_z_offst):
                                 # impPart.Placement=shape.Placement;
                                 #impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[1])*mmPerInch,pos_y+float(wrl_pos[0])*mmPerInch,-pcbThickness-float(wrl_pos[2])*mmPerInch),FreeCAD.Rotation(-float(wrl_rot[2])-rot+180,-float(wrl_rot[1])+180,-float(wrl_rot[0])))
 
-                                pos_z = model_z_offst + pcbThickness #KK Still Broken
+                                pos_z = model_z_offst + pcbThickness
                                 impPart.Placement = FreeCAD.Placement(FreeCAD.Vector(pos_x+float(wrl_pos[0])*mmPerInch, \
                                                                                      pos_y+float(wrl_pos[1])*mmPerInch, \
                                                                                      +pos_z+float(wrl_pos[2])*mmPerInch), \
@@ -6027,11 +6027,11 @@ def Load_models(pcbThickness, modules, model_z_offst):
                                                                                      -float(wrl_rot[0]))) #rot is already rot fp -rot wrl
                                 shape=impPart.Shape.copy()
                                 shape.Placement=impPart.Placement;
-                                shape.rotate((pos_x,pos_y,0),(0,0,1),180+rot+float(wrl_rot[2])) #KK Do we need to fix Z? I think we're rotating around Z, so doesn't matter.
+                                shape.rotate((pos_x,pos_y,0),(0,0,1),180+rot+float(wrl_rot[2])) 
                                 impPart.Placement=shape.Placement;
                                 shape=impPart.Shape.copy()
                                 shape.Placement=impPart.Placement;
-                                shape.rotate((pos_x,pos_y,0),(0,1,0),180) #KK This rotates around Y, do we need to fix Z?
+                                shape.rotate((pos_x,pos_y,0),(0,1,0),180) 
                                 impPart.Placement=shape.Placement;
                                 if force_transparency:
                                     FreeCADGui.ActiveDocument.ActiveObject.Transparency=60
@@ -6107,7 +6107,7 @@ def Load_models(pcbThickness, modules, model_z_offst):
             FreeCAD.ActiveDocument.removeObject(bot_name)    
     
     FreeCAD.ActiveDocument.recompute()
-    say_time()
+    #say_time()
     FreeCADGui.Selection.clearSelection()
     if 0: #try
         print('TreeView Test collapsing')
@@ -6203,8 +6203,8 @@ def LoadKicadBoard (board_fname):
     if FC_majorV == 0 and FC_minorV > 17:
         if FC_git_Nbr >= int(FC_export_min_version):
             use_AppPart=True
-    if use_AppPart and not force_oldGroups:
-        sayw("creating hierarchy")
+    #if use_AppPart and not force_oldGroups:
+    #    sayw("creating hierarchy")
     if (fusion==True):
         msg+="you have chosen: fuse modules to board\r\nbe careful ... fusion can be heavy or generate FC crash"
         msg+="when fusing a lot of objects\r\nplease consider to use bbox or blacklist small objects\r\n\r\n"    
@@ -7183,8 +7183,8 @@ def check_requirements():
     if FC_majorV == 0 and FC_minorV > 17:
         if FC_git_Nbr >= int(FC_export_min_version):
             use_AppPart=True
-    if use_AppPart and not force_oldGroups:
-        sayw("creating hierarchy")
+    #if use_AppPart and not force_oldGroups:
+    #    sayw("creating hierarchy")
     if (fusion==True):
         msg+="you have chosen: fuse modules to board\r\nbe careful ... fusion can be heavy or generate FC crash"
         msg+="when fusing a lot of objects\r\nplease consider to use bbox or blacklist small objects\r\n\r\n"    
@@ -7195,7 +7195,7 @@ def sanitizeSketch(s_name):
     global edge_tolerance
     
     s=FreeCAD.ActiveDocument.getObject(s_name)
-    sayw('check to sanitize')
+    #sayw('check to sanitize')
     if 'Sketcher' in s.TypeId:
         idx_to_del=[]
         for i,g in enumerate (s.Geometry):
@@ -7324,7 +7324,7 @@ def add_constraints(s_name):
                 cnt=cnt+1
     elif addConstraints=='coincident' or addConstraints=='full':
         if hasattr (FreeCAD.ActiveDocument.getObject(s_name), "autoconstraint"):
-            sayw('using constrainator')
+            #sayw('using constrainator')
             sanitizeSketch(s_name)
             sk1=FreeCAD.ActiveDocument.getObject(s_name)
             sk1.detectMissingPointOnPointConstraints(edge_tolerance)
@@ -7685,7 +7685,7 @@ def onLoadBoard(file_name=None,load_models=None,insert=None,model_z_offset=0):
                 #fpth = os.path.dirname(os.path.abspath(__file__))
                 fpth = os.path.dirname(os.path.abspath(name))
                 #filePath = os.path.split(os.path.realpath(__file__))[0]
-                say ('my file path '+fpth)
+                say ('my file path '+fpth) ## Logger
                 if fpth == "":
                     fpth = u"."
                 last_pcb_path = fpth
@@ -7737,7 +7737,7 @@ def onLoadBoard(file_name=None,load_models=None,insert=None,model_z_offset=0):
                     if hasattr(mypcb.setup, 'grid_origin'):
                         #say('aux_axis_origin' + str(mypcb.setup.aux_axis_origin))
                         xp=-mypcb.setup.grid_origin[0]; yp=mypcb.setup.grid_origin[1]
-                        sayw('grid origin found @ ('+str(xp)+', '+str(yp)+')') 
+                        #sayw('grid origin found @ ('+str(xp)+', '+str(yp)+')') 
                     else:
                         say('grid origin not set\nusing default top left corner')
                         xp=0;yp=0
@@ -7843,7 +7843,7 @@ def onLoadBoard(file_name=None,load_models=None,insert=None,model_z_offset=0):
                 #board_base_point_y=-(ymin+(yMax-ymin)/2)-off_y
                 board_base_point_x=center_x-off_x
                 board_base_point_y=center_y-off_y
-            sayw('placing board @ '+str(board_base_point_x)+','+str(board_base_point_y))
+            #sayw('placing board @ '+str(board_base_point_x)+','+str(board_base_point_y))
             if SketchLayer == 'Edge.Cuts':
                 #FreeCAD.ActiveDocument.getObject("Pcb").Placement = FreeCAD.Placement(FreeCAD.Vector(board_base_point_x,board_base_point_y,0),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),0))
                 FreeCAD.ActiveDocument.getObject(pcb_name).Placement = FreeCAD.Placement(FreeCAD.Vector(board_base_point_x,board_base_point_y,0),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),0))
@@ -7853,9 +7853,9 @@ def onLoadBoard(file_name=None,load_models=None,insert=None,model_z_offset=0):
             if load_sketch:
                 if SketchLayer != 'Edge.Cuts' and SketchLayer is not None:
                     newname = SketchLayer.split('.')[0]+'_Sketch'
-                say_inline('building up pcb time')
-                get_time()
-                say(str(running_time))
+                #say_inline('building up pcb time')
+                #get_time()
+                #say(str(running_time))
                 t1=(running_time)
                 #add_constraints("PCB_Sketch_draft")
                 #FreeCAD.ActiveDocument.recompute()
@@ -7892,9 +7892,9 @@ def onLoadBoard(file_name=None,load_models=None,insert=None,model_z_offset=0):
                 if 0: # test_face # addConstraints!='none': 
                     say('start adding constraints to pcb sketch')
                     add_constraints(s_name)
-                    get_time()
+                    #get_time()
                     #say('adding constraints time ' +str(running_time-t1))
-                    say('adding constraints time ' + "{0:.3f}".format(running_time-t1))
+                    #say('adding constraints time ' + "{0:.3f}".format(running_time-t1))
     
                 ##FreeCAD.ActiveDocument.recompute()
                 pcb_sk=FreeCAD.ActiveDocument.getObject(newname)
@@ -8029,7 +8029,7 @@ def onLoadBoard(file_name=None,load_models=None,insert=None,model_z_offset=0):
                     doc.addObject("App::DocumentObjectGroup", stepM_name)
                     doc.addObject("App::DocumentObjectGroup", stepV_name)
                 doc.recompute()
-                say_time()
+                #say_time()
                 if disable_VBO:
                     paramGetV = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/View")
                     VBO_status=paramGetV.GetBool("UseVBO")
@@ -8142,8 +8142,8 @@ def onLoadBoard(file_name=None,load_models=None,insert=None,model_z_offset=0):
                     Display_info(blacklisted_model_elements)
                 if (zfit):
                     FreeCADGui.SendMsgToActiveView("ViewFit")
-            msg="running time: "+str(round(running_time,3))+"sec"    
-            say(msg)
+            #msg="running time: "+str(round(running_time,3))+"sec"    
+            #say(msg)
             zf= Timer (0.3,ZoomFitThread)
             zf.start()
             zf.cancel()
@@ -11693,7 +11693,7 @@ def Process_board_outline(doc,board_outline,drills,board_thickness):
         grp.addObject(doc_outline)
         #grp.addObject(Sketch)
         doc.Pcb.ViewObject.ShapeColor = (colr,colg,colb)
-        say_time()
+        #say_time()
         #say(str(start_time));say('*'+str(end_milli_time)+'start-end')
         FreeCADGui.activeDocument().activeView().viewAxometric()
         if (zfit):
@@ -12321,7 +12321,7 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
     if lyr is None:
         lyr = 'Edge.Cuts'
     #load_sketch=True
-    get_time()
+    #get_time()
     t0=(running_time)
     #say(start_time)
     
@@ -12362,7 +12362,7 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
     # say(len(mypcb.gr_arc))
     #edg_segms = len(mypcb.gr_line)+len(mypcb.gr_arc)
     edg_segms = 0
-    sayw('parsing')
+    #sayw('parsing')
     for ln in mypcb.gr_line:
         if lyr in ln.layer:
             #say(ln.layer)
@@ -12388,7 +12388,7 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
             for p in bs.pts.xy:
                 edg_segms+=1
             #edg_segms+=1
-    sayw(str(edg_segms)+' edge segments')
+    #sayw(str(edg_segms)+' edge segments')
     #for lp in mypcb.gr_poly: #pcb polylines
     #    if lp.layer != 'Edge.Cuts':
     #        continue
@@ -12416,14 +12416,14 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
     #stop
     origin = None
     if hasattr(mypcb.setup, 'aux_axis_origin'):
-        say('aux_axis_origin' + str(mypcb.setup.aux_axis_origin))
+        #say('aux_axis_origin' + str(mypcb.setup.aux_axis_origin))
         origin = 'aux origin'
         #say(mypcb.setup.aux_axis_origin)
         #xp=mypcb.setup.aux_axis_origin[0]; yp=-mypcb.setup.aux_axis_origin[1]
     else:
         say('aux origin not found')
     if hasattr(mypcb.setup, 'grid_origin'):
-        say('grid_origin' + str(mypcb.setup.grid_origin))
+        #say('grid_origin' + str(mypcb.setup.grid_origin))
         origin = 'grid origin'
         #say(mypcb.setup.aux_axis_origin)
         #xp=mypcb.setup.aux_axis_origin[0]; yp=-mypcb.setup.aux_axis_origin[1]
@@ -12610,8 +12610,8 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
         PCB.append(['Circle', xs, ys, r])
 
     #say(PCBs)
-    get_time()
-    say('parsing&building time ' +str(round(running_time-t0,3)))
+    #get_time()
+    #say('parsing&building time ' +str(round(running_time-t0,3)))
     if 0:
         new_cpy_skt = FreeCAD.ActiveDocument.copyObject(FreeCAD.ActiveDocument.PCB_Sketch_draft, True)
         FreeCAD.ActiveDocument.addObject("Part::Face", "Face_PCB_Sketch_draft").Sources = (new_cpy_skt, )
@@ -12663,11 +12663,39 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
     #FreeCADGui.SendMsgToActiveView("ViewFit")
     #stop
     HoleList=[]
+    ViaHoleList=[]
     if lyr == 'Edge.Cuts':
         TopPadList=[]
         BotPadList=[]
         HoleList=[]
         THPList=[]
+
+        #################################################################################
+        # Finding all the via holes and adding to the list ViaHoleList[]
+        # We will combine this with the HoleList[] later, just before it drills the holes
+        # To be included in our list, the layers must include 'Top' and 'Bottom'
+        # The reason for this is that we're not rendering any internal PCB features
+        # so blind or hidden vias are not easily represented in the MCAD model for now.
+        #
+        # We'll look through the vias list, including any which mention both Top and Bottom layers
+        # Look below to see where we add this to the list of holes developed from the components
+        
+        # mypcb['via'][] =  odict_keys(['at', 'size', 'drill', 'layers', 'net', 'tstamp'])
+        for via in mypcb.via:
+            if via.drill >= min_drill_size \
+                and "Top" in via.layers \
+                and "Bottom" in via.layers:
+                    x_via=via.at[0]
+                    y_via=-via.at[1]
+                    radius = float(via.drill)
+                    rx=radius;ry=radius
+                    
+                    if holes_solid:
+                        obj=createHole3(x_via,y_via,rx,ry,"oval",totalHeight)
+                    else:
+                        obj=createHole4(x_via,y_via,rx,ry,"oval")
+                    ViaHoleList.append(obj)   
+
         ## NB use always float() to guarantee number not string!!!
         warn=""
         PCB_Models = []
@@ -12792,6 +12820,11 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
                         PCB_Models.append(line)
                         n_md+=1
         
+            ###################################################
+            # Adding Drills from component pads to HoleList[]
+            #   This list is used below to make the drilled holes
+            #   on the bare PCB model.
+
             pads = []
             for p in m.pad:
                 if 'drill' not in p:
@@ -12845,7 +12878,7 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
                     #print (p.drill);print(p.drill.oval);print(str(p.drill).split(',')[0])
                     #if p.drill.oval is not None:
                     if 'oval' in str(p.drill).split(',')[0]:  #py3 dict workaround
-                    #if p.drill.oval:  #maui temp workaround errorchecking
+                        #if p.drill.oval:  #maui temp workaround errorchecking
                         #sayw(str(p.drill.oval))
                         #sayw('drill oval')
                         if p.drill[0] >= min_drill_size or p.drill[1] >= min_drill_size:
@@ -12891,8 +12924,8 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
                         #    rotateObj(obj, [x1, y1, p_angle])
                         #rotateObj(obj, [m.at[0], m.at[1], m_angle])
                         HoleList.append(obj)   
-                    ##pads.append({'x': x, 'y': y, 'rot': rot, 'padType': pType, 'padShape': pShape, 'rx': drill_x, 'ry': drill_y, 'dx': dx, 'dy': dy, 'holeType': hType, 'xOF': xOF, 'yOF': yOF, 'layers': layers})        
-                    #stop
+            ### Done adding Component Holes
+
             for ml in m.fp_line:
                 # if ml.layer != 'Edge.Cuts':
                 if lyr not in ml.layer:
@@ -12999,8 +13032,8 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
                 PCB2Sketch=FreeCAD.ActiveDocument.PCB_Sketch_draft
             if len(PCB2Sketch.Geometry)>0:
                 if addConstraints!='none' and not dont_use_constraints:
-                    say('start adding constraints to pcb sketch')
-                    get_time()
+                    #say('start adding constraints to pcb sketch')
+                    #get_time()
                     t0=(running_time)
                     if hasattr (FreeCAD.ActiveDocument.getObject(PCB2Sketch.Name), "autoconstraint"):
                         if addConstraints=='full':
@@ -13015,9 +13048,9 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
                         add_constraints("PCB_Sketch_draft")
                         if use_PCB_Sketch_E:
                             add_constraints("PCB_Sketch_draft_E")
-                    get_time()
+                    #get_time()
                     #say('adding constraints time ' +str(running_time-t0))
-                    say('adding constraints time ' + "{0:.3f}".format(running_time-t0))
+                    #say('adding constraints time ' + "{0:.3f}".format(running_time-t0))
                 if 0: #dont_use_constraints:
                     sayw('adding missing geometry')
                     add_missing_geo("PCB_Sketch_draft")
@@ -13049,7 +13082,7 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
                     s_PCB_Sketch_draft = FreeCAD.ActiveDocument.getObject("Face_PCB_Sketch_draft").Shape.copy()
                     
                 #s_PCB_Sketch_draft = s.copy()
-                sayw ('created PCB face w/ edge tolerance -> '+str(edge_tolerance)+' mm')
+                #sayw ('created PCB face w/ edge tolerance -> '+str(edge_tolerance)+' mm')
                 if aux_orig ==1 or grid_orig ==1:
                     s_PCB_Sketch_draft.translate((off_x, off_y,0))
                 #else:
@@ -13452,7 +13485,7 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
                 #w_pcb = Part.Wire(edges)
                 #Part.show(w_pcb)
                 
-        say_time()
+        #say_time()
         #stop
         
         #cut_base = cut_base.extrude(Base.Vector(0,0,totalHeight)) # test_face
@@ -13534,15 +13567,21 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
         #    side = "Bottom"
         #    m_angle *= -1 ##bottom 3d model rotation
         #    say(m_angle)    
-        say("start cutting")
-        get_time()
+
+
+        # Append the ViaHoleList to other holes we've collected
+        for hole in ViaHoleList:
+            HoleList.append(hole)    
+
+        #say("start cutting")
+        #get_time()
         t1=(running_time)
         if not use_AppPart:  #old method slower for FC016,015
-            if holes_solid:
+            #if holes_solid:
                 #HoleList = getPads(board_elab,pcbThickness)
-                say('generating solid holes')
-            else:
-                say('generating flat holes')
+                #say('generating solid holes')
+            #else:
+                #say('generating flat holes')
                 ##HoleList = getPads_flat(board_elab)
             #say('alive-getting holes')
             #stop
@@ -13564,13 +13603,13 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
                 #face = cut_base
                 cut_base = cut_base
         else:    
-            sayw('using hierarchy container')
+            #sayw('using hierarchy container')
             if len(HoleList)>0:
-                if holes_solid:
+                #if holes_solid:
                     #HoleList = getPads(board_elab,pcbThickness)
-                    say('generating solid holes')
-                else:
-                    say('generating flat holes')
+                    #say('generating solid holes')
+                #else:
+                    #say('generating flat holes')
                 dlo=[]
                 shapes=[];s_names=[]
                 #for drill in HoleList:
@@ -13635,8 +13674,8 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
         #    ##if len(HoleList)>0:
         #    ##    #face = cut_base.cut(Part.makeCompound(HoleList))
         #    ##    cut_base = cut_base.cut(Part.makeCompound(HoleList))   ###VERY fast but failing when overlapping of pads
-        get_time()
-        say('cutting time ' +str(round(running_time-t1,3)))
+        #get_time()
+        #say('cutting time ' +str(round(running_time-t1,3)))
         
         if lyr == 'Edge.Cuts':
             pcb_name=u'Pcb'+fname_sfx
@@ -13770,8 +13809,8 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
             #grp.addObject(pcb_sk)
             #grp.addObject(doc_outline)      
             pcb_bbx = doc.getObject(pcb_name).Shape.BoundBox
-            say("pcb dimensions: ("+"{0:.2f}".format(pcb_bbx.XLength)+";"+"{0:.2f}".format(pcb_bbx.YLength)+";"+"{0:.2f}".format(pcb_bbx.ZLength)+")")          
-    say_time()
+            say("pcb dimensions: ("+"{0:.2f}".format(pcb_bbx.XLength)+" x "+"{0:.2f}".format(pcb_bbx.YLength)+" x "+"{0:.2f}".format(pcb_bbx.ZLength)+")")          
+    #say_time()
     FreeCADGui.activeDocument().activeView().viewAxometric()
     if (zfit):
         FreeCADGui.SendMsgToActiveView("ViewFit")
@@ -16002,7 +16041,7 @@ def PushMoved():
                         with codecs.open(fpath,'w', encoding='utf-8') as ofile:
                             ofile.write(newcontent)
                             ofile.close()        
-                        say_time()
+                        #say_time()
                         say('pushed '+str(mdp)+' model(s)')
                         msg="""<b>3D model new position(s) pushed to kicad board!</b><br>["""+str(mdp)+""" model(s) updated]<br><br>"""
                         if found_tracks:
@@ -16368,7 +16407,7 @@ def PullMoved():
                                 #    msg="""select only 3D model(s) to be updated/pulled from kicad board!<br><b>a TimeSTamp is required!</b>"""
                                 #    sayerr(msg)
                                 #    say_warning(msg)
-                        say_time()
+                        #say_time()
                         msg="""<b>3D model new position pulled from kicad board!</b><br><br>"""
                         msg+="<b>file loaded from<br>"+fpath+"</b><br><br>"
                         msgr="3D model new position pulled from kicad board!\n"
@@ -17637,7 +17676,7 @@ def export_footprint(fname=None):
         with codecs.open(fpath,'w', encoding='utf-8') as ofile:
             ofile.write(newcontent)
             ofile.close()        
-        say_time()
+        #say_time()
         msg="""<b>new Footprint pushed to kicad footprint!</b><br><br>"""
         msg+="<b>file saved to<br>"+fpath+"</b><br><br>"
         msgr="new Footprint pushed to kicad footprint!\n"
@@ -19968,7 +20007,7 @@ def export_pcb(fname=None,sklayer=None,skname=None):
             with codecs.open(fpath,'w', encoding='utf-8') as ofile:
                 ofile.write(newcontent)
                 ofile.close()        
-            say_time()
+            #say_time()
             if ssklayer != 'FillZone' and ssklayer != 'KeepOutZone':
                 msg="""<b>new Edge pushed to kicad board!</b><br><br><br>"""
             elif ssklayer != 'FillZone':
@@ -20482,7 +20521,7 @@ def singleInstance():
             say (str(i.objectName()))
             #i.close()
             #i.deleteLater()
-            say ('closed')
+            #say ('closed')
             return False
     t=FreeCADGui.getMainWindow()
     dw=t.findChildren(QtGui.QDockWidget)
@@ -20546,7 +20585,7 @@ if singleInstance():
 
     KSUWidget.activateWindow()
     KSUWidget.raise_()
-    logger.info('done!')
+    #logger.info('done!')
 
 
     #if (tabify_widg):
