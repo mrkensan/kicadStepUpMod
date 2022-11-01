@@ -191,13 +191,15 @@ class KiCadStepUpWB ( Workbench ):
  
     def Activated(self):
                 # do something here if needed...
-        Msg ("KiCadStepUpWB.Activated("+ksu_wb_version+")\n")
+        if init_ui_debug: Msg ("KiCadStepUpWB.Activated("+ksu_wb_version+")\n")
         from PySide import QtGui
         import time, sys, os, re
         from time import strftime, localtime
         from os.path import expanduser
         import codecs #utf-8 config parser
         import FreeCAD, FreeCADGui
+        from tracks import getTracksVersion
+        from kicad_parser import getKiCadParserVersion
         
         # **********************************
         # Query Generic Workbench Preferences
@@ -206,15 +208,17 @@ class KiCadStepUpWB ( Workbench ):
         pg = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUp")
         oneday = 86400
 
-        # Write the version every time so we can read it in settings
-        # Always gets overwritten after upgrade
+        # Write the versions every time so we can read it in settings
+        # This way, it always gets overwritten after upgrade
         pg.SetString("ksu_wb_version",ksu_wb_version)   
         pg.SetString("mycommitsKWB", str(mycommitsKWB))
+        pg.SetString("tracksVersion", getTracksVersion())
+        pg.SetString("KiCad_Parser_Ver", getKiCadParserVersion())
         
         if pg.IsEmpty():
             updates_enabled=True
             pg.SetBool("checkUpdates",updates_enabled)
-            pg.SetString("updateDaysInterval","1")
+            pg.SetString("updateCheckInterval","1")
             last_check_time = int(time.time()) - (2*oneday)
             last_check_text = strftime("%a, %d %b %Y %H:%M:%S", localtime(last_check_time))
             pg.SetInt("lastCheck",last_check_time)
@@ -232,6 +236,10 @@ class KiCadStepUpWB ( Workbench ):
             QtGui.QApplication.restoreOverrideCursor()
             reply = QtGui.QMessageBox.information(None,"Warning", msg)
         else:
+            # auto-update to new preferences parameter
+            uci = pg.GetString("updateCheckInterval")
+            if not uci:
+                pg.SetString("updateCheckInterval", str(pg.GetInt("updateDaysInterval")))
             updates_enabled=pg.GetBool("checkUpdates")
 
 
@@ -287,6 +295,18 @@ class KiCadStepUpWB ( Workbench ):
             prefs.SetInt('sketch_constraints',0)
             prefs.SetString('blacklist',u'')
             prefs.SetString('blacklist',u'')
+
+            # Prefs for Tracks
+            prefs.SetInt('Tracks_Cu_Weight',2)      # 1 oz Copper
+            prefs.SetInt('Tracks_Cu_Finish',0)      # ROHS (Lead Free)
+            prefs.SetInt('PCB_Part_Placement',0)    # Componenets on FR4
+            prefs.SetBool('Tracks_Pad_Drills',1)    # Drill Holes in pads
+            prefs.SetInt('PCBA_Import_Mode',1)      # Import Components/Models with PCB
+            
+
+            # **********************************
+            # Convert Old .ini file to new Preferences
+            #        
             home = expanduser("~")
             fname_ksu=home+os.sep+'ksu-config.ini'
             ksu_config_fname=fname_ksu
@@ -358,6 +378,7 @@ class KiCadStepUpWB ( Workbench ):
                 prefs.SetString('prefix3d_2',mk_str(models3D_prefix2.replace('\\','/').rstrip('/')))
                 #stop
             ##
+
             FreeCAD.Console.PrintError('new \'preferences Page\' added to configure StepUp!!!\n')
             msg="""
             <font color=red>new \'preference Page\' added to configure StepUp!!!</font>
@@ -370,10 +391,10 @@ class KiCadStepUpWB ( Workbench ):
             reply = QtGui.QMessageBox.information(None,"Warning", msg)
             # FreeCADGui.runCommand("Std_DlgPreferences") it cannot launched here until InitGui has run!!!
         ##
-        time_interval = int(pg.GetString("updateDaysInterval"))
+        time_interval = int(pg.GetString("updateCheckInterval"))
         if time_interval <= 0:
             time_interval = 1
-            pg.SetString("updateDaysInterval","1")
+            pg.SetString("updateCheckInterval","1")
         nowTimeCheck = int(time.time())
         lastTimeCheck = pg.GetInt("lastCheck")
 
