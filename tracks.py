@@ -109,6 +109,60 @@ def make_unicode_t(input):
 
 from kicadStepUptools import removesubtree, cfg_read_all
 from kicadStepUptools import KicadPCB, make_unicode, make_string
+TopLayer = 0
+BotLayer = 31
+
+# *************************************************************************
+# Place new Copper Feature on PCB
+#
+def placeCopper(doc, renderedCu, deltaz, name, suffix, pcbThickness, cuThickness, layer):
+    # Does the newly rendered copper have any features?
+
+#    print(renderedCu)
+    if not hasattr(renderedCu, "Shape"):
+        logger.warning("Copper Layer '"+name+"' has no features.... skipping.")
+        return
+    
+    # Make a copy we will work with
+    doc.addObject('Part::Feature',name+suffix).Shape = renderedCu.Shape
+    newCopper = doc.ActiveObject
+    newCopper.Label=name+suffix
+
+    # Add color to the newCopper object
+    docG=FreeCADGui.ActiveDocument
+    docG.ActiveObject.ShapeColor   = docG.getObject(renderedCu.Name).ShapeColor
+    docG.ActiveObject.LineColor    = docG.getObject(renderedCu.Name).LineColor
+    docG.ActiveObject.PointColor   = docG.getObject(renderedCu.Name).PointColor
+    docG.ActiveObject.DiffuseColor = docG.getObject(renderedCu.Name).DiffuseColor
+    docG.ActiveObject.DisplayMode  = 'Shaded'
+
+    if layer==BotLayer:
+        deltaz += pcbThickness + cuThickness
+        deltaz = -deltaz
+
+    # Move the newCopper feature off of the PCB surface as required for visibility
+    #   Note movement distance is in negative direction for bottom layer
+    newCopper.Placement = FreeCAD.Placement(FreeCAD.Vector(0,0,deltaz),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),0))
+
+    # Move the newCopper feature to the location the PCB is placed, if a PCB is present
+    if len (doc.getObjectsByLabel('Pcb'+suffix)) >0:
+        logger.info("Moving Tracks to PCB")
+        newCopper.Placement = doc.getObject('Pcb'+suffix).Placement
+        newCopper.Placement.Base.z += (deltaz)
+        if len (doc.getObjectsByLabel('Board_Geoms'+suffix)) > 0:
+            if use_AppPart and not use_LinkGroups:
+                doc.getObject('Board_Geoms'+suffix).addObject(newCopper)
+            elif use_LinkGroups:
+                doc.getObject('Board_Geoms'+suffix).ViewObject.dropObject(newCopper,None,'',[])
+    else:
+        logger.warning("No PCB Found, Tracks are placed at origin")
+
+    # Remove the passed-in Copper feature, we don't need it anymore
+    FreeCADGui.Selection.clearSelection()
+    FreeCADGui.Selection.addSelection(doc.getObject(renderedCu.Name))
+    removesubtree(FreeCADGui.Selection.getSelection())
+
+### 
 
 # *************************************************************************
 # Generate Copper Tracks for Top and Bottom Layers
@@ -116,8 +170,6 @@ from kicadStepUptools import KicadPCB, make_unicode, make_string
 def addtracks():
     global use_LinkGroups, use_AppPart
     import sys
-    TopLayer = 0
-    BotLayer = 31
     
     #FreeCAD.Console.PrintMessage('tracks version: '+getTracksVersion()+'\n')
     logger.info("***************** Generating Copper Layers *****************")
@@ -152,6 +204,19 @@ def addtracks():
         pg.SetString("last_pcb_path", make_string(last_pcb_path)) # py3 .decode("utf-8")
 
         # **********************************
+        # Load PCB from file
+        #
+        mypcb = KicadPCB.load(filename)
+        pcbThickness = float(mypcb.general.thickness)
+
+        import kicad_parser; reload_lib(kicad_parser)
+        pcb = kicad_parser.KicadFcad(filename)
+
+        doc=FreeCAD.ActiveDocument
+        if doc is None:
+            doc=FreeCAD.newDocument(name)
+
+        # **********************************
         # Read user prefs for board features
         #
         prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUpGui")
@@ -160,9 +225,6 @@ def addtracks():
             pcb_color_pref = prefs.GetInt('pcb_color')
         except:
             pcb_color_pref = 0  # Green
-        
-        pcb_color, trk_color, slk_color, color_name = GetPcbColors(pcb_color_pref)
-        #print ("Tracks Stats: ", pcb_color, trk_color, slk_color, color_name)
         
         try:
             minSizeDrill = float(prefs.GetString('drill_size')) # Match PCB Import Parameter
@@ -173,36 +235,56 @@ def addtracks():
             pcb_pad_pref = prefs.GetInt('Tracks_Cu_Finish')
         except:
             pcb_pad_pref = 0  # Render Bare copper
-            
-        pad_thk, pad_color, pad_name = GetPadFinish(pcb_pad_pref)
         
         try:
             pcb_copper_pref = prefs.GetInt('Tracks_Cu_Weight')
         except:
             pcb_copper_pref = 0  # Surface Only (no Thickness)
             
+        pcb_color, trk_color, slk_color, color_name = GetPcbColors(pcb_color_pref)
+        pad_thk, pad_color, pad_name = GetPadFinish(pcb_pad_pref)
         copper_thk, copper_name = GetCuWeight(pcb_copper_pref)
         
         logger.info("PCB Fabrication Parameters:")
+        logger.info("    PCB Thickness: "+str(pcbThickness))
         logger.info("         Mask Color: "+color_name)
-        logger.info("     Copper Finish: "+pad_name)
-        logger.info("    Copper Weight: "+copper_name)
+        logger.info("     Copper Finish: "+pad_name+" ("+str(1000*pad_thk)+"um)")
+        logger.info("    Copper Weight: "+copper_name+" ("+str(1000*copper_thk)+"um)")
         logger.info(" ")
         
-
-        # **********************************
-        # Load PCB from file
-        #
-        mypcb = KicadPCB.load(filename)
-        pcbThickness = float(mypcb.general.thickness)
-
-        deltaz = 0.015 # 10 micron offset for copper from board surface
-
-        import kicad_parser; reload_lib(kicad_parser)
-        pcb = kicad_parser.KicadFcad(filename)
+        # When rendering copper features, the pads must be "taller" (more in front)
+        # of the copper tracks by at least some amount to be rendered correctly.
+        # This means:
+        # 1. When rendering pads the thickness of the copper is added to the
+        #       thickness of the finish layer of the pads to get the full pad thickness.
+        # 2. When the pad finish thickness is less than minimum, it is artifically
+        #       inflated to at least minimum to allow it to be rendered (visually) correctly. 
+        # 3. When 0oz copper is selected (implying just faces are created),
+        #       we offset the pads object from the tracks to keep them "on top".
+        # 
+        # When pads and tracks are rendered as solids, they will be placed with 0 offset
+        # from the surface of the PCB. However, when rendered as faces, they will be placed
+        # with small offsets from the board surface (and each other, #3 above) so they are
+        # rendered in a visually correct manner. 
         
+        render_min_thk = 0.001  # 5 micron 
         
-        # Set colors rendered by kicad_parser when making copper features
+        if pcb_copper_pref == 0:  # Means we are rnedering only "Faces"
+            logger.warning("Rendering as FACE")
+            deltaz = render_min_thk # offsets between board, copper, and pads
+            object_type = "face"    # Render features as Face objects (0 thickness)
+            pad_thickness = 0.0
+            track_thickness = 0.0
+            zone_thickness = 0.0
+        else:               # Render copper features as "Solids"
+            if pad_thk < render_min_thk: pad_thk=render_min_thk # Inflate pads by minimum for visual rendering
+            deltaz = 0                              # all copper features places on board surface, no offset
+            object_type = "solid"                   # Render features as solids
+            pad_thickness = pad_thk + copper_thk    # pads are thicker than copper features
+            track_thickness = copper_thk
+            zone_thickness = copper_thk + render_min_thk # This fixes poor rendering for colocated tracks/zones
+            
+            # Set colors rendered by kicad_parser when making copper features
             #pcb.colors = {
             #   'board':ColorToFreeCad("0x3A6629"),
             #   'pad':{0:ColorToFreeCad(219,188,126)},
@@ -213,103 +295,61 @@ def addtracks():
         pcb.colors['track'][0] = ColorToFreeCad(trk_color)  # Set track color rendered in kicad_parser
         pcb.colors['zone'][0]  = ColorToFreeCad(trk_color)   # Set zone color rendered in kicad_parser
         pcb.colors['pad'][0]  = ColorToFreeCad(pad_color)   # Set zone color rendered in kicad_parser
-        
 
+        #def makePads(self, shape_type='face', thickness=0.05, holes=False, fit_arcs=True, prefix=''):
+        #def makeTracks(self,shape_type='face',fit_arcs=True, thickness=0.05,holes=False,prefix=''):
+        
         # **********************************
         # Generate Top Layer Copper
         #
         pcb.setLayer(TopLayer)
-        pcb.makePads(holes=True, shape_type='solid', prefix="Top Layer: ")
-        #def makePads(self, shape_type='face', thickness=0.05, holes=False, fit_arcs=True, prefix=''):
-
-
-        #pcb.makeCopper(holes=True, minSize=minSizeDrill, shape_type='face', prefix="Top Layer: ")
-        doc=FreeCAD.ActiveDocument
-
-        composed = doc.ActiveObject
-        s = composed.Shape
-        doc.addObject('Part::Feature','topTracks'+ftname_sfx).Shape=composed.Shape
-        topTracks = doc.ActiveObject
-
-        if 1:
-    
-                #print (doc.ActiveObject.Label)
-                #print (topTracks.Label)
-    
-            docG=FreeCADGui.ActiveDocument
-            docG.ActiveObject.ShapeColor   = docG.getObject(composed.Name).ShapeColor
-            docG.ActiveObject.LineColor    = docG.getObject(composed.Name).LineColor
-            docG.ActiveObject.PointColor   = docG.getObject(composed.Name).PointColor
-            docG.ActiveObject.DiffuseColor = docG.getObject(composed.Name).DiffuseColor
-    
-            topTracks.Label="topTracks"+ftname_sfx
-            topTracks.Placement = FreeCAD.Placement(FreeCAD.Vector(0,0,deltaz),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),0))
-    
-            if len (doc.getObjectsByLabel('Pcb'+ftname_sfx)) >0:
-                topTracks.Placement = doc.getObject('Pcb'+ftname_sfx).Placement
-                topTracks.Placement.Base.z += (deltaz * 2)
-                if len (doc.getObjectsByLabel('Board_Geoms'+ftname_sfx)) > 0:
-                    if use_AppPart and not use_LinkGroups:
-                        doc.getObject('Board_Geoms'+ftname_sfx).addObject(topTracks)
-                    elif use_LinkGroups:
-                        doc.getObject('Board_Geoms'+ftname_sfx).ViewObject.dropObject(topTracks,None,'',[])
-
-            FreeCADGui.Selection.clearSelection()
-            FreeCADGui.Selection.addSelection(doc.getObject(composed.Name))
-
-        removesubtree(FreeCADGui.Selection.getSelection())
         
-        msg = "Top Layer: Run Time: "+str(get_run_time(start_time))+" Sec"
+        # Pads
+        offset = deltaz if not (object_type=="face") else (render_min_thk * 3)
+        
+        newFeature = pcb.makePads(holes=True, shape_type=object_type, thickness=pad_thickness, prefix="Top Layer: ")
+        placeCopper(doc=doc, renderedCu=newFeature, deltaz=offset, name="TopPads", suffix=ftname_sfx,
+                    pcbThickness=pcbThickness, cuThickness=pad_thickness, layer=TopLayer)
+        
+        # Tracks
+        newFeature = pcb.makeTracks(holes=True, shape_type=object_type, thickness=track_thickness, prefix="Top Layer: ")
+        placeCopper(doc=doc, renderedCu=newFeature, deltaz=deltaz, name="TopTracks", suffix=ftname_sfx,
+                    pcbThickness=pcbThickness, cuThickness=track_thickness, layer=TopLayer)
+        
+        # Zones
+        offset = deltaz if not (object_type=="face") else (render_min_thk * 2)
+        
+        newFeature = pcb.makeZones(holes=True, shape_type=object_type, thickness=zone_thickness, prefix="Top Layer: ")
+        placeCopper(doc=doc, renderedCu=newFeature, deltaz=offset, name="TopZones", suffix=ftname_sfx,
+                    pcbThickness=pcbThickness, cuThickness=zone_thickness, layer=TopLayer)
+        
+        # **********************************
+        # Generate Top Bottom Copper
+        #
+        pcb.setLayer(BotLayer)
+        
+        # Pads
+        offset = deltaz if not (object_type=="face") else (render_min_thk * 3)
+        
+        newFeature = pcb.makePads(holes=True, shape_type=object_type, thickness=pad_thickness, prefix="Bot Layer: ")
+        placeCopper(doc=doc, renderedCu=newFeature, deltaz=offset, name="BotPads", suffix=ftname_sfx,
+                    pcbThickness=pcbThickness, cuThickness=pad_thickness, layer=BotLayer)
+        
+        # Tracks
+        newFeature = pcb.makeTracks(holes=True, shape_type=object_type, thickness=track_thickness, prefix="Bot Layer: ")
+        placeCopper(doc=doc, renderedCu=newFeature, deltaz=deltaz, name="BotTracks", suffix=ftname_sfx,
+                    pcbThickness=pcbThickness, cuThickness=track_thickness, layer=BotLayer)
+        
+        # Zones
+        offset = deltaz if not (object_type=="face") else (render_min_thk * 2)
+        
+        newFeature = pcb.makeZones(holes=True, shape_type=object_type, thickness=track_thickness, prefix="Bot Layer: ")
+        placeCopper(doc=doc, renderedCu=newFeature, deltaz=offset, name="BotZones", suffix=ftname_sfx,
+                    pcbThickness=pcbThickness, cuThickness=zone_thickness, layer=BotLayer)
+        
+        msg = "MakeTracks: Run Time: "+str(get_run_time(start_time))+" Sec"
         logger.info(msg)
-        #say_time(start_time)
 
-        if 0:
-            # **********************************
-            # Generate Bot Layer Copper
-            #
-            pcb.setLayer(BotLayer)
-            pcb.makeCopper(holes=True, minSize=minSizeDrill)
-            composed = doc.ActiveObject
-            s = composed.Shape
-            doc.addObject('Part::Feature','botTracks'+ftname_sfx).Shape=composed.Shape
-            botTracks = doc.ActiveObject
-            #print (doc.ActiveObject.Label)
-            #print (topTracks.Label)
-            docG.ActiveObject.ShapeColor   = docG.getObject(composed.Name).ShapeColor
-            docG.ActiveObject.LineColor    = docG.getObject(composed.Name).LineColor
-            docG.ActiveObject.PointColor   = docG.getObject(composed.Name).PointColor
-            docG.ActiveObject.DiffuseColor = docG.getObject(composed.Name).DiffuseColor
-            #doc.recompute()
-            #doc.addObject('Part::Feature',"topTraks").Shape=s
-            botTracks.Label="botTracks"+ftname_sfx
-            botTracks.Placement = FreeCAD.Placement(FreeCAD.Vector(0,0,-1.6-deltaz),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),0))            
-            #if hasattr(doc.Pcb, 'Shape'):
-            ##docG.getObject(botTracks.Name).Transparency=40
-            if 0:
-                docG.getObject(botTracks.Name).ShapeColor = (0.78,0.46,0.20)
-            FreeCADGui.Selection.clearSelection()
-            FreeCADGui.Selection.addSelection(doc.getObject(composed.Name))
-            
-            removesubtree(FreeCADGui.Selection.getSelection())
-            #if hasattr(doc.Pcb, 'Shape'):
-            if len (doc.getObjectsByLabel('Pcb'+ftname_sfx)) > 0:
-                botTracks.Placement = doc.getObject('Pcb'+ftname_sfx).Placement
-                #botTracks.Placement = doc.Pcb.Placement
-                botTracks.Placement.Base.z-=pcbThickness+deltaz
-                if len (doc.getObjectsByLabel('Board_Geoms'+ftname_sfx)) > 0:
-                    if use_AppPart and not use_LinkGroups:
-                        doc.getObject('Board_Geoms'+ftname_sfx).addObject(botTracks)
-                    elif use_LinkGroups:
-                        doc.getObject('Board_Geoms'+ftname_sfx).ViewObject.dropObject(botTracks,None,'',[])
-            #botTracks = FreeCAD.ActiveDocument.ActiveObject
-            #botTracks.Label="botTracks"
-            #botTracks.Placement = FreeCAD.Placement(FreeCAD.Vector(0,0,-1.6),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),0))    
-            #docG.ActiveObject.Transparency=40
-            #except Exception as e:
-            #    exc_type, exc_obj, exc_tb = sys.exc_info()
-            #    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            #    FreeCAD.Console.PrintError('error class: '+str(exc_type)+'\nfile name: '+str(fname)+'\nerror @line: '+str(exc_tb.tb_lineno)+'\nerror value: '+str(e.args[0])+'\n')
-            say_time(start_time)
-        
         FreeCADGui.SendMsgToActiveView("ViewFit")
-        #docG.activeView().viewAxonometric()
+        docG=FreeCADGui.ActiveDocument
+        docG.activeView().viewAxonometric()
