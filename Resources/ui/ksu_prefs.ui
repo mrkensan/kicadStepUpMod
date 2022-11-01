@@ -33,6 +33,9 @@
     <layout class="QVBoxLayout" name="verticalLayout_2">
      <item>
       <widget class="QGroupBox" name="prefix_3d_group">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <property name="title">
         <string>3D Prefix working folder</string>
        </property>
@@ -83,9 +86,6 @@
            <property name="prefPath" stdset="0">
             <cstring>Mod/kicadStepUpGui</cstring>
            </property>
-              <property name="mode">
-              <enum>Gui::FileChooser::Directory</enum>
-              </property>
           </widget>
          </item>
         </layout>
@@ -137,9 +137,6 @@
            <property name="prefPath" stdset="0">
             <cstring>Mod/kicadStepUpGui</cstring>
            </property>
-              <property name="mode">
-              <enum>Gui::FileChooser::Directory</enum>
-           </property>
           </widget>
          </item>
         </layout>
@@ -147,7 +144,7 @@
        <widget class="QGroupBox" name="pcb_settings">
         <property name="geometry">
          <rect>
-          <x>-1</x>
+          <x>0</x>
           <y>110</y>
           <width>524</width>
           <height>261</height>

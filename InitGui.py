@@ -32,7 +32,6 @@ import ksu_locator
 from kicadStepUpCMD import *
 
 ksuWBpath = os.path.dirname(ksu_locator.__file__)
-#sys.path.append(ksuWB + '/Gui')
 ksuWB_icons_path =  os.path.join( ksuWBpath, 'Resources', 'icons')
 ksuWB_ui_path = os.path.join( ksuWBpath, 'Resources','ui' )
 
@@ -41,41 +40,33 @@ main_ksu_Icon = os.path.join( ksuWB_icons_path , 'kicad-StepUp-tools-WB.svg')
 
 from PySide import QtGui
 
-import hlp
-header_txt="""<font color=GoldenRod><b>kicad StepUp version """+verKSU+"""</font></b><br>"""
-help_t = header_txt+hlp.help_txt
-
-#try:
-#    from FreeCADGui import Workbench
-#except ImportError as e:
-#    FreeCAD.Console.PrintWarning("error")
-# class CalendarPage:
-#     def __init__(self):
-#         from PySide import QtGui
-#         self.form = QtGui.QCalendarWidget()
-#         self.form.setWindowTitle("Calendar")
-#     def saveSettings(self):
-#         print ("saveSettings")
-#     def loadSettings(self):
-#         print ("loadSettings")
+global init_ui_debug
+#init_ui_debug = True
+init_ui_debug = False
 
 class kSU_MainPrefPage:
-
-    def selectDirectory(self):
-        from PySide import QtGui, QtCore
-        selected_directory = QtGui.QFileDialog.getExistingDirectory()
-        # Use the selected directory...
-        print ('selected_directory:', selected_directory)
+    if init_ui_debug: 
+        def selectDirectory(self):
+            from PySide import QtGui, QtCore
+            selected_directory = QtGui.QFileDialog.getExistingDirectory()
+            # Use the selected directory...
+            print ('selected_directory:', selected_directory)
 
     def __init__(self, parent=None):
         from PySide import QtGui, QtCore
         import os, hlp
         global ksuWBpath
-        print ("Created kSU Auxiliar Pref page")
-        #help_t = hlp.help_txt
+        if init_ui_debug: print ("Created kSU Auxiliar Pref page")
+
+        # **********************************
+        # Set 'Help Tips' Content
+        #        
         header_txt="""<font color=GoldenRod><b>kicad StepUp version """+verKSU+"""</font></b><br>"""
         help_t = header_txt+hlp.help_txt
 
+        # **********************************
+        # Init 'Help Tips' Tab in kSU Setting
+        #        
         self.form = QtGui.QWidget()
         self.form.setWindowTitle("kSU \'Help Tips\'")
         self.form.verticalLayoutWidget = QtGui.QWidget(self.form)
@@ -84,39 +75,39 @@ class kSU_MainPrefPage:
         self.form.verticalLayout = QtGui.QVBoxLayout(self.form.verticalLayoutWidget)
         self.form.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.form.verticalLayout.setObjectName("verticalLayout")
-        #self.form.label = QtGui.QLabel(self.form.verticalLayoutWidget)
-        #self.form.label.setObjectName("label")
-        #self.form.label.setText("Hello world!")
-        #self.form.verticalLayout.addWidget(self.form.label)
+            #self.form.label = QtGui.QLabel(self.form.verticalLayoutWidget)
+            #self.form.label.setObjectName("label")
+            #self.form.label.setText("Hello world!")
+            #self.form.verticalLayout.addWidget(self.form.label)
         self.form.textEdit = QtGui.QTextBrowser(self.form.verticalLayoutWidget)
         self.form.textEdit.setGeometry(QtCore.QRect(00, 10, 530, 640)) #top corner, width, height
         self.form.textEdit.setOpenExternalLinks(True)
-        self.form.textEdit.setObjectName("textEdit")
+        self.form.textEdit.setObjectName("HelpText")
         self.form.textEdit.setText(help_t)        
-# Button UI
-        add_button=False
-        if add_button:
-            self.form.btn = QtGui.QPushButton('Create Folder', self.form.verticalLayoutWidget)
-            self.form.btn.setToolTip('This creates the folders.')
-            self.form.btn.resize(self.form.btn.sizeHint())
-            self.form.btn.move(5, 60)       
-            self.form.btn.clicked.connect(self.selectDirectory)   
-            self.form.verticalLayout.addWidget(self.form.btn)        
+
+        if init_ui_debug: 
+            # Button UI
+            add_button=False
+            if add_button:
+                self.form.btn = QtGui.QPushButton('Create Folder', self.form.verticalLayoutWidget)
+                self.form.btn.setToolTip('This creates the folders.')
+                self.form.btn.resize(self.form.btn.sizeHint())
+                self.form.btn.move(5, 60)       
+                self.form.btn.clicked.connect(self.selectDirectory)   
+                self.form.verticalLayout.addWidget(self.form.btn)        
         
     def saveSettings(self):
-        print ("saveSettings Helper")
+        if init_ui_debug: print ("saveSettings Helper")
         import SaveSettings
         SaveSettings.update_ksuGui()
         
     def loadSettings(self):
-        print ("loadSettings Helper")
-        prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUpGui").GetString('prefix3d_1')+'/'
-        print('KISYS3DMOD assigned to: ', prefs)
-        prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUpGui")
-        #if prefs.GetContents() is not None:
-        #    for p in prefs.GetContents():
-        #        print (p)
-        print(FreeCAD.getUserAppDataDir())
+        if init_ui_debug: 
+            print ("loadSettings Helper")
+            prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUpGui").GetString('prefix3d_1')+'/'
+            print('KISYS3DMOD assigned to: ', prefs)
+            prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUpGui")
+            print(FreeCAD.getUserAppDataDir())
 ##
 class KiCadStepUpWB ( Workbench ):
     global main_ksu_Icon, ksu_wb_version, myurlKWB, mycommitsKWB, verKSU
@@ -137,13 +128,15 @@ class KiCadStepUpWB ( Workbench ):
         pref_page = True # False #True #
         import FreeCADGui
 
-        submenu = ['demo.kicad_pcb','d-pak.kicad_mod', 'demo-sketch.FCStd', 'demo.step',\
-                   'footprint-template.FCStd', 'footprint-Edge-template.FCStd', 'footprint-template-roundrect-polylines.FCStd',\
-                   'footprint-RF-antenna.FCStd', 'footprint-RF-antenna-w-solder-Mask.FCStd', 'RF-antenna-dxf.dxf', \
-                   'complex-Polyline-footprint.FCStd', 'footprint-complex-arc-pads.FCStd', \
-                   'footprint-SPU0410LR5H.FCStd',\
-                   'kicadStepUp-cheat-sheet.pdf', 'kicad-3D-to-MCAD.pdf', 'Generating-a-KiCAD-footprint-and-Model-from-3D-Step-Data.pdf' ]
-        dirs = self.ListDemos()
+        # Add Demo items to Demo submenu
+        demoFiles = self.ListDemos()
+        for curFile in demoFiles:
+            FreeCADGui.addCommand(curFile, kicadStepUpCMD.ksuExcDemo(curFile))
+        
+        
+        # **********************************
+        # Init the ToolBars
+        #        
 
         #self.appendToolbar("ksu Tools", ["ksuTools"])
         self.appendToolbar("ksu Tools", ["ksuToolsEditPrefs","ksuTools","ksuToolsOpenBoard","ksuToolsLoadFootprint",\
@@ -172,20 +165,23 @@ class KiCadStepUpWB ( Workbench ):
         #    Hlp_TB.remove("ksuToolsHighlightToggle")
         self.appendToolbar("ksu Show", ["ksuToolsTurnTable", "ksuToolsExplode"])
         self.appendToolbar("ksu Helpers", Hlp_TB)
-        #self.appendMenu("ksu Tools", ["ksuTools","ksuToolsEdit"])
+
+
+        # **********************************
+        # Add Menus to FreeCAD
+        #        
         self.appendMenu("ksu Tools", ["ksuTools","ksuToolsEditPrefs"])
         self.appendMenu("ksu PushPull", ["ksuToolsOpenBoard","ksuToolsPushPCB","ksuToolsPushMoved","ksuToolsSync3DModels","ksuToolsPullPCB","ksuToolsPullMoved",\
                         "Separator","ksuToolsGeneratePositions","ksuToolsComparePositions",\
                         "Separator","ksuRemoveTimeStamp","ksuRemoveSuffix",\
                         "Separator","ksuToolsLoadFootprint","ksuToolsFootprintGen"])
-        self.appendMenu(["ksu Tools", "Demo"], submenu)
+        self.appendMenu(["ksu Tools", "Demo"], demoFiles)
         
-        #FreeCADGui.addPreferencePage( a2plib.pathOfModule() + '/GuiA2p/ui/a2p_prefs.ui','A2plus' )
+        # **********************************
+        # Add Preference Tabs to FreeCAD
+        #        
         if pref_page:
-            FreeCADGui.addPreferencePage(
-                ksuWB_ui_path + '/ksu_prefs.ui',
-                'kicadStepUpGui'
-                )
+            FreeCADGui.addPreferencePage(ksuWB_ui_path + '/ksu_prefs.ui',"kicadStepUpGui")
             FreeCADGui.addPreferencePage(kSU_MainPrefPage,"kicadStepUpGui")
 
         FreeCADGui.addIconPath(ksuWB_icons_path)
@@ -446,6 +442,7 @@ class KiCadStepUpWB ( Workbench ):
     def Deactivated(self):
                 # do something here if needed...
         Msg ("KiCadStepUpWB.Deactivated()\n")
+
     @staticmethod
     def ListDemos():
         import os
@@ -453,9 +450,13 @@ class KiCadStepUpWB ( Workbench ):
 
         dirs = []
         # List all of the example files in an order that makes sense
+        # Remove directories from list
         module_base_path = ksu_locator.module_path()
         demo_dir_path = os.path.join(module_base_path, 'demo')
-        dirs = os.listdir(demo_dir_path)
+        with os.scandir(demo_dir_path) as it:
+            for entry in it:
+                if not entry.name.startswith('.') and entry.is_file():
+                    dirs.append(entry.name)
         dirs.sort()
 
         return dirs
@@ -463,14 +464,9 @@ class KiCadStepUpWB ( Workbench ):
 
 ###
 
-dirs = KiCadStepUpWB.ListDemos()
-#print dirs
-#FreeCADGui.addCommand('ksuWBOpenDemo', ksuOpenDemo())
-#dirs = KiCadStepUpWB.ListDemos()
-for curFile in dirs:
-    FreeCADGui.addCommand(curFile, ksuExcDemo(curFile))
-
-#FreeCADGui.addPreferencePage(kSU_MainPrefPage,"kicadStepUpGui")
-#FreeCADGui.addPreferencePage(CalendarPage, "kicadStepUpGui")
-        
+# **********************************
+# Add the Workbench to FreeCAD
+#        
 FreeCADGui.addWorkbench(KiCadStepUpWB)
+
+# EOF

@@ -175,7 +175,12 @@ def addtracks():
     # cfg_read_all() it doesn't work through different files
     # print (min_drill_size)
     
+    # **********************************
+    # User Selection of PCB File
+    #
     FreeCAD.Console.PrintMessage('tracks version: '+tracks_version+'\n')
+    print("Something Different to test Print\n")
+    
     Filter=""
     pg = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUp")
     last_pcb_path = pg.GetString("last_pcb_path")
@@ -184,89 +189,112 @@ def addtracks():
     fname, Filter = PySide.QtGui.QFileDialog.getOpenFileName(None, "Open File...",
             make_unicode(last_pcb_path), "*.kicad_pcb")
     path, name = os.path.split(fname)
-    #filename=os.path.splitext(name)[0]
+        #filename=os.path.splitext(name)[0]
     filename = fname
-    #importDXF.open(os.path.join(dirname,filename))
+        #importDXF.open(os.path.join(dirname,filename))
+ 
+    # **********************************
+    # Start the process if a file was selected
+    #
     if len(fname) > 0:
         start_time=current_milli_time()
+        
+        # **********************************
+        # Record the selected filename in Prefs
+        #        
         last_pcb_path=os.path.dirname(fname)
         path, ftname = os.path.split(fname)
         ftname=os.path.splitext(ftname)[0]
         ftname_sfx=crc_gen_t(make_unicode_t(ftname))
         pg = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUp")
         pg.SetString("last_pcb_path", make_string(last_pcb_path)) # py3 .decode("utf-8")
+
+        # **********************************
+        # Set Track & Silk color based on PCB Color
+        #
         prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUpGui")
         pcb_color_pos = prefs.GetInt('pcb_color')
-        #pcb_color_values = [light_green,blue,red,purple,darkgreen,darkblue,lightblue,yellow,black,white]
+            #pcb_color_values = [light_green,blue,red,purple,darkgreen,darkblue,lightblue,yellow,black,white]
         assign_col=['#41c382','#2474cf','#ff4000','#9a1a85','#3c7f5d','#426091','#005fff','#fff956','#4d4d4d','#f0f0f0']
-        #print(pcb_color_pos)
+            #print(pcb_color_pos)
         trk_col = (assign_col[pcb_color_pos])
-        if pcb_color_pos == 9:
-            slk_col = '#2d2d2d'
+        if pcb_color_pos == 9:  # if Board color is BLACK
+            slk_col = '#2d2d2d' #   Silkscreen color is ???
         else:
-            slk_col = '#f8f8f0'
+            slk_col = '#f8f8f0' #   Otherwise, silkscreen color is ???
+
+        # **********************************
+        # Load PCB from file
+        #
         mypcb = KicadPCB.load(filename)
         pcbThickness = float(mypcb.general.thickness)
-        #print (mypcb.general.thickness)
-        #print(mypcb.layers)
-        
-        #if version>=4:
+            #print (mypcb.general.thickness)
+            #print(mypcb.layers)
         Top_lvl=0;Bot_lvl=31
-        #for lynbr in mypcb.layers: #getting layers name
-        #    if float(lynbr) == Top_lvl:
-        #        LvlTopName=(mypcb.layers['{0}'.format(str(lynbr))][0])
-        #    if float(lynbr) == Bot_lvl:
-        #        LvlBotName=(mypcb.layers['{0}'.format(str(lynbr))][0])
-        #print(LvlTopName,'  ',LvlBotName)
+            #for lynbr in mypcb.layers: #getting layers name
+            #    if float(lynbr) == Top_lvl:
+            #        LvlTopName=(mypcb.layers['{0}'.format(str(lynbr))][0])
+            #    if float(lynbr) == Bot_lvl:
+            #        LvlBotName=(mypcb.layers['{0}'.format(str(lynbr))][0])
+            #print(LvlTopName,'  ',LvlBotName)
+        deltaz = 0.010 # 10 micron offset for copper from board surface
+
         import kicad_parser; reload_lib(kicad_parser)
         pcb = kicad_parser.KicadFcad(filename)
-        #pcb.setLayer(LvlTopName)
+            #pcb.setLayer(LvlTopName)
         minSizeDrill = 0.0  #0.8
-        #print(pcb.colors)
-        # https://www.seeedstudio.com/blog/2017/07/23/why-are-printed-circuit-boards-are-usually-green-in-colour/
-        # <span style="color: #105e7d;">deep-sea blue</span></strong>, <strong><span style="color: #ff2f00;">Ferrari red</span></strong>, <strong><span style="color: #ffcc00;">sunshine yellow</span></strong>, <strong>slick black</strong>, <span style="color: #999999;"><strong>pure white</strong></span> and of course <strong><span style="color: #339966;">good</span></strong> <strong><span style="color: #339966;">ol’ green</span>
-        # (r/255.0,g/255.0,b/255.0)
-        pcb_col = pcb.colors
-        #zone_col = pcb_col['zone'][0]
-        #track_col = pcb_col['track'][0]
-        pcb_col['track'][0] = mkColor(trk_col)
-        pcb_col['zone'][0] = mkColor(trk_col)
+            #print(pcb.colors)
+            # https://www.seeedstudio.com/blog/2017/07/23/why-are-printed-circuit-boards-are-usually-green-in-colour/
+            # <span style="color: #105e7d;">deep-sea blue</span></strong>, <strong><span style="color: #ff2f00;">Ferrari red</span></strong>, <strong><span style="color: #ffcc00;">sunshine yellow</span></strong>, <strong>slick black</strong>, <span style="color: #999999;"><strong>pure white</strong></span> and of course <strong><span style="color: #339966;">good</span></strong> <strong><span style="color: #339966;">ol’ green</span>
+            # (r/255.0,g/255.0,b/255.0)
+        pcb_col = pcb.colors                    # Get KiCad Colors from PCB file
+            #zone_col = pcb_col['zone'][0]
+            #track_col = pcb_col['track'][0]
+        pcb_col['track'][0] = mkColor(trk_col)  # Set track color rendered in FreeCAD
+        pcb_col['zone'][0] = mkColor(trk_col)   # Set zone color rendered in FreeCAD
         
-        #pcb_col['track'][0] = mkColor('#147b9d')
-        #pcb_col['zone'][0] = mkColor('#147b9d')
-        #pcb.colors = {
-        #   'board':mkColor("0x3A6629"),
-        #   'pad':{0:mkColor(219,188,126)},
-        #   'zone':{0:mkColor('#147b9d')},
-        #   'track':{0:mkColor(26,157,204)},
-        #   'copper':{0:mkColor(200,117,51)},
-        #}
-        #pcb.colors={'board':(1.,1.,1.),'pad':{0:(219/255,188/255,126/255)},'zone':{0:(0.,1.,0.)},'track':{0:(0.,1.,1.)},'copper':{0:(0.,1.,1.)},}  
+            #pcb_col['track'][0] = mkColor('#147b9d')
+            #pcb_col['zone'][0] = mkColor('#147b9d')
+            #pcb.colors = {
+            #   'board':mkColor("0x3A6629"),
+            #   'pad':{0:mkColor(219,188,126)},
+            #   'zone':{0:mkColor('#147b9d')},
+            #   'track':{0:mkColor(26,157,204)},
+            #   'copper':{0:mkColor(200,117,51)},
+            #}
+            #pcb.colors={'board':(1.,1.,1.),'pad':{0:(219/255,188/255,126/255)},'zone':{0:(0.,1.,0.)},'track':{0:(0.,1.,1.)},'copper':{0:(0.,1.,1.)},}  
+
+        # **********************************
+        # Generate Top Layer Copper
+        #
+            #try:   #doing top tracks layer
         pcb.setLayer(Top_lvl)
-        #try:   #doing top tracks layer
-        pcb.makeCopper(holes=True, minSize=minSizeDrill)
+        pcb.makeCopper(holes=True, minSize=minSizeDrill, shape_type='solid')
         doc=FreeCAD.ActiveDocument
-        docG=FreeCADGui.ActiveDocument
-        deltaz = 0.01 #10 micron
+
         composed = doc.ActiveObject
         s = composed.Shape
         doc.addObject('Part::Feature','topTracks'+ftname_sfx).Shape=composed.Shape
         topTracks = doc.ActiveObject
-        #print (doc.ActiveObject.Label)
-        #print (topTracks.Label)
+            #print (doc.ActiveObject.Label)
+            #print (topTracks.Label)
+
+        docG=FreeCADGui.ActiveDocument
         docG.ActiveObject.ShapeColor   = docG.getObject(composed.Name).ShapeColor
         docG.ActiveObject.LineColor    = docG.getObject(composed.Name).LineColor
         docG.ActiveObject.PointColor   = docG.getObject(composed.Name).PointColor
         docG.ActiveObject.DiffuseColor = docG.getObject(composed.Name).DiffuseColor
-        #doc.recompute()
-        #doc.addObject('Part::Feature',"topTraks").Shape=s
+            #doc.recompute()
+            #doc.addObject('Part::Feature',"topTraks").Shape=s
+
         topTracks.Label="topTracks"+ftname_sfx
         topTracks.Placement = FreeCAD.Placement(FreeCAD.Vector(0,0,deltaz),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),0))
-        #if hasattr(doc.Pcb, 'Shape'):
-        #if len (doc.getObjectsByLabel('Pcb')) >0:
+            #if hasattr(doc.Pcb, 'Shape'):
+            #if len (doc.getObjectsByLabel('Pcb')) >0:
+
         if len (doc.getObjectsByLabel('Pcb'+ftname_sfx)) >0:
             topTracks.Placement = doc.getObject('Pcb'+ftname_sfx).Placement
-            topTracks.Placement.Base.z+=deltaz
+            topTracks.Placement.Base.z += (deltaz * 2)
             if len (doc.getObjectsByLabel('Board_Geoms'+ftname_sfx)) > 0:
                 if use_AppPart and not use_LinkGroups:
                     doc.getObject('Board_Geoms'+ftname_sfx).addObject(topTracks)
@@ -285,9 +313,14 @@ def addtracks():
         #    exc_type, exc_obj, exc_tb = sys.exc_info()
         #    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         #    FreeCAD.Console.PrintError('error class: '+str(exc_type)+'\nfile name: '+str(fname)+'\nerror @line: '+str(exc_tb.tb_lineno)+'\nerror value: '+str(e.args[0])+'\n')
+
+
         
-        #try:    #doing bot tracks layer
-        #pcb.setLayer(LvlBotName)
+        # **********************************
+        # Generate Top Layer Copper
+        #
+            #try:    #doing bot tracks layer
+            #pcb.setLayer(LvlBotName)
         pcb.setLayer(Bot_lvl)
         pcb.makeCopper(holes=True, minSize=minSizeDrill)
         composed = doc.ActiveObject
