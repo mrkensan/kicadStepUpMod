@@ -21,6 +21,9 @@ $RECYCLE.BIN/
 # Python executable
 *.pyc
 
+# Visual Studio Project
+*.vs
+
 # =========================
 # Operating System Files
 # =========================
