@@ -3837,6 +3837,7 @@ def cfg_read_all():
     global ksu_config_fname, default_ksu_config_ini, applymaterials
     ##ksu pre-set
     global models3D_prefix, models3D_prefix2, blacklisted_model_elements, col, colr, colg, colb
+    global models3D_name_3d_macro, models3D_path_3d_macro
     global bbox, volume_minimum, height_minimum, idf_to_origin, aux_orig
     global base_orig, base_point, bbox_all, bbox_list, whitelisted_model_elements
     global fusion, addVirtual, blacklisted_models, exportFusing, min_drill_size
@@ -3869,29 +3870,25 @@ def cfg_read_all():
         #print (default_prefix3d)
         default_prefix3d = re.sub("\\\\", "/", default_prefix3d) #default_prefix3d.replace('\\','/')
         #print (default_prefix3d)
-    prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUpGui")
-    ## if prefs.GetContents() is not None:
-    ##     for i,p in enumerate (prefs.GetContents()):
-    ##         print (p)
-    ## else:
-    ##     print('preferences null')
-    # print (prefs)
-    # for i,p in enumerate (prefs.GetContents()):
-    #     print (p)
-    # stop
-    
-    #if prefs.GetContents() is None:
-    #    print('Creating first time ksu preferences')
-    #    stop #TBD
-    #else:
-    #    for i,p in enumerate (prefs.GetContents()):
-    #        print (p)
-            
+
+    # Get File Path Preferences
+    prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUpGui")            
     models3D_prefix = prefs.GetString('prefix3d_1')
     if len (models3D_prefix) == 0:
         prefs.SetString('prefix3d_1',make_string(default_prefix3d))
         models3D_prefix = prefs.GetString('prefix3d_1')
     models3D_prefix2 = prefs.GetString('prefix3d_2')
+    
+    models3D_name_3d_macro = prefs.GetString('name_3d_macro')
+    if len(models3D_name_3d_macro) == 0:
+        models3D_name_3d_macro = make_string("")
+        prefs.SetString('name_3d_macro', models3D_name_3d_macro)
+
+    models3D_path_3d_macro = prefs.GetString('path_3d_macro')
+    if len(models3D_path_3d_macro) == 0:
+        models3D_path_3d_macro = make_string("")
+        prefs.SetString('path_3d_macro', models3D_path_3d_macro)
+    
     
     # ***************************************************
     # Set color of PCB Object
@@ -5044,6 +5041,7 @@ def check_wrl_transparency(step_module):
 def Load_models(pcbThickness, modules, model_z_offst):
     global off_x, off_y, volume_minimum, height_minimum, bbox_all, bbox_list
     global whitelisted_model_elements, models3D_prefix, models3D_prefix2, last_pcb_path, full_placement
+    global models3D_name_3d_macro, models3D_path_3d_macro
     global allow_compound, compound_found, bklist, force_transparency, warning_nbr, use_AppPart
     global conv_offs, use_Links, links_imp_mode, use_pypro, use_LinkGroups, fname_sfx
     
@@ -5089,6 +5087,17 @@ def Load_models(pcbThickness, modules, model_z_offst):
             #say(step_module.split(':')[1:])
             say('adjusting Alias Path')
             say('step-module-replaced '+step_module)
+
+        # Look for the use of a KiCad File Prefix Macro in the filename
+        # If this exists, do the macro substitution using Preferences settings
+        if (len(models3D_name_3d_macro) > 2) and (len(models3D_path_3d_macro) > 2):
+            if (step_module.find('${'+models3D_name_3d_macro+'}')!=-1):  #User 3D File Prefix                
+                step_module = step_module.replace(u'${'+models3D_name_3d_macro+'}', models3D_path_3d_macro)
+                step_module = step_module.replace(u'"', u'')  # name with spaces
+                encoded=1
+                say('Adjusting filename to USER Path')
+                say('step-module-replaced '+step_module)
+
         if (step_module.find('${HOME}')!=-1):  #local 3D path
             #step_module=step_module.replace('${KIPRJMOD}', '.')
             home = expanduser("~")
@@ -5098,6 +5107,7 @@ def Load_models(pcbThickness, modules, model_z_offst):
             encoded=1
             say('adjusting Local Path')
             say('step-module-replaced '+step_module)
+
         if (step_module.find('${KIPRJMOD}')!=-1):  #local 3D path
             step_module = re.sub("\\\\", "/", step_module)
             #if isinstance(step_module, str):
@@ -5113,6 +5123,7 @@ def Load_models(pcbThickness, modules, model_z_offst):
             encoded=1
             say('adjusting Relative Path')
             say('step-module-replaced '+step_module)
+
         if (step_module.startswith('.')) or (step_module.startswith('".')):  #relative path
             #step_module=last_pcb_path+"/"+step_module
             step_module=last_pcb_path+os.sep+step_module
@@ -5122,6 +5133,7 @@ def Load_models(pcbThickness, modules, model_z_offst):
             sayw('adjusting Relative Path')
             say('step-module-replaced '+step_module)
             #stop
+
         if (step_module.find('${KISYS3DMOD}/')!=-1):  #local ${KISYS3DMOD} 3D path
             #step_module=step_module.replace('${KIPRJMOD}', '.')
             #step_module=step_module.decode("utf-8").replace(u'${KISYS3DMOD}/', u'')
@@ -5131,6 +5143,7 @@ def Load_models(pcbThickness, modules, model_z_offst):
             encoded=1
             say('adjusting Local Path')
             say('step-module-replaced '+step_module)
+
         if (step_module.find('${')!=-1) and encoded==0:  #extra local ${ENV} 3D path
             step_module= re.sub('\${.*?}/', '', step_module)
             #step_module=step_module.decode("utf-8").replace(u'${}/', u'')
@@ -5147,6 +5160,7 @@ def Load_models(pcbThickness, modules, model_z_offst):
             encoded=1
             say('adjusting 2nd Local Path')
             say('step-module-replaced '+step_module)      
+
         if (encoded == 0):  #test local 3D path without the use of KIPRJMOD
             step_module_local = re.sub("\\\\", "/", step_module)
             #if isinstance(step_module, str):
@@ -5240,54 +5254,31 @@ def Load_models(pcbThickness, modules, model_z_offst):
                     createScaledObjs=True
                 if not createScaledObjs:
                     module_path='not-found'
-                    step_module=step_module.replace(u'"', u'')  # name with spaces
-                        # sayerr(step_module+' TEST')
-                        #step_module=step_module.replace('"', '')  # name with spaces
-                        #step_module=step_module.decode("utf-8").replace(u'"', u'')  # name with spaces
-                        #step_module=step_module.encode("utf-8")
-                        #sayw(models3D_prefix+step_module)
-                        # removing 'backslash' for unicode_escape
-                        ## new utf-8 test
+
+                    # Fix up basic filename provided by the PCB file                    
+                    step_module = step_module.replace(u'"', u'')  # name with spaces
+                    step_module = re.sub("\\\\", "/", step_module)
+                    
+                    # Build file path using primary 3D Model Prefix
                     models3D_prefix = re.sub("\\\\", "/", models3D_prefix)
                     models3D_prefix_U = models3D_prefix
-                        #if isinstance(models3D_prefix, str):
-                        #    models3D_prefix_U = models3D_prefix.decode('unicode_escape')
-                        #else:
-                        #    models3D_prefix_U = models3D_prefix
-                    step_module = re.sub("\\\\", "/", step_module)
-                        #if isinstance(step_module, str):
-                        #    step_module = step_module.decode('unicode_escape')
-                        #else:
-                        #    step_module = step_module.encode('utf-8')
-                        #utf_path=os.path.join(models3D_prefix,step_module)
-                        #print(type(step_module))  #maui test py3
                     utf_path=os.path.join(make_unicode(models3D_prefix_U),make_unicode(step_module))
-                        #sayw(utf_path)
-                        #utf_path=os.path.join(models3D_prefix,step_module)
-                        ##adding 2nd 3Dprefix support to step
-                        #utf_path2=os.path.join(models3D_prefix2,step_module)
-                        ## new utf-8 test
+
+                    # Build file path using secondary 3D Model Prefix
                     models3D_prefix2 = re.sub("\\\\", "/", models3D_prefix2)
-                        #if isinstance(models3D_prefix2, str):
-                        #    models3D_prefix2_U = models3D_prefix2.decode('unicode_escape')
-                        #else:
-                        #    models3D_prefix2_U = models3D_prefix2
                     models3D_prefix2_U = models3D_prefix2
                     utf_path2=os.path.join(make_unicode(models3D_prefix2_U),make_unicode(step_module)) # utf-8 chars
-                        #print(utf_path)
-                        #print(utf_path2)
-                        #print(step_module)
-                        #.step
+
+                    # Can we find this file anywhere?
                     if os.path.exists(utf_path):
-                        #module_path=models3D_prefix+step_module
                         module_path=utf_path
-                        #sayw("found! "+module_path)
                     else:
                         if os.path.exists(step_module): # absolute path
                             module_path=step_module
                         else:
                             if os.path.exists(utf_path2):
                                 module_path=utf_path2
+
                     #.STEP
                     if (module_path=='not-found'):
                         pos=utf_path.rfind('.')
