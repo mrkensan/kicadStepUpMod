@@ -1068,7 +1068,6 @@ class KicadFcad:
         self._pushLog('making pads...')
 
         def _wire(obj,name,label=None,fill=False):
-            #return self._makeWires(obj,name,fill=fill,label=label)
             return self._makeWires(obj,name,fill=fill,label=label,offset=self.pad_inflate)
 
         def _face(obj,name,label=None):
@@ -1102,7 +1101,8 @@ class KicadFcad:
                 try:
                     if self.layer not in p.layers \
                         and layer_match not in p.layers \
-                        and '*' not in p.layers:
+                        and '*' not in p.layers \
+                        and '*.Cu' not in p.layers:
                         skip_count+=1
                         continue
                 except:
@@ -1112,7 +1112,8 @@ class KicadFcad:
                 #    print(pd)
                 if self.layer not in p.layers \
                     and layer_match not in p.layers \
-                    and '*' not in p.layers:
+                    and '*' not in p.layers \
+                    and '*.Cu' not in p.layers:
                     skip_count+=1
                     continue
                 shape = p[2]
@@ -1209,9 +1210,6 @@ class KicadFcad:
                     thickness=0.05,holes=False,prefix=''):
 
         self._pushLog('making tracks...',prefix=prefix)
-        print("shape_type= ", shape_type)		#KK Del
-        print("thickness= ", thickness)			#KK Del
-        print("holes= ", holes)					#KK Del
 
         width = 0
         def _line(edges,offset=0,fill=False):
