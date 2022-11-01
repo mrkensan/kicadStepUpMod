@@ -267,7 +267,7 @@ def addtracks():
         # with small offsets from the board surface (and each other, #3 above) so they are
         # rendered in a visually correct manner. 
         
-        render_min_thk = 0.001  # 5 micron 
+        render_min_thk = 0.001  # 1 micron 
         
         if pcb_copper_pref == 0:  # Means we are rnedering only "Faces"
             logger.warning("Rendering as FACE")
@@ -280,9 +280,16 @@ def addtracks():
             if pad_thk < render_min_thk: pad_thk=render_min_thk # Inflate pads by minimum for visual rendering
             deltaz = 0                              # all copper features places on board surface, no offset
             object_type = "solid"                   # Render features as solids
-            pad_thickness = pad_thk + copper_thk    # pads are thicker than copper features
+            
+            # Thickness here is important because it controls visualization
+            #
+            # Tracks are "thinnest" so they are "buried" in Zones and Pads
+            # This setting means a Zone is rendered solidly, without artifacts
+            # Pads are the thicker than both Tracks and Zones.
+            # This is required to assure that "thermal features" of Zones don't obscure Pads
             track_thickness = copper_thk
-            zone_thickness = copper_thk + render_min_thk # This fixes poor rendering for colocated tracks/zones
+            zone_thickness = copper_thk + render_min_thk           # This fixes poor rendering for colocated Tracks/Zones
+            pad_thickness = pad_thk + copper_thk + render_min_thk  # Pads are thicker than all copper features
             
             # Set colors rendered by kicad_parser when making copper features
             #pcb.colors = {
