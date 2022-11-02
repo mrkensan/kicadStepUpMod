@@ -9,14 +9,15 @@
 #*                                                                          *
 #*  Kicad STEPUP (TM) is a TradeMark and cannot be freely usable            *
 #*                                                                          *
+#****************************************************************************
+#*                                                                          *
+#*  KiCAD_LiteSTEP - Render KiCAD PCB Models as STEP (No Advanced Features) *
+#*                                                                          *
+#****************************************************************************
 
-# two options for IDF added by Milos Koutny (12-Feb-2010)
-#FreeCAD.addImportType("Kicad pcb board/mod File Type (*.kicad_pcb *.emn *.kicad_mod)","kicadStepUptools") 
 # ___ver___ = "6.0.4.5"
-## idf import dropped
 
 FreeCAD.addImportType("Kicad pcb board/mod File Type (*.kicad_pcb *.kicad_mod)","kicadStepUptools") 
 
 FreeCAD.addImportType("zip of STEP/FCStd File Type (*.zip)","ZipStepImport")
 
-#FreeCAD.addImportType("IDF emp File Type (*.emp)","Import_Emp") 

@@ -9,10 +9,15 @@
 #*                                                                          *
 #*  Kicad STEPUP (TM) is a TradeMark and cannot be freely usable            *
 #*                                                                          *
+#****************************************************************************
+#*                                                                          *
+#*  KiCAD_LiteSTEP - Render KiCAD PCB Models as STEP (No Advanced Features) *
+#*                                                                          *
+#****************************************************************************
 
 ksu_wb_version='v 10.16.5'
 global myurlKWB, ksuWBpath
-myurlKWB='https://github.com/easyw/kicadStepUpMod'
+myurlKWB='https://github.com/mrkensan/kicadStepUpMod'
 global mycommitsKWB
 mycommitsKWB=572 # v10.16.5
 global verKSU
@@ -47,19 +52,6 @@ import hlp
 header_txt="""<font color=GoldenRod><b>kicad StepUp version """+verKSU+"""</font></b><br>"""
 help_t = header_txt+hlp.help_txt
 
-#try:
-#    from FreeCADGui import Workbench
-#except ImportError as e:
-#    FreeCAD.Console.PrintWarning("error")
-# class CalendarPage:
-#     def __init__(self):
-#         from PySide import QtGui
-#         self.form = QtGui.QCalendarWidget()
-#         self.form.setWindowTitle("Calendar")
-#     def saveSettings(self):
-#         print ("saveSettings")
-#     def loadSettings(self):
-#         print ("loadSettings")
 
 class kSU_MainPrefPage:
 
@@ -139,52 +131,43 @@ class KiCadStepUpWB ( Workbench ):
         pref_page = True # False #True #
         import FreeCADGui
 
-        submenu = ['demo.kicad_pcb','d-pak.kicad_mod', 'demo-sketch.FCStd', 'demo.step',\
-                   'footprint-template.FCStd', 'footprint-Edge-template.FCStd', 'footprint-template-roundrect-polylines.FCStd',\
-                   'footprint-RF-antenna.FCStd', 'footprint-RF-antenna-w-solder-Mask.FCStd', 'RF-antenna-dxf.dxf', \
-                   'complex-Polyline-footprint.FCStd', 'footprint-complex-arc-pads.FCStd', \
-                   'footprint-SPU0410LR5H.FCStd','WaveguideAntenna-RF-fp.FCStd', 'Notch-RF-filter-wNT-fp.FCStd', \
-                   'Microstrip-RF-filter-fp.FCStd', 'Splitter-RF-fp.FCStd', \
-                   'kicadStepUp-cheat-sheet.pdf', 'kicad-3D-to-MCAD.pdf', 'Generating-a-KiCAD-footprint-and-Model-from-3D-Step-Data.pdf', \
-                   'ECAD-MCAD-collaboration.pdf']
-        dirs = self.ListDemos()
+#!#       submenu = ['demo.kicad_pcb','d-pak.kicad_mod', 'demo-sketch.FCStd', 'demo.step',\
+#!#                  'footprint-template.FCStd', 'footprint-Edge-template.FCStd', 'footprint-template-roundrect-polylines.FCStd',\
+#!#                  'footprint-RF-antenna.FCStd', 'footprint-RF-antenna-w-solder-Mask.FCStd', 'RF-antenna-dxf.dxf', \
+#!#                  'complex-Polyline-footprint.FCStd', 'footprint-complex-arc-pads.FCStd', \
+#!#                  'footprint-SPU0410LR5H.FCStd','WaveguideAntenna-RF-fp.FCStd', 'Notch-RF-filter-wNT-fp.FCStd', \
+#!#                  'Microstrip-RF-filter-fp.FCStd', 'Splitter-RF-fp.FCStd', \
+#!#                  'kicadStepUp-cheat-sheet.pdf', 'kicad-3D-to-MCAD.pdf', 'Generating-a-KiCAD-footprint-and-Model-from-3D-Step-Data.pdf', \
+#!#                  'ECAD-MCAD-collaboration.pdf']
+#!#       dirs = self.ListDemos()
 
-        #self.appendToolbar("ksu Tools", ["ksuTools"])
         self.appendToolbar("ksu Tools", ["ksuToolsEditPrefs","ksuTools","ksuToolsOpenBoard","ksuToolsLoadFootprint",\
-                           "ksuToolsExportModel","ksuToolsPushPCB","ksuToolsFootprintGen","Separator","ksuToolsAddTracks","ksuToolsAddSilks","Separator",\
+                           "ksuToolsExportModel","Separator","ksuToolsAddTracks","ksuToolsAddSilks","Separator",\
                            "ksuToolsCollisions","ksuToolsImport3DStep","ksuToolsExport3DStep","ksuToolsMakeUnion",\
-                           "ksuToolsMakeCompound", "ksuToolsUnion", "ksuToolsSimpleCopy", "ksuToolsDeepCopy", "ksuToolsColoredClone",\
-                           "ksuToolsColoredBinder", "ksuToolsReLinkBinder", "ksuToolsCheckSolid"])
-                           #, "ksuToolsPushMoved","ksuToolsSync3DModels"])
-        self.appendToolbar("ksu Sketching", ["ksuTools3D2D", "ksuTools2D2Sketch", "ksuTools2DtoFace",\
-                           "ksuToolsLoopSelection","ksuToolsEdges2Sketch","ksuToolsMoveSketch","ksuToolsOffset2D","ksuToolsExtrude","Create_BoundBox","ksuToolsMergeSketches",\
-                           "ksuToolsSimplifySketck", "ksuToolsBsplineNormalize", "ksuToolsConstrainator", "ksuToolsSkValidate", "ksuToolsDiscretize",\
-                           "ksuToolsContour2Poly", "Arcs2Circles", "approximateCenter"])
-                           #, "ksuToolsPushMoved","ksuToolsSync3DModels"])
-        ksuTB = ["ksuToolsOpenBoard","ksuToolsPushPCB","ksuToolsPushMoved","ksuToolsSync3DModels","ksuToolsPullPCB","ksuToolsPullMoved","ksuAsm2Part",\
+                           "ksuToolsUnion", "ksuToolsSimpleCopy"])
+
+#!#        self.appendToolbar("ksu Sketching", ["ksuToolsLoopSelection"])
+
+        ksuTB = ["ksuToolsOpenBoard","ksuToolsSync3DModels","ksuToolsPullPCB",\
                  "Separator","ksuToolsGeneratePositions","ksuToolsComparePositions",\
-                 "Separator","ksuToolsToggleTreeView","Separator","ksuRemoveTimeStamp","ksuRemoveSuffix","Separator","ksuToolsLoadFootprint","ksuToolsFootprintGen"]
+                 "Separator","Separator","ksuRemoveTimeStamp","ksuRemoveSuffix","Separator","ksuToolsLoadFootprint"]
         #ksuTB.extend(["Separator","ksuToolsAligner","ksuToolsMover","ksuToolsCaliper"])
         self.appendToolbar("ksu PushPull", ksuTB)
         combined_path = '\t'.join(sys.path)
         if 'Manipulator' in combined_path:
             ksuDTB=["ksuToolsAligner","ksuToolsMover","ksuToolsCaliper","Separator","ksuToolsDefeaturingTools"]
             self.appendToolbar("ksu Design Tools", ksuDTB)
-        Hlp_TB = ["ksuToolsToggleTreeView", "Restore_Transparency", "ksuToolsTransparencyToggle", "ksuToolsHighlightToggle",\
-                            "ksuToolsVisibilityToggle", "ksuToolsStepImportModeSTD", "ksuToolsStepImportModeComp",\
-                            "ksuToolsCopyPlacement", "ksuToolsResetPlacement", "ksuToolsResetPartPlacement", "ksuToolsAddToTree",\
-                            "ksuToolsRemoveFromTree", "ksuToolsRemoveSubTree", "checkSolidExpSTEP"]
+        Hlp_TB = ["ksuToolsResetPartPlacement", "ksuToolsRemoveSubTree", "checkSolidExpSTEP"]
         #if 'LinkView' in dir(FreeCADGui):
         #    Hlp_TB.remove("ksuToolsHighlightToggle")
         self.appendToolbar("ksu Show", ["ksuToolsTurnTable", "ksuToolsExplode"])
         self.appendToolbar("ksu Helpers", Hlp_TB)
         #self.appendMenu("ksu Tools", ["ksuTools","ksuToolsEdit"])
         self.appendMenu("ksu Tools", ["ksuTools","ksuToolsEditPrefs"])
-        self.appendMenu("ksu PushPull", ["ksuToolsOpenBoard","ksuToolsPushPCB","ksuToolsPushMoved","ksuToolsSync3DModels","ksuToolsPullPCB","ksuToolsPullMoved",\
+        self.appendMenu("ksu PushPull", ["ksuToolsOpenBoard","ksuToolsSync3DModels","ksuToolsPullPCB",\
                         "Separator","ksuToolsGeneratePositions","ksuToolsComparePositions",\
-                        "Separator","ksuRemoveTimeStamp","ksuRemoveSuffix",\
-                        "Separator","ksuToolsLoadFootprint","ksuToolsFootprintGen"])
-        self.appendMenu(["ksu Tools", "Demo"], submenu)
+                        "Separator","ksuRemoveTimeStamp","ksuRemoveSuffix"])
+#!#        self.appendMenu(["ksu Tools", "Demo"], submenu)
         
         #FreeCADGui.addPreferencePage( a2plib.pathOfModule() + '/GuiA2p/ui/a2p_prefs.ui','A2plus' )
         if pref_page:
@@ -485,12 +468,12 @@ class KiCadStepUpWB ( Workbench ):
 
 ###
 
-dirs = KiCadStepUpWB.ListDemos()
-#print dirs
-#FreeCADGui.addCommand('ksuWBOpenDemo', ksuOpenDemo())
-#dirs = KiCadStepUpWB.ListDemos()
-for curFile in dirs:
-    FreeCADGui.addCommand(curFile, ksuExcDemo(curFile))
+#!# dirs = KiCadStepUpWB.ListDemos()
+#!# #print dirs
+#!# #FreeCADGui.addCommand('ksuWBOpenDemo', ksuOpenDemo())
+#!# #dirs = KiCadStepUpWB.ListDemos()
+#!# for curFile in dirs:
+#!#    FreeCADGui.addCommand(curFile, ksuExcDemo(curFile))
 
 #FreeCADGui.addPreferencePage(kSU_MainPrefPage,"kicadStepUpGui")
 #FreeCADGui.addPreferencePage(CalendarPage, "kicadStepUpGui")

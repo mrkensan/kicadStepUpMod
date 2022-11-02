@@ -5187,16 +5187,16 @@ def Load_models(pcbThickness,modules):
         print('TreeView Test collapsing')
         FreeCADGui.Selection.addSelection(FreeCAD.ActiveDocument.Board)
         import kicadStepUpCMD
-        FreeCADGui.runCommand('ksuToolsToggleTreeView',0)
+#!#        FreeCADGui.runCommand('ksuToolsToggleTreeView',0)
         s=FreeCADGui.Selection.getSelection()[0]
         print(s.Label)
-        FreeCADGui.runCommand('ksuToolsToggleTreeView',0)
-        #kicadStepUpCMD.ksuToolsToggleTreeView.Activated(s)
+#!#        FreeCADGui.runCommand('ksuToolsToggleTreeView',0)
+#!#        #kicadStepUpCMD.ksuToolsToggleTreeView.Activated(s)
         #FreeCADGui.Selection.clearSelection()
         #FreeCADGui.Selection.addSelection(FreeCAD.ActiveDocument.Board)
         #s=FreeCADGui.Selection.getSelection()[0]
         #print(s.Label)
-        #kicadStepUpCMD.ksuToolsToggleTreeView.Activated(s)
+#!#        #kicadStepUpCMD.ksuToolsToggleTreeView.Activated(s)
         FreeCADGui.Selection.clearSelection()
     elif 0: #except:
         import expTree; 
@@ -13969,10 +13969,10 @@ class Ui_DockWidget(object):
         self.ConfigPB.setIconSize(QtCore.QSize(btn_md_sizeX,btn_md_sizeY))   
         self.ConfigPB.setIcon(QtGui.QIcon(pm))
         
-        pm = QtGui.QPixmap()
-        pm.loadFromData(base64.b64decode(pcb_edge_b64))  #sketch
-        self.pushPCB.setIconSize(QtCore.QSize(btn_md_sizeX,btn_md_sizeY))   
-        self.pushPCB.setIcon(QtGui.QIcon(pm))
+#!#        pm = QtGui.QPixmap()
+#!#        pm.loadFromData(base64.b64decode(pcb_edge_b64))  #sketch
+#!#        self.pushPCB.setIconSize(QtCore.QSize(btn_md_sizeX,btn_md_sizeY))   
+#!#        self.pushPCB.setIcon(QtGui.QIcon(pm))
         
         pm = QtGui.QPixmap()
         pm.loadFromData(base64.b64decode(help_b64))
