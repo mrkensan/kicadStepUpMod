@@ -24,6 +24,9 @@ $RECYCLE.BIN/
 # Visual Studio Project
 *.vs
 
+# Visual Studio Project
+*.srctr*
+
 # =========================
 # Operating System Files
 # =========================
