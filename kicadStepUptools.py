@@ -67,6 +67,25 @@
 #*   51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA           *
 #*                                                                          *
 #****************************************************************************
+#*                                                                          *
+#*  KiCAD_2STEP - Render KiCAD PCB Models as STEP (No Round Trip, etc...)   *
+#*                                                                          *
+#*   This FreeCAD workbench is derived from the work of the Kicad STEPUP    *
+#*   team including Maurice easyw@katamail.com and numerous others.         *
+#*                                                                          *
+#*   The purpose of this workbench is to provide a single-function tool     *
+#*   for converting KiCAD PCBs to useful STEP models to be used in other    *
+#*   MCAD packages. Our intent is to add a few enhancements to the original *
+#*   while keeping the core functionality similar.                          *
+#*                                                                          *
+#*   Because our use-case does not require manipulation of the rendered     *
+#*   PCB nor round-tipping of MCAD-ECAD data, we have simplified that part  *
+#*   of the workbench core-code and UI.                                     *
+#*                                                                          *
+#*   We hope that this workbench is useful to the community!                *
+#*                                                                          *
+#****************************************************************************
+
 ##With kicad StepUp you’ll get an exact representation of your physical board in Native 3D PCB
 
 ## kicad StepUp tools

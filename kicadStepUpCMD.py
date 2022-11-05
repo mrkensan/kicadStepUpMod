@@ -9,6 +9,46 @@
 #*                                                                          *
 #*  Kicad STEPUP (TM) is a TradeMark and cannot be freely usable            *
 #*                                                                          *
+#****************************************************************************
+#*                                                                          *
+#*   This program is free software; you can redistribute it and/or modify   *
+#*   it under the terms of the GNU Affero General Public License            *
+#*   as published by the Free Software Foundation to ensure cooperation     *
+#*   with the community in the case of network server software;             *
+#*   for detail see the LICENCE text file.                                  *
+#*   http://www.gnu.org/licenses/agpl-3.0.en.html                           *
+#*   Moreover you have to include the original author copyright             *
+#*   kicad StepUP made by Maurice easyw@katamail.com                        *
+#*                                                                          *
+#*   This program is distributed in the hope that it will be useful,        *
+#*   but WITHOUT ANY WARRANTY; without even the implied warranty of         *
+#*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
+#*   GNU Library General Public License for more details.                   *
+#*                                                                          *
+#*   You should have received a copy of the GNU Library General Public      *
+#*   License along with this program; if not, write to the Free Software    *
+#*   Foundation, Inc.,                                                      *
+#*   51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA           *
+#*                                                                          *
+#****************************************************************************
+#*                                                                          *
+#*  KiCAD_2STEP - Render KiCAD PCB Models as STEP (No Round Trip, etc...)   *
+#*                                                                          *
+#*   This FreeCAD workbench is derived from the work of the Kicad STEPUP    *
+#*   team including Maurice easyw@katamail.com and numerous others.         *
+#*                                                                          *
+#*   The purpose of this workbench is to provide a single-function tool     *
+#*   for converting KiCAD PCBs to useful STEP models to be used in other    *
+#*   MCAD packages. Our intent is to add a few enhancements to the original *
+#*   while keeping the core functionality similar.                          *
+#*                                                                          *
+#*   Because our use-case does not require manipulation of the rendered     *
+#*   PCB nor round-tipping of MCAD-ECAD data, we have simplified that part  *
+#*   of the workbench core-code and UI.                                     *
+#*                                                                          *
+#*   We hope that this workbench is useful to the community!                *
+#*                                                                          *
+#****************************************************************************
 
 import FreeCAD, FreeCADGui, Part
 from FreeCAD import Base
@@ -597,34 +637,34 @@ class Ui_CDialog(object):
         
 ################ ------------------- end CD-ui #############################
 
-class ksuTools:
-    "ksu tools object"
- 
-    def GetResources(self):
-        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'kicad-StepUp-icon.svg') , # the name of a svg file available in the resources
-                     'MenuText': "ksu Tools" ,
-                     'ToolTip' : "Activate the main\nkicad StepUp Tools Dialog"}
- 
-    def IsActive(self):
-        #if FreeCAD.ActiveDocument == None:
-        #    return False
-        #else:
-        #    return True
-        #import kicadStepUptools
-        import os, sys
-        return True
- 
-    def Activated(self):
-        # do something here...
-        import kicadStepUptools
-        reload_lib( kicadStepUptools )
-        kicadStepUptools.KSUWidget.activateWindow()
-        kicadStepUptools.KSUWidget.show()
-        kicadStepUptools.KSUWidget.raise_()
-        FreeCAD.Console.PrintWarning( 'active :)\n' )
-        #import kicadStepUptools
- 
-FreeCADGui.addCommand('ksuTools',ksuTools())
+#!# class ksuTools:
+#!#   "ksu tools object"
+#!#
+#!#   def GetResources(self):
+#!#       return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'kicad-StepUp-icon.svg') , # the name of a svg file available in the resources
+#!#                    'MenuText': "ksu Tools" ,
+#!#                    'ToolTip' : "Activate the main\nkicad StepUp Tools Dialog"}
+#!#
+#!#   def IsActive(self):
+#!#       #if FreeCAD.ActiveDocument == None:
+#!#       #    return False
+#!#       #else:
+#!#       #    return True
+#!#       #import kicadStepUptools
+#!#       import os, sys
+#!#       return True
+#!#
+#!#   def Activated(self):
+#!#       # do something here...
+#!#       import kicadStepUptools
+#!#       reload_lib( kicadStepUptools )
+#!#       kicadStepUptools.KSUWidget.activateWindow()
+#!#       kicadStepUptools.KSUWidget.show()
+#!#       kicadStepUptools.KSUWidget.raise_()
+#!#       FreeCAD.Console.PrintWarning( 'active :)\n' )
+#!#       #import kicadStepUptools
+#!#
+#!# FreeCADGui.addCommand('ksuTools',ksuTools())
 ##
 
 #!#class ksuToolsContour2Poly:
