@@ -38,11 +38,11 @@
 #*   team including Maurice easyw@katamail.com and numerous others.         *
 #*                                                                          *
 #*   The purpose of this workbench is to provide a single-function tool     *
-#*   for converting KiCAD PCBs to useful STEP models to be used in other    *
+#*   for converting KiCAD PCBs to useful STEP models for use in non-FreeCAD *
 #*   MCAD packages. Our intent is to add a few enhancements to the original *
 #*   while keeping the core functionality similar.                          *
 #*                                                                          *
-#*   Because our use-case does not require manipulation of the rendered     *
+#*   Because our use-case does not require manipulation in FreeCAD of the   *
 #*   PCB nor round-tipping of MCAD-ECAD data, we have simplified that part  *
 #*   of the workbench core-code and UI.                                     *
 #*                                                                          *
@@ -995,36 +995,36 @@ class ksuToolsOpenBoard:
 FreeCADGui.addCommand('ksuToolsOpenBoard',ksuToolsOpenBoard())
 ##
 
-class ksuToolsLoadFootprint:
-    "ksu tools Load Footprint object"
- 
-    def GetResources(self):
-        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'importFP.svg') , # the name of a svg file available in the resources
-                     'MenuText': "Load FootPrint" ,
-                     'ToolTip' : "ksu Load KiCad PCB FootPrint"}
- 
-    def IsActive(self):
-        #if FreeCAD.ActiveDocument == None:
-        #    return False
-        #else:
-        #    return True
-        #import kicadStepUptools
-        return True
- 
-    def Activated(self):
-        # do something here...
-        import kicadStepUptools
-        #if not kicadStepUptools.checkInstance():
-        #    reload( kicadStepUptools )
-        if 1: #reload_Gui:
-            reload_lib( kicadStepUptools )
-        #FreeCAD.Console.PrintWarning( 'active :)\n' )
-        kicadStepUptools.KSUWidget.activateWindow()
-        kicadStepUptools.KSUWidget.show()
-        kicadStepUptools.KSUWidget.raise_()
-        kicadStepUptools.onLoadFootprint()
-
-FreeCADGui.addCommand('ksuToolsLoadFootprint',ksuToolsLoadFootprint())
+#!#class ksuToolsLoadFootprint:
+#!#    "ksu tools Load Footprint object"
+#!# 
+#!#    def GetResources(self):
+#!#        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'importFP.svg') , # the name of a svg file available in the resources
+#!#                     'MenuText': "Load FootPrint" ,
+#!#                     'ToolTip' : "ksu Load KiCad PCB FootPrint"}
+#!# 
+#!#    def IsActive(self):
+#!#        #if FreeCAD.ActiveDocument == None:
+#!#        #    return False
+#!#        #else:
+#!#        #    return True
+#!#        #import kicadStepUptools
+#!#        return True
+#!# 
+#!#    def Activated(self):
+#!#        # do something here...
+#!#        import kicadStepUptools
+#!#        #if not kicadStepUptools.checkInstance():
+#!#        #    reload( kicadStepUptools )
+#!#        if 1: #reload_Gui:
+#!#            reload_lib( kicadStepUptools )
+#!#        #FreeCAD.Console.PrintWarning( 'active :)\n' )
+#!#        kicadStepUptools.KSUWidget.activateWindow()
+#!#        kicadStepUptools.KSUWidget.show()
+#!#        kicadStepUptools.KSUWidget.raise_()
+#!#        kicadStepUptools.onLoadFootprint()
+#!#
+#!#FreeCADGui.addCommand('ksuToolsLoadFootprint',ksuToolsLoadFootprint())
 ##
 
 class ksuToolsExportModel:
@@ -1136,34 +1136,34 @@ class ksuToolsExport3DStep:
 FreeCADGui.addCommand('ksuToolsExport3DStep',ksuToolsExport3DStep())
 ##
 
-class ksuToolsMakeUnion:
-    "ksu tools Make a Union object"
- 
-    def GetResources(self):
-        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'fusion.svg') , # the name of a svg file available in the resources
-                     'MenuText': "Make Union" ,
-                     'ToolTip' : "ksu Make a Union of selected objects"}
- 
-    def IsActive(self):
-        #if FreeCAD.ActiveDocument == None:
-        #    return False
-        #else:
-        #    return True
-        #import kicadStepUptools
-        return True
- 
-    def Activated(self):
-        # do something here...
-        import kicadStepUptools
-        #if not kicadStepUptools.checkInstance():
-        #    reload( kicadStepUptools )
-        if reload_Gui:
-            reload_lib( kicadStepUptools )
-        #from kicadStepUptools import onPushPCB
-        #FreeCAD.Console.PrintWarning( 'active :)\n' )
-        kicadStepUptools.group_part_union()
-
-FreeCADGui.addCommand('ksuToolsMakeUnion',ksuToolsMakeUnion())
+#!#class ksuToolsMakeUnion:
+#!#    "ksu tools Make a Union object"
+#!# 
+#!#    def GetResources(self):
+#!#        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'fusion.svg') , # the name of a svg file available in the resources
+#!#                     'MenuText': "Make Union" ,
+#!#                     'ToolTip' : "ksu Make a Union of selected objects"}
+#!# 
+#!#    def IsActive(self):
+#!#        #if FreeCAD.ActiveDocument == None:
+#!#        #    return False
+#!#        #else:
+#!#        #    return True
+#!#        #import kicadStepUptools
+#!#        return True
+#!# 
+#!#    def Activated(self):
+#!#        # do something here...
+#!#        import kicadStepUptools
+#!#        #if not kicadStepUptools.checkInstance():
+#!#        #    reload( kicadStepUptools )
+#!#        if reload_Gui:
+#!#            reload_lib( kicadStepUptools )
+#!#        #from kicadStepUptools import onPushPCB
+#!#        #FreeCAD.Console.PrintWarning( 'active :)\n' )
+#!#        kicadStepUptools.group_part_union()
+#!#
+#!#FreeCADGui.addCommand('ksuToolsMakeUnion',ksuToolsMakeUnion())
 ##
 
 #!#class ksuToolsMakeCompound:
@@ -1607,31 +1607,31 @@ FreeCADGui.addCommand('ksuToolsPullPCB',ksuToolsPullPCB())
 # FreeCADGui.addCommand('ksuToolsEdit',ksuToolsEdit())
 ##
 
-class ksuToolsCollisions:
-    "ksu tools Check Collisions object"
- 
-    def GetResources(self):
-        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'collisions.svg') , # the name of a svg file available in the resources
-                     'MenuText': "Check Collisions" ,
-                     'ToolTip' : "ksu Check Collisions and Interferences"}
- 
-    def IsActive(self):
-        return True
- 
-    def Activated(self):
-        # do something here...
-        import kicadStepUptools
-        #if not kicadStepUptools.checkInstance():
-        #    reload( kicadStepUptools )
-        if reload_Gui:
-            reload_lib( kicadStepUptools )
-        #FreeCAD.Console.PrintWarning( 'active :)\n' )
-        FreeCAD.ActiveDocument.openTransaction('collisions')
-        kicadStepUptools.routineCollisions()
-        FreeCAD.ActiveDocument.commitTransaction()
-
-FreeCADGui.addCommand('ksuToolsCollisions',ksuToolsCollisions())
-##
+#!#class ksuToolsCollisions:
+#!#    "ksu tools Check Collisions object"
+#!# 
+#!#    def GetResources(self):
+#!#        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'collisions.svg') , # the name of a svg file available in the resources
+#!#                     'MenuText': "Check Collisions" ,
+#!#                     'ToolTip' : "ksu Check Collisions and Interferences"}
+#!# 
+#!#    def IsActive(self):
+#!#        return True
+#!# 
+#!#    def Activated(self):
+#!#        # do something here...
+#!#        import kicadStepUptools
+#!#        #if not kicadStepUptools.checkInstance():
+#!#        #    reload( kicadStepUptools )
+#!#        if reload_Gui:
+#!#            reload_lib( kicadStepUptools )
+#!#        #FreeCAD.Console.PrintWarning( 'active :)\n' )
+#!#        FreeCAD.ActiveDocument.openTransaction('collisions')
+#!#        kicadStepUptools.routineCollisions()
+#!#        FreeCAD.ActiveDocument.commitTransaction()
+#!#
+#!#FreeCADGui.addCommand('ksuToolsCollisions',ksuToolsCollisions())
+#!###
 
 #!#class ksuTools3D2D:
 #!#   "ksu tools 3D to 2D object"
@@ -1681,66 +1681,66 @@ FreeCADGui.addCommand('ksuToolsCollisions',ksuToolsCollisions())
 #!#
 #!#FreeCADGui.addCommand('ksuTools3D2D',ksuTools3D2D())
 ##
-class ksuToolsTurnTable:
-    "ksu tools TurnTable"
- 
-    def GetResources(self):
-        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'texture_turntable.svg') , # the name of a svg file available in the resources
-                     'MenuText': "TurnTable" ,
-                     'ToolTip' : "ksu TurnTable"}
- 
-    def IsActive(self):
-        if FreeCAD.ActiveDocument is None:
-            return False
-        else:
-            return True
- 
-    def Activated(self):
-        # do something here...
-        # https://forum.freecadweb.org/viewtopic.php?f=3&t=28795
-        
-        ## references
-        # My 2 favorite docs about coin are :
-        # http://www-evasion.imag.fr/~Francois.Fa ... index.html
-        # https://grey.colorado.edu/coin3d/annotated.html
-        
-        imgfilename = os.path.join( ksuWB_icons_path , '../textures/infinite_reflection_blur.png')
-        paramGet = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/View")
-        #old_AutoRotation = paramGet.GetBool("UseAutoRotation")
-        #print(old_AutoRotation);print(paramGet.GetBool("UseAutoRotation"))
-        paramGet.SetBool("UseAutoRotation",1)
-        sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
-        tex = sg.getByName("myTexture")
-        tc = sg.getByName("myTextCoord")
-        if tex: # remove existing
-            sg.removeChild(tex)
-        else: # or insert a new one
-            tex =  coin.SoTexture2()
-            tex.setName("myTexture")
-            #jpgfilename = QtGui.QFileDialog.getOpenFileName(QtGui.qApp.activeWindow(),'Open image file','*.jpg')
-            #tex.filename = str(jpgfilename[0])
-            #print(str(jpgfilename[0]))
-            tex.filename = str(imgfilename)
-            #print (str(imgfilename))
-            sg.insertChild(tex,1)
-            FreeCADGui.ActiveDocument.ActiveView.startAnimating(0,1,0,0.2)
-        if tc:
-            sg.removeChild(tc)
-            FreeCADGui.ActiveDocument.ActiveView.stopAnimating()
-            # uar = 0 if (old_AutoRotation) else 1
-            #if (old_AutoRotation):
-            #    uar = 1 
-            #else:
-            #    uar = 0
-            #paramGet.SetBool("UseAutoRotation",uar)
-            #print(old_AutoRotation);print (uar);print(paramGet.GetBool("UseAutoRotation"))
-        else:
-            tc = coin.SoTextureCoordinateEnvironment()
-            tc.setName("myTextCoord")
-            sg.insertChild(tc,2)
-        
-
-FreeCADGui.addCommand('ksuToolsTurnTable',ksuToolsTurnTable())
+#!#class ksuToolsTurnTable:
+#!#    "ksu tools TurnTable"
+#!# 
+#!#    def GetResources(self):
+#!#        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'texture_turntable.svg') , # the name of a svg file available in the resources
+#!#                     'MenuText': "TurnTable" ,
+#!#                     'ToolTip' : "ksu TurnTable"}
+#!# 
+#!#    def IsActive(self):
+#!#        if FreeCAD.ActiveDocument is None:
+#!#            return False
+#!#        else:
+#!#            return True
+#!# 
+#!#    def Activated(self):
+#!#        # do something here...
+#!#        # https://forum.freecadweb.org/viewtopic.php?f=3&t=28795
+#!#        
+#!#        ## references
+#!#        # My 2 favorite docs about coin are :
+#!#        # http://www-evasion.imag.fr/~Francois.Fa ... index.html
+#!#        # https://grey.colorado.edu/coin3d/annotated.html
+#!#        
+#!#        imgfilename = os.path.join( ksuWB_icons_path , '../textures/infinite_reflection_blur.png')
+#!#        paramGet = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/View")
+#!#        #old_AutoRotation = paramGet.GetBool("UseAutoRotation")
+#!#        #print(old_AutoRotation);print(paramGet.GetBool("UseAutoRotation"))
+#!#        paramGet.SetBool("UseAutoRotation",1)
+#!#        sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
+#!#        tex = sg.getByName("myTexture")
+#!#        tc = sg.getByName("myTextCoord")
+#!#        if tex: # remove existing
+#!#            sg.removeChild(tex)
+#!#        else: # or insert a new one
+#!#            tex =  coin.SoTexture2()
+#!#            tex.setName("myTexture")
+#!#            #jpgfilename = QtGui.QFileDialog.getOpenFileName(QtGui.qApp.activeWindow(),'Open image file','*.jpg')
+#!#            #tex.filename = str(jpgfilename[0])
+#!#            #print(str(jpgfilename[0]))
+#!#            tex.filename = str(imgfilename)
+#!#            #print (str(imgfilename))
+#!#            sg.insertChild(tex,1)
+#!#            FreeCADGui.ActiveDocument.ActiveView.startAnimating(0,1,0,0.2)
+#!#        if tc:
+#!#            sg.removeChild(tc)
+#!#            FreeCADGui.ActiveDocument.ActiveView.stopAnimating()
+#!#            # uar = 0 if (old_AutoRotation) else 1
+#!#            #if (old_AutoRotation):
+#!#            #    uar = 1 
+#!#            #else:
+#!#            #    uar = 0
+#!#            #paramGet.SetBool("UseAutoRotation",uar)
+#!#            #print(old_AutoRotation);print (uar);print(paramGet.GetBool("UseAutoRotation"))
+#!#        else:
+#!#            tc = coin.SoTextureCoordinateEnvironment()
+#!#            tc.setName("myTextCoord")
+#!#            sg.insertChild(tc,2)
+#!#        
+#!#
+#!#FreeCADGui.addCommand('ksuToolsTurnTable',ksuToolsTurnTable())
 ##
 
 #!#class ksuToolsConstrainator:
@@ -1873,77 +1873,77 @@ FreeCADGui.addCommand('ksuToolsTurnTable',ksuToolsTurnTable())
 #!#FreeCADGui.addCommand('ksuToolsEdges2Sketch',ksuToolsEdges2Sketch())
 ##
 
-class ksuToolsResetPartPlacement:
-    "ksu tools Reset PartPlacement"
-    #####################################
-    # Copyright (c) openBrain 2019
-    # Licensed under LGPL v2
-    #
-    # This macro will reset position of all part containers to document origin while keeping the absolute object positions
-    # __Web__ = 'https://www.freecadweb.org/wiki/Macro_PlacementAbsolufy'
-    # Version history :
-    # *0.1 : alpha release, almost no test performed
-    # *0.2 : some typo improvement + commenting for official PR
-    #
-    #####################################
-    def GetResources(self):
-        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'resetPartPlacement.svg') , # the name of a svg file available in the resources
-                     'MenuText': "Reset Part Placement" ,
-                     'ToolTip' : "ksu Reset Placement for all Part containers in selection"}
-    def getLinkGlobalPlacement(self,ob):
-        # print(ob.Name,'Link object')
-        # FreeCAD.Console.PrintMessage(ob.Parents)
-        # FreeCAD.Console.PrintWarning(ob.Parents[0][0].Name+' '+ob.Parents[0][1])
-        # FreeCAD.Console.PrintWarning(Part.getShape(ob.Parents[0][0],ob.Parents[0][1]).Placement)
-        # return ob.Label
-        return Part.getShape(ob.Parents[0][0],ob.Parents[0][1]).Placement
-    #
-    def Activated(self):        
-        doc = FreeCAD.ActiveDocument
-        if doc is None:
-            FreeCAD.Console.Print("No Active Document found")
-            return
-        else:
-            FreeCAD.ActiveDocument.openTransaction("Absolufy") #open a transaction for undo management
-            currState = {} #initialize a dictionary to store current object placements
-            sel = FreeCADGui.Selection.getSelection()
-            for obj in sel: ## App.ActiveDocument.Objects: #going through active document objects
-                if "Placement" in obj.PropertiesList and obj.TypeId != 'Sketcher::SketchObject' \
-                   and 'body object' not in str(obj.InList): #if object has a Placement property
-                    #FreeCAD.Console.PrintWarning(obj.TypeId)
-                    if hasattr(obj,'getGlobalPlacement'):
-                        currState[obj] = obj.getGlobalPlacement() #store the object pointer with its global placement
-                    #elif obj.TypeId == 'App::Link':
-                    #    obj.getLinkGlobalPlacement()
-                for o in obj.OutListRecursive:
-                    if "Placement" in o.PropertiesList and o.TypeId != 'Sketcher::SketchObject' \
-                      and 'body object' not in str(o.InList): #if object has a Placement property
-                        #FreeCAD.Console.PrintWarning(o.TypeId)
-                        if hasattr(o,'getGlobalPlacement'):
-                            currState[o] = o.getGlobalPlacement() #store the object pointer with its global placement
-                        elif o.TypeId == 'App::Link':
-                            plc = self.getLinkGlobalPlacement(o)
-                            print(plc)
-                            currState[o] = plc
-                            
-            # FreeCAD.ActiveDocument.openTransaction("Absolufy") #open a transaction for undo management
-            
-            for obj, plac in currState.items(): #going through all moveable objects
-                if obj.isDerivedFrom("App::Part"): #if object is a part container
-                    obj.Placement = FreeCAD.Placement(FreeCAD.Vector(0,0,0),FreeCAD.Rotation(0,0,0)) #reset its placement to global document origin
-                elif obj.TypeId[:5] == "App::" and obj.TypeId != 'App::Link': #if object is another App type (typically an origin axis or plane)
-                    None #do nothing
-                else: #for all other objects
-                    obj.Placement = plac #replace them at their global (absolute) placement
-            
-            FreeCAD.ActiveDocument.commitTransaction() #commit transaction
-        return
-
-    def IsActive(self):
-        doc = FreeCAD.activeDocument()
-        if doc is None: return False
-        return True
-FreeCADGui.addCommand('ksuToolsResetPartPlacement',ksuToolsResetPartPlacement())
+#!#class ksuToolsResetPartPlacement:
+#!#    "ksu tools Reset PartPlacement"
+#!#    #####################################
+#!#    # Copyright (c) openBrain 2019
+#!#    # Licensed under LGPL v2
+#!#    #
+#!#    # This macro will reset position of all part containers to document origin while keeping the absolute object positions
+#!#    # __Web__ = 'https://www.freecadweb.org/wiki/Macro_PlacementAbsolufy'
+#!#    # Version history :
+#!#    # *0.1 : alpha release, almost no test performed
+#!#    # *0.2 : some typo improvement + commenting for official PR
+#!#    #
+#!#    #####################################
+#!#    def GetResources(self):
+#!#        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'resetPartPlacement.svg') , # the name of a svg file available in the resources
+#!#                     'MenuText': "Reset Part Placement" ,
+#!#                     'ToolTip' : "ksu Reset Placement for all Part containers in selection"}
+#!#    def getLinkGlobalPlacement(self,ob):
+#!#        # print(ob.Name,'Link object')
+#!#        # FreeCAD.Console.PrintMessage(ob.Parents)
+#!#        # FreeCAD.Console.PrintWarning(ob.Parents[0][0].Name+' '+ob.Parents[0][1])
+#!#        # FreeCAD.Console.PrintWarning(Part.getShape(ob.Parents[0][0],ob.Parents[0][1]).Placement)
+#!#        # return ob.Label
+#!#        return Part.getShape(ob.Parents[0][0],ob.Parents[0][1]).Placement
+#!#    #
+#!#    def Activated(self):        
+#!#        doc = FreeCAD.ActiveDocument
+#!#        if doc is None:
+#!#            FreeCAD.Console.Print("No Active Document found")
+#!#            return
+#!#        else:
+#!#            FreeCAD.ActiveDocument.openTransaction("Absolufy") #open a transaction for undo management
+#!#            currState = {} #initialize a dictionary to store current object placements
+#!#            sel = FreeCADGui.Selection.getSelection()
+#!#            for obj in sel: ## App.ActiveDocument.Objects: #going through active document objects
+#!#                if "Placement" in obj.PropertiesList and obj.TypeId != 'Sketcher::SketchObject' \
+#!#                   and 'body object' not in str(obj.InList): #if object has a Placement property
+#!#                    #FreeCAD.Console.PrintWarning(obj.TypeId)
+#!#                    if hasattr(obj,'getGlobalPlacement'):
+#!#                        currState[obj] = obj.getGlobalPlacement() #store the object pointer with its global placement
+#!#                    #elif obj.TypeId == 'App::Link':
+#!#                    #    obj.getLinkGlobalPlacement()
+#!#                for o in obj.OutListRecursive:
+#!#                    if "Placement" in o.PropertiesList and o.TypeId != 'Sketcher::SketchObject' \
+#!#                      and 'body object' not in str(o.InList): #if object has a Placement property
+#!#                        #FreeCAD.Console.PrintWarning(o.TypeId)
+#!#                        if hasattr(o,'getGlobalPlacement'):
+#!#                            currState[o] = o.getGlobalPlacement() #store the object pointer with its global placement
+#!#                        elif o.TypeId == 'App::Link':
+#!#                            plc = self.getLinkGlobalPlacement(o)
+#!#                            print(plc)
+#!#                            currState[o] = plc
+#!#                            
+#!#            # FreeCAD.ActiveDocument.openTransaction("Absolufy") #open a transaction for undo management
+#!#            
+#!#            for obj, plac in currState.items(): #going through all moveable objects
+#!#                if obj.isDerivedFrom("App::Part"): #if object is a part container
+#!#                    obj.Placement = FreeCAD.Placement(FreeCAD.Vector(0,0,0),FreeCAD.Rotation(0,0,0)) #reset its placement to global document origin
+#!#                elif obj.TypeId[:5] == "App::" and obj.TypeId != 'App::Link': #if object is another App type (typically an origin axis or plane)
+#!#                    None #do nothing
+#!#                else: #for all other objects
+#!#                    obj.Placement = plac #replace them at their global (absolute) placement
+#!#            
+#!#            FreeCAD.ActiveDocument.commitTransaction() #commit transaction
+#!#        return
+#!#
+#!#    def IsActive(self):
+#!#        doc = FreeCAD.activeDocument()
+#!#        if doc is None: return False
+#!#        return True
+#!#FreeCADGui.addCommand('ksuToolsResetPartPlacement',ksuToolsResetPartPlacement())
 ##
 
 #!#class ksuToolsResetPlacement:
@@ -2606,142 +2606,142 @@ FreeCADGui.addCommand('ksuToolsResetPartPlacement',ksuToolsResetPartPlacement())
 #!#FreeCADGui.addCommand('ksuToolsReLinkBinder',ksuToolsReLinkBinder())
 
 ####
-class ksuToolsUnion:
-    "ksu tools Make Union objects"
- 
-    def GetResources(self):
-        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'Part-Fuse.svg') , # the name of a svg file available in the resources
-                     'MenuText': "Fuse objects" ,
-                     'ToolTip' : "Make Union (Fuse) objects"}
- 
-    def IsActive(self):
-        return True
- 
-    def Activated(self):
-        # do something here...
-        if FreeCADGui.Selection.getSelection():
-            sel=FreeCADGui.Selection.getSelection()
-            def mk_str(input):
-                if (sys.version_info > (3, 0)):  #py3
-                    if isinstance(input, str):
-                        return input
-                    else:
-                        input =  input.encode('utf-8')
-                        return input
-                else:  #py2
-                    if type(input) == unicode:
-                        input =  input.encode('utf-8')
-                        return input
-                    else:
-                        return input
-            ##
-            if len(sel)<=1:
-                    msg="Select at least two objects with Shape to be copied!\n"
-                    reply = QtGui.QMessageBox.information(None,"Warning", msg)
-                    FreeCAD.Console.PrintWarning(msg)             
-            else: #sel[0].TypeId != 'PartDesign::Body'):
-                FreeCAD.activeDocument().addObject("Part::MultiFuse","Fusion")
-                Fusion = FreeCAD.activeDocument().ActiveObject
-                Fusion.Shapes = sel
-                FreeCAD.ActiveDocument.recompute()
-        else:
-            #FreeCAD.Console.PrintError("Select elements from dxf imported file\n")
-            reply = QtGui.QMessageBox.information(None,"Warning", "Select at least two objects with Shape to be copied!")
-            FreeCAD.Console.PrintWarning("Select at least two objects with Shape to be copied!\n")             
-
-FreeCADGui.addCommand('ksuToolsUnion',ksuToolsUnion())
+#!#class ksuToolsUnion:
+#!#    "ksu tools Make Union objects"
+#!# 
+#!#    def GetResources(self):
+#!#        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'Part-Fuse.svg') , # the name of a svg file available in the resources
+#!#                     'MenuText': "Fuse objects" ,
+#!#                     'ToolTip' : "Make Union (Fuse) objects"}
+#!# 
+#!#    def IsActive(self):
+#!#        return True
+#!# 
+#!#    def Activated(self):
+#!#        # do something here...
+#!#        if FreeCADGui.Selection.getSelection():
+#!#            sel=FreeCADGui.Selection.getSelection()
+#!#            def mk_str(input):
+#!#                if (sys.version_info > (3, 0)):  #py3
+#!#                    if isinstance(input, str):
+#!#                        return input
+#!#                    else:
+#!#                        input =  input.encode('utf-8')
+#!#                        return input
+#!#                else:  #py2
+#!#                    if type(input) == unicode:
+#!#                        input =  input.encode('utf-8')
+#!#                        return input
+#!#                    else:
+#!#                        return input
+#!#            ##
+#!#            if len(sel)<=1:
+#!#                    msg="Select at least two objects with Shape to be copied!\n"
+#!#                    reply = QtGui.QMessageBox.information(None,"Warning", msg)
+#!#                    FreeCAD.Console.PrintWarning(msg)             
+#!#            else: #sel[0].TypeId != 'PartDesign::Body'):
+#!#                FreeCAD.activeDocument().addObject("Part::MultiFuse","Fusion")
+#!#                Fusion = FreeCAD.activeDocument().ActiveObject
+#!#                Fusion.Shapes = sel
+#!#                FreeCAD.ActiveDocument.recompute()
+#!#        else:
+#!#            #FreeCAD.Console.PrintError("Select elements from dxf imported file\n")
+#!#            reply = QtGui.QMessageBox.information(None,"Warning", "Select at least two objects with Shape to be copied!")
+#!#            FreeCAD.Console.PrintWarning("Select at least two objects with Shape to be copied!\n")             
+#!#
+#!#FreeCADGui.addCommand('ksuToolsUnion',ksuToolsUnion())
 
 ####
-class ksuToolsSimpleCopy:
-    "ksu tools Simple Copy object"
- 
-    def GetResources(self):
-        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'simple_copy.svg') , # the name of a svg file available in the resources
-                     'MenuText': "Simple Copy" ,
-                     'ToolTip' : "ksu Simple Copy object"}
- 
-    def IsActive(self):
-        return True
- 
-    def Activated(self):
-        # do something here...
-        if FreeCADGui.Selection.getSelection():
-            sel=FreeCADGui.Selection.getSelection()
-            def mk_str(input):
-                if (sys.version_info > (3, 0)):  #py3
-                    if isinstance(input, str):
-                        return input
-                    else:
-                        input =  input.encode('utf-8')
-                        return input
-                else:  #py2
-                    if type(input) == unicode:
-                        input =  input.encode('utf-8')
-                        return input
-                    else:
-                        return input
-            ##
-            if len(sel)<1:
-                    msg="Select at least one object with Shape to be copied!\n"
-                    reply = QtGui.QMessageBox.information(None,"Warning", msg)
-                    FreeCAD.Console.PrintWarning(msg)             
-            else: #sel[0].TypeId != 'PartDesign::Body'):
-                for obj_tocopy in sel:
-                #obj_tocopy=sel[0]
-                    cp_label=mk_str(obj_tocopy.Label)+u'_sc'
-                    if hasattr(FreeCAD.ActiveDocument.getObject(obj_tocopy.Name), "Shape"):
-                        FreeCAD.ActiveDocument.addObject('Part::Feature',cp_label).Shape=FreeCAD.ActiveDocument.getObject(obj_tocopy.Name).Shape
-                        newObj = FreeCAD.ActiveDocument.ActiveObject
-                        newObjV = FreeCADGui.ActiveDocument.ActiveObject
-                        newObj.Label=cp_label
-                        #FreeCAD.Console.PrintMessage(obj_tocopy.Label);FreeCAD.Console.PrintMessage('\n')
-                        #FreeCAD.Console.PrintMessage(obj_tocopy.TypeId)
-                        #FreeCAD.Console.PrintMessage(obj_tocopy.OutList)
-                        #FreeCAD.Console.PrintMessage(obj_tocopy.TypeId);FreeCAD.Console.PrintMessage('\n')
-                        if obj_tocopy.TypeId == 'App::Part':
-                            for subobj in obj_tocopy.OutList:
-                                #FreeCAD.Console.PrintMessage(subobj.Label);FreeCAD.Console.PrintMessage('\n')
-                                if hasattr(FreeCADGui.ActiveDocument.getObject(subobj.Name),'ShapeColor'):# and ('Origin' not in FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name).TypeId):
-                                    # if 'LinkView' in dir(FreeCADGui):
-                                    #     FreeCAD.ActiveDocument.ActiveObject.ViewObject.ShapeColor=getattr(FreeCAD.ActiveDocument.getObject(obj_tocopy.Name).getLinkedObject(True).ViewObject,'ShapeColor',FreeCAD.ActiveDocument.getObject(obj_tocopy.Name).ViewObject.ShapeColor)
-                                    #     FreeCAD.ActiveDocument.ActiveObject.ViewObject.LineColor=getattr(FreeCAD.ActiveDocument.getObject(obj_tocopy.Name).getLinkedObject(True).ViewObject,'LineColor',FreeCAD.ActiveDocument.getObject(obj_tocopy.Name).ViewObject.LineColor)
-                                    #else:
-                                    newObjV.ShapeColor=FreeCADGui.ActiveDocument.getObject(subobj.Name).ShapeColor
-                                    #FreeCAD.Console.PrintMessage(subobj.Label);FreeCAD.Console.PrintMessage(' ShapeColor ' +str(FreeCADGui.ActiveDocument.getObject(subobj.Name).ShapeColor)+ '\n')
-                                    if hasattr(FreeCADGui.ActiveDocument.getObject(subobj.Name),'LineColor'):
-                                        #FreeCAD.Console.PrintMessage(subobj.Label);FreeCAD.Console.PrintMessage(' LineColor ' +str(FreeCADGui.ActiveDocument.getObject(subobj.Name).LineColor)+ '\n')
-                                        newObjV.LineColor=FreeCADGui.ActiveDocument.getObject(subobj.Name).LineColor
-                                        newObjV.PointColor=FreeCADGui.ActiveDocument.getObject(subobj.Name).PointColor
-                                    if hasattr(FreeCADGui.ActiveDocument.getObject(subobj.Name),'DiffuseColor'):
-                                        #FreeCAD.Console.PrintMessage(subobj.Label);FreeCAD.Console.PrintMessage(' DiffuseColor ' +str(FreeCADGui.ActiveDocument.getObject(subobj.Name).DiffuseColor)+ '\n')
-                                        newObjV.DiffuseColor=FreeCADGui.ActiveDocument.getObject(subobj.Name).DiffuseColor
-                                    if hasattr(FreeCADGui.ActiveDocument.getObject(subobj.Name),'Transparency'):
-                                        #FreeCAD.Console.PrintMessage(subobj.Label);FreeCAD.Console.PrintMessage(' Transparency ' +str(FreeCADGui.ActiveDocument.getObject(subobj.Name).Transparency)+ '\n')
-                                        newObjV.Transparency=FreeCADGui.ActiveDocument.getObject(subobj.Name).Transparency
-                        elif hasattr(FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name),'ShapeColor'):# and ('Origin' not in FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name).TypeId):
-                            # if 'LinkView' in dir(FreeCADGui):
-                            #     FreeCAD.ActiveDocument.ActiveObject.ViewObject.ShapeColor=getattr(FreeCAD.ActiveDocument.getObject(obj_tocopy.Name).getLinkedObject(True).ViewObject,'ShapeColor',FreeCAD.ActiveDocument.getObject(obj_tocopy.Name).ViewObject.ShapeColor)
-                            #     FreeCAD.ActiveDocument.ActiveObject.ViewObject.LineColor=getattr(FreeCAD.ActiveDocument.getObject(obj_tocopy.Name).getLinkedObject(True).ViewObject,'LineColor',FreeCAD.ActiveDocument.getObject(obj_tocopy.Name).ViewObject.LineColor)
-                            #else:
-                            FreeCADGui.ActiveDocument.ActiveObject.ShapeColor=FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name).ShapeColor
-                            if hasattr(FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name),'LineColor'):
-                                FreeCADGui.ActiveDocument.ActiveObject.LineColor=FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name).LineColor
-                                FreeCADGui.ActiveDocument.ActiveObject.PointColor=FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name).PointColor
-                            if hasattr(FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name),'DiffuseColor'):
-                                FreeCADGui.ActiveDocument.ActiveObject.DiffuseColor=FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name).DiffuseColor
-                            if hasattr(FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name),'Transparency'):
-                                FreeCADGui.ActiveDocument.ActiveObject.Transparency=FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name).Transparency
-                        else:
-                            FreeCAD.Console.PrintWarning('missing copy of color attributes')
-                        FreeCAD.ActiveDocument.recompute()
-                    #else:
-                    #    FreeCAD.Console.PrintWarning("Select object with a \"Shape\" to be copied!\n")             
-        else:
-            #FreeCAD.Console.PrintError("Select elements from dxf imported file\n")
-            reply = QtGui.QMessageBox.information(None,"Warning", "Select at least one object with Shape to be copied!")
-            FreeCAD.Console.PrintWarning("Select at least one object with Shape to be copied!\n")             
-
-FreeCADGui.addCommand('ksuToolsSimpleCopy',ksuToolsSimpleCopy())
+#!#class ksuToolsSimpleCopy:
+#!#    "ksu tools Simple Copy object"
+#!# 
+#!#    def GetResources(self):
+#!#        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'simple_copy.svg') , # the name of a svg file available in the resources
+#!#                     'MenuText': "Simple Copy" ,
+#!#                     'ToolTip' : "ksu Simple Copy object"}
+#!# 
+#!#    def IsActive(self):
+#!#        return True
+#!# 
+#!#    def Activated(self):
+#!#        # do something here...
+#!#        if FreeCADGui.Selection.getSelection():
+#!#            sel=FreeCADGui.Selection.getSelection()
+#!#            def mk_str(input):
+#!#                if (sys.version_info > (3, 0)):  #py3
+#!#                    if isinstance(input, str):
+#!#                        return input
+#!#                    else:
+#!#                        input =  input.encode('utf-8')
+#!#                        return input
+#!#                else:  #py2
+#!#                    if type(input) == unicode:
+#!#                        input =  input.encode('utf-8')
+#!#                        return input
+#!#                    else:
+#!#                        return input
+#!#            ##
+#!#            if len(sel)<1:
+#!#                    msg="Select at least one object with Shape to be copied!\n"
+#!#                    reply = QtGui.QMessageBox.information(None,"Warning", msg)
+#!#                    FreeCAD.Console.PrintWarning(msg)             
+#!#            else: #sel[0].TypeId != 'PartDesign::Body'):
+#!#                for obj_tocopy in sel:
+#!#                #obj_tocopy=sel[0]
+#!#                    cp_label=mk_str(obj_tocopy.Label)+u'_sc'
+#!#                    if hasattr(FreeCAD.ActiveDocument.getObject(obj_tocopy.Name), "Shape"):
+#!#                        FreeCAD.ActiveDocument.addObject('Part::Feature',cp_label).Shape=FreeCAD.ActiveDocument.getObject(obj_tocopy.Name).Shape
+#!#                        newObj = FreeCAD.ActiveDocument.ActiveObject
+#!#                        newObjV = FreeCADGui.ActiveDocument.ActiveObject
+#!#                        newObj.Label=cp_label
+#!#                        #FreeCAD.Console.PrintMessage(obj_tocopy.Label);FreeCAD.Console.PrintMessage('\n')
+#!#                        #FreeCAD.Console.PrintMessage(obj_tocopy.TypeId)
+#!#                        #FreeCAD.Console.PrintMessage(obj_tocopy.OutList)
+#!#                        #FreeCAD.Console.PrintMessage(obj_tocopy.TypeId);FreeCAD.Console.PrintMessage('\n')
+#!#                        if obj_tocopy.TypeId == 'App::Part':
+#!#                            for subobj in obj_tocopy.OutList:
+#!#                                #FreeCAD.Console.PrintMessage(subobj.Label);FreeCAD.Console.PrintMessage('\n')
+#!#                                if hasattr(FreeCADGui.ActiveDocument.getObject(subobj.Name),'ShapeColor'):# and ('Origin' not in FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name).TypeId):
+#!#                                    # if 'LinkView' in dir(FreeCADGui):
+#!#                                    #     FreeCAD.ActiveDocument.ActiveObject.ViewObject.ShapeColor=getattr(FreeCAD.ActiveDocument.getObject(obj_tocopy.Name).getLinkedObject(True).ViewObject,'ShapeColor',FreeCAD.ActiveDocument.getObject(obj_tocopy.Name).ViewObject.ShapeColor)
+#!#                                    #     FreeCAD.ActiveDocument.ActiveObject.ViewObject.LineColor=getattr(FreeCAD.ActiveDocument.getObject(obj_tocopy.Name).getLinkedObject(True).ViewObject,'LineColor',FreeCAD.ActiveDocument.getObject(obj_tocopy.Name).ViewObject.LineColor)
+#!#                                    #else:
+#!#                                    newObjV.ShapeColor=FreeCADGui.ActiveDocument.getObject(subobj.Name).ShapeColor
+#!#                                    #FreeCAD.Console.PrintMessage(subobj.Label);FreeCAD.Console.PrintMessage(' ShapeColor ' +str(FreeCADGui.ActiveDocument.getObject(subobj.Name).ShapeColor)+ '\n')
+#!#                                    if hasattr(FreeCADGui.ActiveDocument.getObject(subobj.Name),'LineColor'):
+#!#                                        #FreeCAD.Console.PrintMessage(subobj.Label);FreeCAD.Console.PrintMessage(' LineColor ' +str(FreeCADGui.ActiveDocument.getObject(subobj.Name).LineColor)+ '\n')
+#!#                                        newObjV.LineColor=FreeCADGui.ActiveDocument.getObject(subobj.Name).LineColor
+#!#                                        newObjV.PointColor=FreeCADGui.ActiveDocument.getObject(subobj.Name).PointColor
+#!#                                    if hasattr(FreeCADGui.ActiveDocument.getObject(subobj.Name),'DiffuseColor'):
+#!#                                        #FreeCAD.Console.PrintMessage(subobj.Label);FreeCAD.Console.PrintMessage(' DiffuseColor ' +str(FreeCADGui.ActiveDocument.getObject(subobj.Name).DiffuseColor)+ '\n')
+#!#                                        newObjV.DiffuseColor=FreeCADGui.ActiveDocument.getObject(subobj.Name).DiffuseColor
+#!#                                    if hasattr(FreeCADGui.ActiveDocument.getObject(subobj.Name),'Transparency'):
+#!#                                        #FreeCAD.Console.PrintMessage(subobj.Label);FreeCAD.Console.PrintMessage(' Transparency ' +str(FreeCADGui.ActiveDocument.getObject(subobj.Name).Transparency)+ '\n')
+#!#                                        newObjV.Transparency=FreeCADGui.ActiveDocument.getObject(subobj.Name).Transparency
+#!#                        elif hasattr(FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name),'ShapeColor'):# and ('Origin' not in FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name).TypeId):
+#!#                            # if 'LinkView' in dir(FreeCADGui):
+#!#                            #     FreeCAD.ActiveDocument.ActiveObject.ViewObject.ShapeColor=getattr(FreeCAD.ActiveDocument.getObject(obj_tocopy.Name).getLinkedObject(True).ViewObject,'ShapeColor',FreeCAD.ActiveDocument.getObject(obj_tocopy.Name).ViewObject.ShapeColor)
+#!#                            #     FreeCAD.ActiveDocument.ActiveObject.ViewObject.LineColor=getattr(FreeCAD.ActiveDocument.getObject(obj_tocopy.Name).getLinkedObject(True).ViewObject,'LineColor',FreeCAD.ActiveDocument.getObject(obj_tocopy.Name).ViewObject.LineColor)
+#!#                            #else:
+#!#                            FreeCADGui.ActiveDocument.ActiveObject.ShapeColor=FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name).ShapeColor
+#!#                            if hasattr(FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name),'LineColor'):
+#!#                                FreeCADGui.ActiveDocument.ActiveObject.LineColor=FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name).LineColor
+#!#                                FreeCADGui.ActiveDocument.ActiveObject.PointColor=FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name).PointColor
+#!#                            if hasattr(FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name),'DiffuseColor'):
+#!#                                FreeCADGui.ActiveDocument.ActiveObject.DiffuseColor=FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name).DiffuseColor
+#!#                            if hasattr(FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name),'Transparency'):
+#!#                                FreeCADGui.ActiveDocument.ActiveObject.Transparency=FreeCADGui.ActiveDocument.getObject(obj_tocopy.Name).Transparency
+#!#                        else:
+#!#                            FreeCAD.Console.PrintWarning('missing copy of color attributes')
+#!#                        FreeCAD.ActiveDocument.recompute()
+#!#                    #else:
+#!#                    #    FreeCAD.Console.PrintWarning("Select object with a \"Shape\" to be copied!\n")             
+#!#        else:
+#!#            #FreeCAD.Console.PrintError("Select elements from dxf imported file\n")
+#!#            reply = QtGui.QMessageBox.information(None,"Warning", "Select at least one object with Shape to be copied!")
+#!#            FreeCAD.Console.PrintWarning("Select at least one object with Shape to be copied!\n")             
+#!#
+#!#FreeCADGui.addCommand('ksuToolsSimpleCopy',ksuToolsSimpleCopy())
 
 #####
 #!#class ksuToolsDeepCopy:
@@ -3731,28 +3731,28 @@ FreeCADGui.addCommand('ksuToolsEditPrefs',ksuToolsEditPrefs())
 #!# FreeCADGui.addCommand('ksuRemoveSuffix',ksuRemoveSuffix())
 
 #####
-class ksuToolsExplode:
-    "ksu tools Explode"
-    
-    def GetResources(self):
-        mybtn_tooltip ="ksu Tools PCB Explode\nSelect the top container of a kicad PCB to exlode it"
-        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'Explode_Pcb.svg') , # the name of a svg file available in the resources
-                     'MenuText': mybtn_tooltip ,
-                     'ToolTip' : mybtn_tooltip}
- 
-    def IsActive(self):
-        if FreeCAD.ActiveDocument is None:
-            return False
-        else:
-            return True
- 
-    def Activated(self):
-        # do something here...
-        import explode
-        explode.runExplodeGui()
-        #import explode;reload_lib(explode)
-
-FreeCADGui.addCommand('ksuToolsExplode',ksuToolsExplode())
+#!#class ksuToolsExplode:
+#!#    "ksu tools Explode"
+#!#    
+#!#    def GetResources(self):
+#!#        mybtn_tooltip ="ksu Tools PCB Explode\nSelect the top container of a kicad PCB to exlode it"
+#!#        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'Explode_Pcb.svg') , # the name of a svg file available in the resources
+#!#                     'MenuText': mybtn_tooltip ,
+#!#                     'ToolTip' : mybtn_tooltip}
+#!# 
+#!#    def IsActive(self):
+#!#        if FreeCAD.ActiveDocument is None:
+#!#            return False
+#!#        else:
+#!#            return True
+#!# 
+#!#    def Activated(self):
+#!#        # do something here...
+#!#        import explode
+#!#        explode.runExplodeGui()
+#!#        #import explode;reload_lib(explode)
+#!#
+#!#FreeCADGui.addCommand('ksuToolsExplode',ksuToolsExplode())
 #####
 class ksuToolsDefeaturingTools:
     "ksu tools DefeaturingTools"
@@ -3781,35 +3781,35 @@ class ksuToolsDefeaturingTools:
 
 FreeCADGui.addCommand('ksuToolsDefeaturingTools',ksuToolsDefeaturingTools())
 #####
-class ksuToolsRemoveSubTree:
-    "ksu tools Remove Sub Tree"
-    
-    def GetResources(self):
-        mybtn_tooltip ="Remove Sub Tree"
-        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'RemoveSubtree.svg') , # the name of a svg file available in the resources
-                     'MenuText': mybtn_tooltip ,
-                     'ToolTip' : mybtn_tooltip}
- 
-    def IsActive(self):
-        if FreeCADGui.Selection.getSelection():
-            return True
-        #else:
-        #    self.setToolTip("Grayed Tooltip!")
-        #    print(self.ObjectName)
-        #    grayed_tooltip="Grayed Tooltip!"
-        #    mybtn_tooltip=grayed_tooltip
- 
-    def Activated(self):
-        # do something here...
-        from PySide import QtGui, QtCore
-        reply = QtGui.QMessageBox.question(None, "DelTree","Remove Sub Tree?\n[Undo WILL NOT work!]", QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel, QtGui.QMessageBox.Cancel)
-        if reply == QtGui.QMessageBox.Ok:
-            #print('OK clicked.')
-            import kicadStepUptools
-            kicadStepUptools.removesubtree(FreeCADGui.Selection.getSelection())
-        else:
-            FreeCAD.Console.PrintMessage('Cancel clicked.')
-FreeCADGui.addCommand('ksuToolsRemoveSubTree',ksuToolsRemoveSubTree())
+#!#class ksuToolsRemoveSubTree:
+#!#    "ksu tools Remove Sub Tree"
+#!#    
+#!#    def GetResources(self):
+#!#        mybtn_tooltip ="Remove Sub Tree"
+#!#        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'RemoveSubtree.svg') , # the name of a svg file available in the resources
+#!#                     'MenuText': mybtn_tooltip ,
+#!#                     'ToolTip' : mybtn_tooltip}
+#!# 
+#!#    def IsActive(self):
+#!#        if FreeCADGui.Selection.getSelection():
+#!#            return True
+#!#        #else:
+#!#        #    self.setToolTip("Grayed Tooltip!")
+#!#        #    print(self.ObjectName)
+#!#        #    grayed_tooltip="Grayed Tooltip!"
+#!#        #    mybtn_tooltip=grayed_tooltip
+#!# 
+#!#    def Activated(self):
+#!#        # do something here...
+#!#        from PySide import QtGui, QtCore
+#!#        reply = QtGui.QMessageBox.question(None, "DelTree","Remove Sub Tree?\n[Undo WILL NOT work!]", QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel, QtGui.QMessageBox.Cancel)
+#!#        if reply == QtGui.QMessageBox.Ok:
+#!#            #print('OK clicked.')
+#!#            import kicadStepUptools
+#!#            kicadStepUptools.removesubtree(FreeCADGui.Selection.getSelection())
+#!#        else:
+#!#            FreeCAD.Console.PrintMessage('Cancel clicked.')
+#!#FreeCADGui.addCommand('ksuToolsRemoveSubTree',ksuToolsRemoveSubTree())
 ####
 class ksuToolsAddTracks:
     "ksu tools Add Tracks"
@@ -4044,80 +4044,80 @@ FreeCADGui.addCommand('ksuToolsAddSilks',ksuToolsAddSilks())
 #!#       #ImportCQ.open(os.path.join(exs_dir_path, self.exFile))
 
 ##
-class checkSolidExpSTEP():
-    "ksu tools check Export Step"
-    
-    def GetResources(self):
-        mybtn_tooltip ="Check if the selected part would be\nexported to STEP as a single solid"
-        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'Import-Export-STEP.svg') , # the name of a svg file available in the resources
-                     'MenuText': mybtn_tooltip ,
-                     'ToolTip' : mybtn_tooltip}
- 
-    def IsActive(self):
-        if len(FreeCADGui.Selection.getSelection()) == 1:
-            return True
- 
-    def Activated(self):
-        # do something here...
-        from PySide import QtGui, QtCore
-        import tempfile
-    
-        doc=FreeCAD.ActiveDocument
-        docG = FreeCADGui.ActiveDocument
-        if doc is not None:
-            fname = doc.Label #doc.FileName
-            if len(fname) == 0:
-                fname='untitled'
-            tmpdir = tempfile.gettempdir() # get the current temporary directory
-            tempfilepath = os.path.join(tmpdir,fname + u'-exported.step')
-            sel=FreeCADGui.Selection.getSelection()
-            if len (sel) == 1:
-                doc_obj_nbr = len(doc.Objects)
-                __objs__=[]
-                __objs__.append(sel[0])
-                docG.getObject(sel[0].Name).Visibility = False
-                FreeCADGui.Selection.clearSelection()
-                ##ReadShapeCompoundMode
-                paramGetVS = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Import/hSTEP")
-                ReadShapeCompoundMode_status=paramGetVS.GetBool("ReadShapeCompoundMode")
-                #sayerr("checking ReadShapeCompoundMode")
-                print("ReadShapeCompoundMode status "+str(ReadShapeCompoundMode_status))
-                restore_settings = False
-                if ReadShapeCompoundMode_status:
-                    paramGetVS = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Import/hSTEP")
-                    paramGetVS.SetBool("ReadShapeCompoundMode",False)
-                    print("disabling ReadShapeCompoundMode")
-                    restore_settings = True
-                import ImportGui
-                ImportGui.export(__objs__,tempfilepath)
-                del __objs__
-                ImportGui.insert(tempfilepath,doc.Name)
-                if restore_settings:
-                    paramGetVS = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Import/hSTEP")
-                    paramGetVS.SetBool("ReadShapeCompoundMode",True)
-                    print("re-enabling ReadShapeCompoundMode")
-                doc_newobj_nbr = len(doc.Objects)
-                if (doc_newobj_nbr-doc_obj_nbr) >1:
-                    msg='Exporting to STEP would create a multi solids object!\n'
-                    msg1="""Exporting to STEP would create a <b>multi solids object!<b>"""
-                    reply = QtGui.QMessageBox.warning(None,"Warning", msg1)
-                    FreeCAD.Console.PrintError(msg)
-                else:
-                    FreeCADGui.Selection.addSelection(FreeCAD.ActiveDocument.ActiveObject)
-                    ksuToolsCheckSolid.Activated(FreeCAD.ActiveDocument.ActiveObject)
-                    if '.[solid]' not in FreeCAD.ActiveDocument.ActiveObject.Label:
-                        msg='Exporting to STEP would create a single NON solids object!\n'
-                        msg1="""Exporting to STEP would create a <b>single NON solids object!<b>"""
-                        reply = QtGui.QMessageBox.warning(None,"Warning", msg1)
-                        FreeCAD.Console.PrintError(msg)
-                    else:
-                        msg='Exporting to STEP would create a single solids object!\n'
-                        reply = QtGui.QMessageBox.information(None,"Info", msg)
-                        FreeCAD.Console.PrintMessage(msg)
-                FreeCADGui.SendMsgToActiveView("ViewFit")
-                FreeCAD.Console.PrintMessage(tempfilepath+u'\n')
-
-FreeCADGui.addCommand('checkSolidExpSTEP',checkSolidExpSTEP())
+#!#class checkSolidExpSTEP():
+#!#    "ksu tools check Export Step"
+#!#    
+#!#    def GetResources(self):
+#!#        mybtn_tooltip ="Check if the selected part would be\nexported to STEP as a single solid"
+#!#        return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'Import-Export-STEP.svg') , # the name of a svg file available in the resources
+#!#                     'MenuText': mybtn_tooltip ,
+#!#                     'ToolTip' : mybtn_tooltip}
+#!# 
+#!#    def IsActive(self):
+#!#        if len(FreeCADGui.Selection.getSelection()) == 1:
+#!#            return True
+#!# 
+#!#    def Activated(self):
+#!#        # do something here...
+#!#        from PySide import QtGui, QtCore
+#!#        import tempfile
+#!#    
+#!#        doc=FreeCAD.ActiveDocument
+#!#        docG = FreeCADGui.ActiveDocument
+#!#        if doc is not None:
+#!#            fname = doc.Label #doc.FileName
+#!#            if len(fname) == 0:
+#!#                fname='untitled'
+#!#            tmpdir = tempfile.gettempdir() # get the current temporary directory
+#!#            tempfilepath = os.path.join(tmpdir,fname + u'-exported.step')
+#!#            sel=FreeCADGui.Selection.getSelection()
+#!#            if len (sel) == 1:
+#!#                doc_obj_nbr = len(doc.Objects)
+#!#                __objs__=[]
+#!#                __objs__.append(sel[0])
+#!#                docG.getObject(sel[0].Name).Visibility = False
+#!#                FreeCADGui.Selection.clearSelection()
+#!#                ##ReadShapeCompoundMode
+#!#                paramGetVS = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Import/hSTEP")
+#!#                ReadShapeCompoundMode_status=paramGetVS.GetBool("ReadShapeCompoundMode")
+#!#                #sayerr("checking ReadShapeCompoundMode")
+#!#                print("ReadShapeCompoundMode status "+str(ReadShapeCompoundMode_status))
+#!#                restore_settings = False
+#!#                if ReadShapeCompoundMode_status:
+#!#                    paramGetVS = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Import/hSTEP")
+#!#                    paramGetVS.SetBool("ReadShapeCompoundMode",False)
+#!#                    print("disabling ReadShapeCompoundMode")
+#!#                    restore_settings = True
+#!#                import ImportGui
+#!#                ImportGui.export(__objs__,tempfilepath)
+#!#                del __objs__
+#!#                ImportGui.insert(tempfilepath,doc.Name)
+#!#                if restore_settings:
+#!#                    paramGetVS = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Import/hSTEP")
+#!#                    paramGetVS.SetBool("ReadShapeCompoundMode",True)
+#!#                    print("re-enabling ReadShapeCompoundMode")
+#!#                doc_newobj_nbr = len(doc.Objects)
+#!#                if (doc_newobj_nbr-doc_obj_nbr) >1:
+#!#                    msg='Exporting to STEP would create a multi solids object!\n'
+#!#                    msg1="""Exporting to STEP would create a <b>multi solids object!<b>"""
+#!#                    reply = QtGui.QMessageBox.warning(None,"Warning", msg1)
+#!#                    FreeCAD.Console.PrintError(msg)
+#!#                else:
+#!#                    FreeCADGui.Selection.addSelection(FreeCAD.ActiveDocument.ActiveObject)
+#!#                    ksuToolsCheckSolid.Activated(FreeCAD.ActiveDocument.ActiveObject)
+#!#                    if '.[solid]' not in FreeCAD.ActiveDocument.ActiveObject.Label:
+#!#                        msg='Exporting to STEP would create a single NON solids object!\n'
+#!#                        msg1="""Exporting to STEP would create a <b>single NON solids object!<b>"""
+#!#                        reply = QtGui.QMessageBox.warning(None,"Warning", msg1)
+#!#                        FreeCAD.Console.PrintError(msg)
+#!#                    else:
+#!#                        msg='Exporting to STEP would create a single solids object!\n'
+#!#                        reply = QtGui.QMessageBox.information(None,"Info", msg)
+#!#                        FreeCAD.Console.PrintMessage(msg)
+#!#                FreeCADGui.SendMsgToActiveView("ViewFit")
+#!#                FreeCAD.Console.PrintMessage(tempfilepath+u'\n')
+#!#
+#!#FreeCADGui.addCommand('checkSolidExpSTEP',checkSolidExpSTEP())
 
 
 #!#class Restore_Transparency():

@@ -35,16 +35,17 @@
 #*                                                                          *
 #*     semantic parser from __author__ = "Zheng, Lei"  fcad_pcb             *
 #*                                                                          *
-#* IDF_ImporterVersion="3.9.2"
-#*  ignoring step search associations (too old models)
-#*  displaying Flat Mode models
-#*  checking version 3 for both Geometry and Part Number
-#*  supporting Z position
-#*  skipping PROP in emp file
-#*  adding color to shapes opt IDF_colorize
-#*  adding emp library/single model load support
-#*  aligning IDF shape to both Geom and PartNBR for exactly match
-#*  to do: .ROUTE_OUTLINE ECAD, .PLACE_OUTLINE MCAD, .ROUTE_KEPOUT ECAD, .PLACE_KEEPOUT ECAD
+#* IDF_ImporterVersion="3.9.2"                                              *
+#*  ignoring step search associations (too old models)                      *
+#*  displaying Flat Mode models                                             *
+#*  checking version 3 for both Geometry and Part Number                    *
+#*  supporting Z position                                                   *
+#*  skipping PROP in emp file                                               *
+#*  adding color to shapes opt IDF_colorize                                 *
+#*  adding emp library/single model load support                            *
+#*  aligning IDF shape to both Geom and PartNBR for exactly match           *
+#*  to do: .ROUTE_OUTLINE ECAD, .PLACE_OUTLINE MCAD,                        *
+#*         .ROUTE_KEPOUT ECAD, .PLACE_KEEPOUT ECAD                          *
 #****************************************************************************
 #*                                                                          *
 #*   This program is free software; you can redistribute it and/or modify   *
@@ -74,11 +75,11 @@
 #*   team including Maurice easyw@katamail.com and numerous others.         *
 #*                                                                          *
 #*   The purpose of this workbench is to provide a single-function tool     *
-#*   for converting KiCAD PCBs to useful STEP models to be used in other    *
+#*   for converting KiCAD PCBs to useful STEP models for use in non-FreeCAD *
 #*   MCAD packages. Our intent is to add a few enhancements to the original *
 #*   while keeping the core functionality similar.                          *
 #*                                                                          *
-#*   Because our use-case does not require manipulation of the rendered     *
+#*   Because our use-case does not require manipulation in FreeCAD of the   *
 #*   PCB nor round-tipping of MCAD-ECAD data, we have simplified that part  *
 #*   of the workbench core-code and UI.                                     *
 #*                                                                          *

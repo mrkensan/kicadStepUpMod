@@ -38,11 +38,11 @@
 #*   team including Maurice easyw@katamail.com and numerous others.         *
 #*                                                                          *
 #*   The purpose of this workbench is to provide a single-function tool     *
-#*   for converting KiCAD PCBs to useful STEP models to be used in other    *
+#*   for converting KiCAD PCBs to useful STEP models for use in non-FreeCAD *
 #*   MCAD packages. Our intent is to add a few enhancements to the original *
 #*   while keeping the core functionality similar.                          *
 #*                                                                          *
-#*   Because our use-case does not require manipulation of the rendered     *
+#*   Because our use-case does not require manipulation in FreeCAD of the   *
 #*   PCB nor round-tipping of MCAD-ECAD data, we have simplified that part  *
 #*   of the workbench core-code and UI.                                     *
 #*                                                                          *
@@ -127,10 +127,9 @@ class KiCadStepUpWB ( Workbench ):
 #!#                          "ksuToolsCollisions","ksuToolsImport3DStep","ksuToolsExport3DStep","ksuToolsMakeUnion",\
 #!#                          "ksuToolsUnion", "ksuToolsSimpleCopy"])
 
-        self.appendToolbar("ksu Tools", ["ksuToolsEditPrefs","ksuToolsOpenBoard","ksuToolsLoadFootprint",\
-                           "ksuToolsExportModel","Separator","ksuToolsAddTracks","ksuToolsAddSilks","Separator",\
-                           "ksuToolsCollisions","ksuToolsImport3DStep","ksuToolsExport3DStep","ksuToolsMakeUnion",\
-                           "ksuToolsUnion", "ksuToolsSimpleCopy"])
+        self.appendToolbar("ksu Tools", ["ksuToolsEditPrefs","ksuToolsOpenBoard",\
+                           "ksuToolsExportModel","ksuToolsAddTracks","ksuToolsAddSilks",\
+                           "ksuToolsImport3DStep","ksuToolsExport3DStep", "ksuToolsPullPCB"])
 
 #!#        self.appendToolbar("ksu Sketching", ["ksuToolsLoopSelection"])
 
@@ -140,19 +139,19 @@ class KiCadStepUpWB ( Workbench ):
 #!#                "Separator","ksuToolsGeneratePositions","ksuToolsComparePositions",\
 #!#                "Separator","Separator","ksuRemoveTimeStamp","ksuRemoveSuffix","Separator","ksuToolsLoadFootprint"]
 
-        ksuTB = ["ksuToolsPullPCB"]
+#!#        ksuTB = ["ksuToolsPullPCB"]
 
         #ksuTB.extend(["Separator","ksuToolsAligner","ksuToolsMover","ksuToolsCaliper"])
-        self.appendToolbar("ksu PushPull", ksuTB)
-        combined_path = '\t'.join(sys.path)
-        if 'Manipulator' in combined_path:
-            ksuDTB=["ksuToolsAligner","ksuToolsMover","ksuToolsCaliper","Separator","ksuToolsDefeaturingTools"]
-            self.appendToolbar("ksu Design Tools", ksuDTB)
-        Hlp_TB = ["ksuToolsResetPartPlacement", "ksuToolsRemoveSubTree", "checkSolidExpSTEP"]
+#!#        self.appendToolbar("ksu PushPull", ksuTB)
+#!#        combined_path = '\t'.join(sys.path)
+#!#        if 'Manipulator' in combined_path:
+#!#            ksuDTB=["ksuToolsAligner","ksuToolsMover","ksuToolsCaliper","Separator","ksuToolsDefeaturingTools"]
+#!#            self.appendToolbar("ksu Design Tools", ksuDTB)
+#!#        Hlp_TB = ["ksuToolsResetPartPlacement", "ksuToolsRemoveSubTree", "checkSolidExpSTEP"]
         #if 'LinkView' in dir(FreeCADGui):
         #    Hlp_TB.remove("ksuToolsHighlightToggle")
-        self.appendToolbar("ksu Show", ["ksuToolsTurnTable", "ksuToolsExplode"])
-        self.appendToolbar("ksu Helpers", Hlp_TB)
+#!#        self.appendToolbar("ksu Show", ["ksuToolsTurnTable", "ksuToolsExplode"])
+#!#        self.appendToolbar("ksu Helpers", Hlp_TB)
         #self.appendMenu("ksu Tools", ["ksuTools","ksuToolsEdit"])
 #!#        self.appendMenu("ksu Tools", ["ksuTools","ksuToolsEditPrefs"])
 
@@ -179,11 +178,11 @@ class KiCadStepUpWB ( Workbench ):
  
     def Activated(self):
                 # do something here if needed...
-        from PySide import QtGui
-        import time, sys, os, re
-        from os.path import expanduser
-        import codecs #utf-8 config parser
-        import FreeCAD, FreeCADGui
+#!#        from PySide import QtGui
+#!#        import time, sys, os, re
+#!#        from os.path import expanduser
+#!#        import codecs #utf-8 config parser
+#!#        import FreeCAD, FreeCADGui
         from kts_PrefsMgmt import check_prefs
         from kts_versions import KTS_WORKBENCH_VER
 
@@ -456,19 +455,20 @@ class KiCadStepUpWB ( Workbench ):
     def Deactivated(self):
                 # do something here if needed...
         Msg ("KiCadStepUpWB.Deactivated()\n")
-    @staticmethod
-    def ListDemos():
-        import os
-        import ksu_locator
 
-        dirs = []
-        # List all of the example files in an order that makes sense
-        module_base_path = ksu_locator.module_path()
-        demo_dir_path = os.path.join(module_base_path, 'demo')
-        dirs = os.listdir(demo_dir_path)
-        dirs.sort()
-
-        return dirs
+#!#    @staticmethod
+#!#    def ListDemos():
+#!#        import os
+#!#        import ksu_locator
+#!#
+#!#        dirs = []
+#!#        # List all of the example files in an order that makes sense
+#!#        module_base_path = ksu_locator.module_path()
+#!#        demo_dir_path = os.path.join(module_base_path, 'demo')
+#!#        dirs = os.listdir(demo_dir_path)
+#!#        dirs.sort()
+#!#
+#!#        return dirs
     ##
 
 ###
