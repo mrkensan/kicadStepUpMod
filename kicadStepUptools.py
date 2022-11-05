@@ -19228,9 +19228,9 @@ def push3D2pcb(s,cnt,tsp):
 ##
 
 
-KSUWidget.activateWindow()
-KSUWidget.raise_()
-KSUWidget.hide()
+#!# KSUWidget.activateWindow()
+#!# KSUWidget.raise_()
+#!# KSUWidget.hide()
 
 def getComboView(self,window):
     """ Returns the main Tab.
