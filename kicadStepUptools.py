@@ -13099,8 +13099,8 @@ if len(args) >= 3:
 #
 #singleInstance()
 
-from Ui_DockWidget import Ui_DockWidget
-from Ui_DockWidget import KSUWidget
+#!# from Ui_DockWidget import Ui_DockWidget
+#!# from Ui_DockWidget import KSUWidget
 
 ## sketch testing button
 

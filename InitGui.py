@@ -134,9 +134,14 @@ class KiCadStepUpWB ( Workbench ):
 
 #!#        self.appendToolbar("ksu Sketching", ["ksuToolsLoopSelection"])
 
-        ksuTB = ["ksuToolsOpenBoard","ksuToolsSync3DModels","ksuToolsPullPCB",\
-                 "Separator","ksuToolsGeneratePositions","ksuToolsComparePositions",\
-                 "Separator","Separator","ksuRemoveTimeStamp","ksuRemoveSuffix","Separator","ksuToolsLoadFootprint"]
+#!#   Examine these menu items to see if any are useful before we delete this
+
+#!#       ksuTB = ["ksuToolsOpenBoard","ksuToolsSync3DModels","ksuToolsPullPCB",\
+#!#                "Separator","ksuToolsGeneratePositions","ksuToolsComparePositions",\
+#!#                "Separator","Separator","ksuRemoveTimeStamp","ksuRemoveSuffix","Separator","ksuToolsLoadFootprint"]
+
+        ksuTB = ["ksuToolsPullPCB"]
+
         #ksuTB.extend(["Separator","ksuToolsAligner","ksuToolsMover","ksuToolsCaliper"])
         self.appendToolbar("ksu PushPull", ksuTB)
         combined_path = '\t'.join(sys.path)
@@ -149,10 +154,16 @@ class KiCadStepUpWB ( Workbench ):
         self.appendToolbar("ksu Show", ["ksuToolsTurnTable", "ksuToolsExplode"])
         self.appendToolbar("ksu Helpers", Hlp_TB)
         #self.appendMenu("ksu Tools", ["ksuTools","ksuToolsEdit"])
-        self.appendMenu("ksu Tools", ["ksuTools","ksuToolsEditPrefs"])
-        self.appendMenu("ksu PushPull", ["ksuToolsOpenBoard","ksuToolsSync3DModels","ksuToolsPullPCB",\
-                        "Separator","ksuToolsGeneratePositions","ksuToolsComparePositions",\
-                        "Separator","ksuRemoveTimeStamp","ksuRemoveSuffix"])
+#!#        self.appendMenu("ksu Tools", ["ksuTools","ksuToolsEditPrefs"])
+
+        self.appendMenu("ksu Tools", ["ksuToolsEditPrefs"])
+
+#!#   Examine these menu items to see if any are useful before we delete this
+#!#
+#!#        self.appendMenu("ksu PushPull", ["ksuToolsOpenBoard","ksuToolsSync3DModels","ksuToolsPullPCB",\
+#!#                        "Separator","ksuToolsGeneratePositions","ksuToolsComparePositions",\
+#!#                        "Separator","ksuRemoveTimeStamp","ksuRemoveSuffix"])
+
 #!#        self.appendMenu(["ksu Tools", "Demo"], submenu)
         
         #FreeCADGui.addPreferencePage( a2plib.pathOfModule() + '/GuiA2p/ui/a2p_prefs.ui','A2plus' )
