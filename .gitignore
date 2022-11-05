@@ -23,8 +23,11 @@ $RECYCLE.BIN/
 
 # Visual Studio Project
 *.vs
+*.pyproj*
+*.sln
 
-# Visual Studio Project
+
+# SourceTrail Generated Files
 *.srctr*
 
 # =========================
