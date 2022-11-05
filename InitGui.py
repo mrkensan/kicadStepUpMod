@@ -11,7 +11,42 @@
 #*                                                                          *
 #****************************************************************************
 #*                                                                          *
+#*   This program is free software; you can redistribute it and/or modify   *
+#*   it under the terms of the GNU Affero General Public License            *
+#*   as published by the Free Software Foundation to ensure cooperation     *
+#*   with the community in the case of network server software;             *
+#*   for detail see the LICENCE text file.                                  *
+#*   http://www.gnu.org/licenses/agpl-3.0.en.html                           *
+#*   Moreover you have to include the original author copyright             *
+#*   kicad StepUP made by Maurice easyw@katamail.com                        *
+#*                                                                          *
+#*   This program is distributed in the hope that it will be useful,        *
+#*   but WITHOUT ANY WARRANTY; without even the implied warranty of         *
+#*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
+#*   GNU Library General Public License for more details.                   *
+#*                                                                          *
+#*   You should have received a copy of the GNU Library General Public      *
+#*   License along with this program; if not, write to the Free Software    *
+#*   Foundation, Inc.,                                                      *
+#*   51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA           *
+#*                                                                          *
+#****************************************************************************
+#*                                                                          *
 #*  KiCAD_2STEP - Render KiCAD PCB Models as STEP (No Round Trip, etc...)   *
+#*                                                                          *
+#*   This FreeCAD workbench is derived from the work of the Kicad STEPUP    *
+#*   team including Maurice easyw@katamail.com and numerous others.         *
+#*                                                                          *
+#*   The purpose of this workbench is to provide a single-function tool     *
+#*   for converting KiCAD PCBs to useful STEP models to be used in other    *
+#*   MCAD packages. Our intent is to add a few enhancements to the original *
+#*   while keeping the core functionality similar.                          *
+#*                                                                          *
+#*   Because our use-case does not require manipulation of the rendered     *
+#*   PCB nor round-tipping of MCAD-ECAD data, we have simplified that part  *
+#*   of the workbench core-code and UI.                                     *
+#*                                                                          *
+#*   We hope that this workbench is useful to the community!                *
 #*                                                                          *
 #****************************************************************************
 
@@ -87,7 +122,12 @@ class KiCadStepUpWB ( Workbench ):
 #!#                  'ECAD-MCAD-collaboration.pdf']
 #!#       dirs = self.ListDemos()
 
-        self.appendToolbar("ksu Tools", ["ksuToolsEditPrefs","ksuTools","ksuToolsOpenBoard","ksuToolsLoadFootprint",\
+#!#       self.appendToolbar("ksu Tools", ["ksuToolsEditPrefs","ksuTools","ksuToolsOpenBoard","ksuToolsLoadFootprint",\
+#!#                          "ksuToolsExportModel","Separator","ksuToolsAddTracks","ksuToolsAddSilks","Separator",\
+#!#                          "ksuToolsCollisions","ksuToolsImport3DStep","ksuToolsExport3DStep","ksuToolsMakeUnion",\
+#!#                          "ksuToolsUnion", "ksuToolsSimpleCopy"])
+
+        self.appendToolbar("ksu Tools", ["ksuToolsEditPrefs","ksuToolsOpenBoard","ksuToolsLoadFootprint",\
                            "ksuToolsExportModel","Separator","ksuToolsAddTracks","ksuToolsAddSilks","Separator",\
                            "ksuToolsCollisions","ksuToolsImport3DStep","ksuToolsExport3DStep","ksuToolsMakeUnion",\
                            "ksuToolsUnion", "ksuToolsSimpleCopy"])
@@ -163,9 +203,9 @@ class KiCadStepUpWB ( Workbench ):
 
         prefs = check_prefs()
 
-        if prefs.IsEmpty():
-            FreeCAD.Console.PrintError('Preferences were not Initialized\n')
-
+#!#       if prefs.IsEmpty():
+#!#           FreeCAD.Console.PrintError('Preferences were not Initialized\n')
+#!#
 #!#           #if prefs.GetContents() is None:
 #!#           def mk_str(input):
 #!#               if (sys.version_info > (3, 0)):  #py3
@@ -282,19 +322,19 @@ class KiCadStepUpWB ( Workbench ):
 #!#               prefs.SetString('prefix3d_2',mk_str(models3D_prefix2.replace('\\','/').rstrip('/')))
 #!#               #stop
 #!#           ##
-            FreeCAD.Console.PrintError('new \'preferences Page\' added to configure StepUp!!!\n')
-            msg="""
-            <font color=red>new \'preference Page\' added to configure StepUp!!!</font>
-            <br>
-            <br>old method using <b>ksu-config.ini</b>
-            <br><font color=red>has been DROPPED</font>.
-            <br>Please have a look at the <b><a href='https://github.com/easyw/kicadStepUpMod/blob/master/demo/kicadStepUp-cheat-sheet.pdf' target='_blank'>\'KiCad StepUp tools cheat sheet\'</a></b> pdf
-            """
-            QtGui.QApplication.restoreOverrideCursor()
-            reply = QtGui.QMessageBox.information(None,"Warning", msg)
-            # FreeCADGui.runCommand("Std_DlgPreferences") it cannot launched here until InitGui has run!!!
-        ##
- #!#      time_interval = pg.GetInt("updateDaysInterval")
+#!#           FreeCAD.Console.PrintError('new \'preferences Page\' added to configure StepUp!!!\n')
+#!#           msg="""
+#!#           <font color=red>new \'preference Page\' added to configure StepUp!!!</font>
+#!#           <br>
+#!#           <br>old method using <b>ksu-config.ini</b>
+#!#           <br><font color=red>has been DROPPED</font>.
+#!#           <br>Please have a look at the <b><a href='https://github.com/easyw/kicadStepUpMod/blob/master/demo/kicadStepUp-cheat-sheet.pdf' target='_blank'>\'KiCad StepUp tools cheat sheet\'</a></b> pdf
+#!#           """
+#!#           QtGui.QApplication.restoreOverrideCursor()
+#!#           reply = QtGui.QMessageBox.information(None,"Warning", msg)
+#!#           # FreeCADGui.runCommand("Std_DlgPreferences") it cannot launched here until InitGui has run!!!
+#!#       ##
+#!#       time_interval = pg.GetInt("updateDaysInterval")
 #!#       if time_interval <= 0:
 #!#           time_interval = 1
 #!#           pg.SetInt("updateDaysInterval",1)
