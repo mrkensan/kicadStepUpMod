@@ -74,22 +74,22 @@ conv_started = False
 global max_geo_admitted
 max_geo_admitted = 1500 # after this number, no recompute is applied
 
-from sys import platform as _platform
-
-pt_lnx=False
-# window GUI dimensions parameters
-if _platform == "linux" or _platform == "linux2":
-   # linux
-   pt_lnx=True
-   sizeXmin=172;sizeYmin=34+34
-   sizeX=172;sizeY=516 #536
-   sizeXright=172;sizeYright=536 #556
-else:
-    sizeXmin=172;sizeYmin=34
-    sizeX=172;sizeY=482#502
-    sizeXright=172;sizeYright=502#522
-if _platform == "darwin":
-    pt_osx=True
+#!#from sys import platform as _platform
+#!#
+#!#pt_lnx=False
+#!## window GUI dimensions parameters
+#!#if _platform == "linux" or _platform == "linux2":
+#!#  # linux
+#!#  pt_lnx=True
+#!#  sizeXmin=172;sizeYmin=34+34
+#!#  sizeX=172;sizeY=516 #536
+#!#  sizeXright=172;sizeYright=536 #556
+#!#else:
+#!#   sizeXmin=172;sizeYmin=34
+#!#   sizeX=172;sizeY=482#502
+#!#   sizeXright=172;sizeYright=502#522
+#!#if _platform == "darwin":
+#!#   pt_osx=True
 
 def P_Line(prm1,prm2):
     if hasattr(Part,"LineSegment"):
@@ -3481,8 +3481,8 @@ class ksuToolsEditPrefs:
     def GetResources(self):
         mybtn_tooltip ="Edit Preferences"
         return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'Preferences-Edit.svg') , # the name of a svg file available in the resources
-                     'MenuText': mybtn_tooltip ,
-                     'ToolTip' : mybtn_tooltip}
+                'MenuText': mybtn_tooltip ,
+                'ToolTip' : mybtn_tooltip}
  
     def IsActive(self):
         return True
@@ -3793,9 +3793,15 @@ class ksuToolsAddTracks:
     def Activated(self):
         # do something here...
         import tracks
-        from kicadStepUptools import removesubtree
+        #!#from kicadStepUptools import removesubtree
         from kicadStepUptools import ZoomFitThread
         from PySide import QtGui, QtCore
+        from sys import platform as _platform
+        
+        pt_lnx=False
+        if _platform == "linux" or _platform == "linux2":
+            pt_lnx=True
+
         if FreeCAD.ActiveDocument is not None:
             doc = FreeCAD.ActiveDocument
         else:

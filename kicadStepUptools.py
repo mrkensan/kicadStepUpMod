@@ -1361,12 +1361,12 @@ def make_unicode(input):
         else:
             input =  input.decode('utf-8')
             return input
-    else: #py2
-        if type(input) != unicode:
-            input =  input.decode('utf-8')
-            return input
-        else:
-            return input
+#!#   else: #py2
+#!#       if type(input) != unicode:
+#!#           input =  input.decode('utf-8')
+#!#           return input
+#!#       else:
+#!#           return input
 
 def make_string(input):
     if (sys.version_info > (3, 0)):  #py3
@@ -1375,12 +1375,12 @@ def make_string(input):
         else:
             input =  input.encode('utf-8')
             return input
-    else:  #py2
-        if type(input) == unicode:
-            input =  input.encode('utf-8')
-            return input
-        else:
-            return input
+#!#   else:  #py2
+#!#       if type(input) == unicode:
+#!#           input =  input.encode('utf-8')
+#!#           return input
+#!#       else:
+#!#           return input
 
 def PLine(prm1,prm2):
     if hasattr(Part,"LineSegment"):
@@ -2455,7 +2455,7 @@ def exportStep(objs, ffPathName):
 
 home = expanduser("~")
 #QtGui.QMessageBox.information(None,"info ...","your home path is \r\n"+ home+"\r\n")
-sayw("kicad StepUp version "+str(___ver___))
+sayw("KiCAD 2STEP version "+str(___ver___))
 #say("tolerance on vertex = "+str(edge_tolerance))
 say("tolerance on vertex applied")
 if apply_light==True:
@@ -2466,124 +2466,124 @@ say("your home path is "+ home)
 fname_ksu=home+os.sep+'ksu-config.ini'
 ksu_config_fname=fname_ksu
 
-default_ksu_config_ini=u"""[info]
-;; kicad StepUp tools config file utf-8
-;; each line starting with a semicolon is a comment
-[prefix3D]
-;; put here your KISYS3DMOD path or 3D model prefix path or 3D Alias
-;; only TWO prefixs are allowed; MUST finish with slash or backslash
-;prefix3D_1 = C:\\Program Files\\KiCad\share\\kicad\\modules\\packages3d\\
-;prefix3D_1 = kicad/share/modules/packages3d/
-;prefix3D_1 = /Library/Application Support/kicad/modules/packages3d/
-;prefix3D_2 = C:\\extra_packages3d\\
-prefix3D_1 = C:\\Program Files\\KiCad\share\\kicad\\modules\\packages3d\\
-prefix3D_2 = kicad/share/modules/packages3d/
-[PcbColor]
-;; pcb color r,g,b e.g. 0.0,0.5,0.0,light green
-;pcb_color=0.3333,0.3333,0.5,blue
-;pcb_color=0.0,0.5,0.0,light green
-;pcb_color = 1.0,0.1,0.0,red (255,25,0)
-pcb_color=0.0,0.298,1.0,lightblue (0,76,255)
-;pcb_color=0.211,0.305,0.455,darkblue (54,79,116)
-[Blacklist]
-;; put here your model names that you don't want to load (e.g. smallest ones)
-;; separated by a comma (none means all the models will be parsed)
-;; (volume=1 means all models with a volume < 1mm3 will not be included)
-;; (height=1 means all models with a height < 1mm  will not be included)
-;bklist = r_0603,r_0402,c_0402,c_0603
-;bklist = height=1.0
-;bklist = volume=1.0
-;bklist = none
-bklist = none
-[BoundingBox]
-;; bounding box option LIST=>whitelist (not converted to bbox)
-;bbox = LIST dpak-to252,sod80
-;bbox = ALL
-;bbox = off default
-bbox = off default
-[Placement]
-;; placement options
-;placement options: useGridOrigin, useAuxOrigin, useBaseOrigin, useBasePoint;x;y, usedefault, +AutoAdjust
-;placement = useGridOrigin
-;placement = useAuxOrigin
-;placement = useAuxOrigin +AutoAdjust
-;placement = useBasePoint;37.0;50.0;
-;placement = useBasePoint;37.0;50.0; +AutoAdjust
-;placement = useBaseOrigin #place board @ 0,0,0
-;placement = useBaseOrigin +AutoAdjust #place board @ 0,0,0
-;placement = usedefault
-;placement = usedefault +AutoAdjust
-placement = useBaseOrigin #place board @ 0,0,0
-[Virtual]
-;; virtual modules to be or not added to board
-virt = addVirtual
-;virt = addVirtual
-;virt = noVirtual
-[ExportFuse]
-;; fuse modules to board
-;; be careful ... fusion can be heavy or generate FC crash with a lot of objects
-;; please consider to use bbox or blacklist small objs
-;exportFusing = fuseAll
-;exportFusing = nofuse  #default
-exportFusing = nofuse  #default
-[minimum_drill_size]
-;; minimum drill size to be handled 
-;; set 0.0 to handle all sizes
-min_drill_size = 0.0
-[last_pcb_path]
-;; last pcb file path used
-last_pcb_path =
-[last_footprint_path]
-;; last footprint file path used
-last_fp_path =
-[export]
-export_to_STEP = yes
-;; export to STEP 
-;export_to_STEP = yes
-;export_to_STEP = no
-[Materials]
-mat = enablematerials
-;; VRML models to be or not exported with material properties
-;mat = enablematerials
-;mat = nomaterials
-[turntable]
-spin = disabled
-;;turntable spin after loading
-;spin = disabled
-;spin = enabled
-[compound]
-compound = allowed
-;;allow compound for STEP models
-;compound = allowed
-;compound = disallowed
-;compound = simplified
-[docking]
-dkmode = right
-;;docking mode
-;dkmode = left
-;dkmode = right
-;dkmode = float
-[sketch_constraints]
-constraints = all
-;constraints = all
-;constraints = coincident
-;constraints = none
-;;constraints generated for pcb sketch
-[step_exporting_mode]
-exporting_mode = hierarchy
-;exporting_mode = hierarchy
-;exporting_mode = flat
-;exporting_mode = onelevel
-;;step exporting mode
-[links_importing_mode]
-importing_mode = standard
-;importing_mode = links
-;importing_mode = standard
-;;models importing mode: use Assembly3 Links or Standard mode
-[fonts]
-font_size = 8
-;;font size for ksu widget
-"""
+#!#   default_ksu_config_ini=u"""[info]
+#!#   ;; kicad StepUp tools config file utf-8
+#!#   ;; each line starting with a semicolon is a comment
+#!#   [prefix3D]
+#!#   ;; put here your KISYS3DMOD path or 3D model prefix path or 3D Alias
+#!#   ;; only TWO prefixs are allowed; MUST finish with slash or backslash
+#!#   ;prefix3D_1 = C:\\Program Files\\KiCad\share\\kicad\\modules\\packages3d\\
+#!#   ;prefix3D_1 = kicad/share/modules/packages3d/
+#!#   ;prefix3D_1 = /Library/Application Support/kicad/modules/packages3d/
+#!#   ;prefix3D_2 = C:\\extra_packages3d\\
+#!#   prefix3D_1 = C:\\Program Files\\KiCad\share\\kicad\\modules\\packages3d\\
+#!#   prefix3D_2 = kicad/share/modules/packages3d/
+#!#   [PcbColor]
+#!#   ;; pcb color r,g,b e.g. 0.0,0.5,0.0,light green
+#!#   ;pcb_color=0.3333,0.3333,0.5,blue
+#!#   ;pcb_color=0.0,0.5,0.0,light green
+#!#   ;pcb_color = 1.0,0.1,0.0,red (255,25,0)
+#!#   pcb_color=0.0,0.298,1.0,lightblue (0,76,255)
+#!#   ;pcb_color=0.211,0.305,0.455,darkblue (54,79,116)
+#!#   [Blacklist]
+#!#   ;; put here your model names that you don't want to load (e.g. smallest ones)
+#!#   ;; separated by a comma (none means all the models will be parsed)
+#!#   ;; (volume=1 means all models with a volume < 1mm3 will not be included)
+#!#   ;; (height=1 means all models with a height < 1mm  will not be included)
+#!#   ;bklist = r_0603,r_0402,c_0402,c_0603
+#!#   ;bklist = height=1.0
+#!#   ;bklist = volume=1.0
+#!#   ;bklist = none
+#!#   bklist = none
+#!#   [BoundingBox]
+#!#   ;; bounding box option LIST=>whitelist (not converted to bbox)
+#!#   ;bbox = LIST dpak-to252,sod80
+#!#   ;bbox = ALL
+#!#   ;bbox = off default
+#!#   bbox = off default
+#!#   [Placement]
+#!#   ;; placement options
+#!#   ;placement options: useGridOrigin, useAuxOrigin, useBaseOrigin, useBasePoint;x;y, usedefault, +AutoAdjust
+#!#   ;placement = useGridOrigin
+#!#   ;placement = useAuxOrigin
+#!#   ;placement = useAuxOrigin +AutoAdjust
+#!#   ;placement = useBasePoint;37.0;50.0;
+#!#   ;placement = useBasePoint;37.0;50.0; +AutoAdjust
+#!#   ;placement = useBaseOrigin #place board @ 0,0,0
+#!#   ;placement = useBaseOrigin +AutoAdjust #place board @ 0,0,0
+#!#   ;placement = usedefault
+#!#   ;placement = usedefault +AutoAdjust
+#!#   placement = useBaseOrigin #place board @ 0,0,0
+#!#   [Virtual]
+#!#   ;; virtual modules to be or not added to board
+#!#   virt = addVirtual
+#!#   ;virt = addVirtual
+#!#   ;virt = noVirtual
+#!#   [ExportFuse]
+#!#   ;; fuse modules to board
+#!#   ;; be careful ... fusion can be heavy or generate FC crash with a lot of objects
+#!#   ;; please consider to use bbox or blacklist small objs
+#!#   ;exportFusing = fuseAll
+#!#   ;exportFusing = nofuse  #default
+#!#   exportFusing = nofuse  #default
+#!#   [minimum_drill_size]
+#!#   ;; minimum drill size to be handled 
+#!#   ;; set 0.0 to handle all sizes
+#!#   min_drill_size = 0.0
+#!#   [last_pcb_path]
+#!#   ;; last pcb file path used
+#!#   last_pcb_path =
+#!#   [last_footprint_path]
+#!#   ;; last footprint file path used
+#!#   last_fp_path =
+#!#   [export]
+#!#   export_to_STEP = yes
+#!#   ;; export to STEP 
+#!#   ;export_to_STEP = yes
+#!#   ;export_to_STEP = no
+#!#   [Materials]
+#!#   mat = enablematerials
+#!#   ;; VRML models to be or not exported with material properties
+#!#   ;mat = enablematerials
+#!#   ;mat = nomaterials
+#!#   [turntable]
+#!#   spin = disabled
+#!#   ;;turntable spin after loading
+#!#   ;spin = disabled
+#!#   ;spin = enabled
+#!#   [compound]
+#!#   compound = allowed
+#!#   ;;allow compound for STEP models
+#!#   ;compound = allowed
+#!#   ;compound = disallowed
+#!#   ;compound = simplified
+#!#   [docking]
+#!#   dkmode = right
+#!#   ;;docking mode
+#!#   ;dkmode = left
+#!#   ;dkmode = right
+#!#   ;dkmode = float
+#!#   [sketch_constraints]
+#!#   constraints = all
+#!#   ;constraints = all
+#!#   ;constraints = coincident
+#!#   ;constraints = none
+#!#   ;;constraints generated for pcb sketch
+#!#   [step_exporting_mode]
+#!#   exporting_mode = hierarchy
+#!#   ;exporting_mode = hierarchy
+#!#   ;exporting_mode = flat
+#!#   ;exporting_mode = onelevel
+#!#   ;;step exporting mode
+#!#   [links_importing_mode]
+#!#   importing_mode = standard
+#!#   ;importing_mode = links
+#!#   ;importing_mode = standard
+#!#   ;;models importing mode: use Assembly3 Links or Standard mode
+#!#   [fonts]
+#!#   font_size = 8
+#!#   ;;font size for ksu widget
+#!#   """
 
 def cfg_read_all():
     global ksu_config_fname, default_ksu_config_ini, applymaterials
@@ -2599,29 +2599,30 @@ def cfg_read_all():
     global constraints_section, addConstraints, exporting_mode_section, stp_exp_mode
     global links_importing_mode_section, links_imp_mode, generate_sketch, edge_tolerance
     
-    import os, sys, re
-    from sys import platform as _platform
-    
-    # window GUI dimensions parameters
-    pt_lnx = False;pt_osx = False;pt_win = False;
-    if _platform == "linux" or _platform == "linux2":
-        # linux
-        pt_lnx = True
-        default_prefix3d = '/usr/share/kicad/modules/packages3d'
-        #'/usr/share/kicad/modules/packages3d'
-    elif _platform == "darwin":
-        #osx
-        pt_osx = True
-        default_prefix3d = '/Library/Application Support/kicad/packages3d' 
-        #/Library/Application Support/kicad/modules/packages3d/' wrong location
-    else:
-        # Windows
-        pt_win = True
-        #default_prefix3d = os.path.join(os.environ["ProgramFiles"],u'\\KiCad\\share\\kicad\\modules\\packages3d')
-        default_prefix3d = (os.environ["ProgramFiles"]+u'\\KiCad\\share\\kicad\\modules\\packages3d')
-        #print (default_prefix3d)
-        default_prefix3d = re.sub("\\\\", "/", default_prefix3d) #default_prefix3d.replace('\\','/')
-        #print (default_prefix3d)
+#!#   import os, sys, re
+#!#   from sys import platform as _platform
+#!#   
+#!#   # window GUI dimensions parameters
+#!#   pt_lnx = False;pt_osx = False;pt_win = False;
+#!#   if _platform == "linux" or _platform == "linux2":
+#!#       # linux
+#!#       pt_lnx = True
+#!#       default_prefix3d = '/usr/share/kicad/modules/packages3d'
+#!#       #'/usr/share/kicad/modules/packages3d'
+#!#   elif _platform == "darwin":
+#!#       #osx
+#!#       pt_osx = True
+#!#       default_prefix3d = '/Library/Application Support/kicad/packages3d' 
+#!#       #/Library/Application Support/kicad/modules/packages3d/' wrong location
+#!#   else:
+#!#       # Windows
+#!#       pt_win = True
+#!#       #default_prefix3d = os.path.join(os.environ["ProgramFiles"],u'\\KiCad\\share\\kicad\\modules\\packages3d')
+#!#       default_prefix3d = (os.environ["ProgramFiles"]+u'\\KiCad\\share\\kicad\\modules\\packages3d')
+#!#       #print (default_prefix3d)
+#!#       default_prefix3d = re.sub("\\\\", "/", default_prefix3d) #default_prefix3d.replace('\\','/')
+#!#       #print (default_prefix3d)
+
     prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUpGui")
     ## if prefs.GetContents() is not None:
     ##     for i,p in enumerate (prefs.GetContents()):
@@ -2647,9 +2648,9 @@ def cfg_read_all():
     # sayw(prefs.GetString('prefix3d_3'))
     # sayw(prefs.GetString('prefix3d_4'))
     
-    if len (models3D_prefix) == 0:
-        prefs.SetString('prefix3d_1',make_string(default_prefix3d))
-        models3D_prefix = prefs.GetString('prefix3d_1')
+#!#   if len (models3D_prefix) == 0:
+#!#       prefs.SetString('prefix3d_1',make_string(default_prefix3d))
+#!#       models3D_prefix = prefs.GetString('prefix3d_1')
     models3D_prefix2 = prefs.GetString('prefix3d_2')
     models3D_prefix3 = prefs.GetString('prefix3d_3')
     models3D_prefix4 = prefs.GetString('prefix3d_4')
@@ -2838,9 +2839,12 @@ def cfg_read_all():
     #stop
     
 ##
+#!# END - cfg_read_all()
 
 #ini_content=read_ini_file()
-ini_content=cfg_read_all()
+#!# ini_content=cfg_read_all()
+cfg_read_all()
+
 
 #ini_vars[2]=u'd:\extrà3D'
 #print cfg_get('prefix3D','prefix3d_2')

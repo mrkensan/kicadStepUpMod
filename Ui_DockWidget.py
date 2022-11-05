@@ -27,6 +27,7 @@
 
 
 
+from pickle import FALSE
 import PySide
 from PySide import QtGui, QtCore
 
@@ -216,6 +217,8 @@ PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0g
 from sys import platform as _platform
 
 # window GUI dimensions parameters
+pt_lnx=FALSE
+
 if _platform == "linux" or _platform == "linux2":
    # linux
    pt_lnx=True
