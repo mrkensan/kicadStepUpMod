@@ -11,78 +11,76 @@
 #*                                                                          *
 #****************************************************************************
 #*                                                                          *
+#*   This program is free software; you can redistribute it and/or modify   *
+#*   it under the terms of the GNU Affero General Public License            *
+#*   as published by the Free Software Foundation to ensure cooperation     *
+#*   with the community in the case of network server software;             *
+#*   for detail see the LICENCE text file.                                  *
+#*   http://www.gnu.org/licenses/agpl-3.0.en.html                           *
+#*   Moreover you have to include the original author copyright             *
+#*   kicad StepUP made by Maurice easyw@katamail.com                        *
+#*                                                                          *
+#*   This program is distributed in the hope that it will be useful,        *
+#*   but WITHOUT ANY WARRANTY; without even the implied warranty of         *
+#*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
+#*   GNU Library General Public License for more details.                   *
+#*                                                                          *
+#*   You should have received a copy of the GNU Library General Public      *
+#*   License along with this program; if not, write to the Free Software    *
+#*   Foundation, Inc.,                                                      *
+#*   51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA           *
+#*                                                                          *
+#****************************************************************************
+#*                                                                          *
 #*  KiCAD_2STEP - Render KiCAD PCB Models as STEP (No Round Trip, etc...)   *
+#*                                                                          *
+#*   This FreeCAD workbench is derived from the work of the Kicad STEPUP    *
+#*   team including Maurice easyw@katamail.com and numerous others.         *
+#*                                                                          *
+#*   The purpose of this workbench is to provide a single-function tool     *
+#*   for converting KiCAD PCBs to useful STEP models for use in non-FreeCAD *
+#*   MCAD packages. Our intent is to add a few enhancements to the original *
+#*   while keeping the core functionality similar.                          *
+#*                                                                          *
+#*   Because our use-case does not require manipulation in FreeCAD of the   *
+#*   PCB nor round-tipping of MCAD-ECAD data, we have simplified that part  *
+#*   of the workbench core-code and UI.                                     *
+#*                                                                          *
+#*   We hope that this workbench is useful to the community!                *
 #*                                                                          *
 #****************************************************************************
 
-from kts_versions import *
+"""Preferences Management Module\nMethods related to reading, writing, updating Workbench settings."""
 
-class kSU_MainPrefPage:
+# These names are different than for all other files so we
+# don't overwrite generic names when including this file
+__KTS_PREFS_VER__  = "1.0.2"
+__KTS_PREFS_NAME__ = "KTS_PREFSMGMT"
 
-    def selectDirectory(self):
-        from PySide import QtGui, QtCore
-        selected_directory = QtGui.QFileDialog.getExistingDirectory()
-        # Use the selected directory...
-        print ('selected_directory:', selected_directory)
+'''
+import os
+def _get_my_file():
+    try:
+        my_file = os.path.dirname(os.path.basename(__file__))
+        print("PrefsMgmt)__file__ = " + my_file)
+    except NameError:  # We are the main py2exe script, not a module
+        import sys
+        my_file = os.path.dirname(os.path.basename(sys.argv[0]))
+        print("(PrefsMgmt) No __file__: " + my_file)
+    return(my_file)
 
-    def __init__(self, parent=None):
-        from PySide import QtGui, QtCore
-#!#        import os, hlp
-        # Text for 'Help Tips' Pref Panel
-        import hlp
-        global ksuWBpath
-        print ("Created kSU 'Help Tips' Pref panel")
-        header_txt="""<font color=GoldenRod><b>kicad StepUp version """+verKSU+"""</font></b><br>"""
-        help_t = header_txt+hlp.help_txt
+print("get_my_file = " + _get_my_file())
+'''
 
-        self.form = QtGui.QWidget()
-        self.form.setWindowTitle("kSU \'Help Tips\'")
-        self.form.verticalLayoutWidget = QtGui.QWidget(self.form)
-        self.form.verticalLayoutWidget.setGeometry(QtCore.QRect(0, 0, 530, 650)) #top corner, width, height
-        self.form.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
-        self.form.verticalLayout = QtGui.QVBoxLayout(self.form.verticalLayoutWidget)
-        self.form.verticalLayout.setContentsMargins(0, 0, 0, 0)
-        self.form.verticalLayout.setObjectName("verticalLayout")
-        #self.form.label = QtGui.QLabel(self.form.verticalLayoutWidget)
-        #self.form.label.setObjectName("label")
-        #self.form.label.setText("Hello world!")
-        #self.form.verticalLayout.addWidget(self.form.label)
-        self.form.textEdit = QtGui.QTextBrowser(self.form.verticalLayoutWidget)
-        self.form.textEdit.setGeometry(QtCore.QRect(00, 10, 530, 640)) #top corner, width, height
-        self.form.textEdit.setOpenExternalLinks(True)
-        self.form.textEdit.setObjectName("textEdit")
-        self.form.textEdit.setText(help_t)        
-# Button UI
-        add_button=False
-        if add_button:
-            self.form.btn = QtGui.QPushButton('Create Folder', self.form.verticalLayoutWidget)
-            self.form.btn.setToolTip('This creates the folders.')
-            self.form.btn.resize(self.form.btn.sizeHint())
-            self.form.btn.move(5, 60)       
-            self.form.btn.clicked.connect(self.selectDirectory)   
-            self.form.verticalLayout.addWidget(self.form.btn)        
-        
-#!#   def saveSettings(self):
-#!#       print ("saveSettings Helper")
-#!#       import SaveSettings
-#!#       SaveSettings.update_ksuGui()
-#!#       
-#!#   def loadSettings(self):
-#!#       print ("loadSettings Helper")
-#!#       prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUpGui").GetString('prefix3d_1')+'/'
-#!#       print('KISYS3DMOD assigned to: ', prefs)
-#!#       prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/kicadStepUpGui")
-#!#       #if prefs.GetContents() is not None:
-#!#       #    for p in prefs.GetContents():
-#!#       #        print (p)
-#!#       print(FreeCAD.getUserAppDataDir())
-
-### END - class kSU_MainPrefPage
-
+# This is the signature of the parameter store for our
+# workbench, within the FreeCAD "user param" store
+def _workbench_prefs_folder():
+    return "User parameter:BaseApp/Preferences/Mod/KiCAD_2STEP"
 
 
 def check_for_updates(url, commit_nbr):
     import re, sys
+
     resp_ok = False
     if (sys.version_info > (3, 0)):  #py3
         import urllib
@@ -176,14 +174,12 @@ def check_for_updates(url, commit_nbr):
 ### END - check_for_updates()
 
 
-def prefs_first_time_init(prefs):
+def _prefs_first_time_init(prefs):
     """Initialize user preferences for KiCAD to STEP Workbench"""
 
-    import time, FreeCAD
+    import FreeCAD
     import os, re
     from sys import platform as _platform
-   # from kts_versions import KTS_WORKBENCH_VER, KTS_PREFS_VER
-
 
     FreeCAD.Console.PrintWarning('Creating first time KiCAD to STEP preferences\n')
 
@@ -197,8 +193,7 @@ def prefs_first_time_init(prefs):
     else:
         # Windows
         default_prefix3d = (os.environ["ProgramFiles"]+u'\\KiCad\\share\\kicad\\modules\\packages3d')
-        default_prefix3d = re.sub("\\\\", "/", default_prefix3d) #default_prefix3d.replace('\\','/')
-
+        default_prefix3d = re.sub("\\\\", "/", default_prefix3d)
 
     # Set Workbench general prefs
     prefs.SetBool("updateChecking", 1)
@@ -260,18 +255,16 @@ def prefs_first_time_init(prefs):
 
     FreeCAD.saveParameter()     # Immediately save the new prefs to user.cfg
 
-### END - prefs_first_time_init()
+### END - _prefs_first_time_init()
 
 
-def check_prefs():
-    """Retrieve/init KiCAD to STEP preferences\nCheck for workbench updates"""
-    import FreeCAD, time
+def prefs_get():
+    """Retrieve/init KiCAD to STEP prefs from FreeCAD Paramter store"""
+    import FreeCAD
 
-    ONE_DAY = 86400
-
-    prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/KiCAD_2STEP")
+    prefs = FreeCAD.ParamGet(_workbench_prefs_folder())
     if prefs.IsEmpty():
-        prefs_first_time_init(prefs)
+        _prefs_first_time_init(prefs)
 
     '''
         tnow = int(time.time())
@@ -294,10 +287,41 @@ def check_prefs():
             upd=prefs.GetBool("checkUpdates")
     '''
 
-    return(prefs)
+    return (prefs)
 
 ### END - check_prefs()
 
+
+def prefs_set_file_version(filename: str, version: str):
+    """Add current version of named file to user preferences store."""
+ 
+    import FreeCAD
+
+    # Assure there is a preferences store present for our Workbench
+    prefs_get()
+    
+    vers = FreeCAD.ParamGet(_workbench_prefs_folder()+"/Versions")
+    vers.SetString(filename, version)
+    FreeCAD.saveParameter()     # Immediately save the new prefs to user.cfg
+
+### END - prefs_set_file_version()
+
+
+def prefs_get_file_version(filename: str):
+    """Add current version of named file to user preferences store."""
+ 
+    import FreeCAD
+
+    # Assure there is a preferences store present for our Workbench
+    prefs_get()
+    
+    vers = FreeCAD.ParamGet(_workbench_prefs_folder()+"/Versions")
+    return (vers.GetString(filename))
+
+### END - prefs_get_file_version()
+
+# This goes at the end for kts_PrefsMgmt so it is run AFTER function Def'n
+prefs_set_file_version(__KTS_PREFS_NAME__, __KTS_PREFS_VER__)
 
 
 '''
