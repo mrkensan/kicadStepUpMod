@@ -9,6 +9,9 @@
 
 __version__ = "v1.0.5"
 
+from kts_versions import *
+
+
 import FreeCAD, FreeCADGui, os
 from PySide import QtCore, QtGui
 from sys import platform as _platform
@@ -34,10 +37,12 @@ if _platform == "darwin":
 toBeReset = None
 btn_iconsize=28
 
-import ksu_locator
-ksuWBpath = os.path.dirname(ksu_locator.__file__)
-#sys.path.append(ksuWB + '/Gui')
-ksuWB_icons_path =  os.path.join( ksuWBpath, 'Resources', 'icons')
+#!# import ksu_locator
+#!# ksuWBpath = os.path.dirname(ksu_locator.__file__)
+#!# #sys.path.append(ksuWB + '/Gui')
+#!# ksuWB_icons_path =  os.path.join( ksuWBpath, 'Resources', 'icons')
+ksuWB_icons_path =  kts_mod_icons_path()
+
 
 def get_top_level (obj):
     lvl=10000

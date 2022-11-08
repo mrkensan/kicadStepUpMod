@@ -50,6 +50,28 @@
 #*                                                                          *
 #****************************************************************************
 
+#****************************************************************************
+#*                                                                          *
+#*  kicadStepUpCMD.py - FreeCAD Workbench "Command" classes                 *
+#*                                                                          *
+#*   Each command definition here follows the structure described by:       *
+#*      https://wiki.freecadweb.org/Workbench_creation                      *
+#*                                                                          *
+#*                                                                          *
+#*                                                                          *
+#*                                                                          *
+#*                                                                          *
+#****************************************************************************
+
+
+__KTS_FILE_VER__  = "?.?.?"
+__KTS_FILE_NAME__ = "KICADSTEPUPCMD"
+
+from kts_PrefsMgmt import prefs_set_file_version
+prefs_set_file_version(__KTS_FILE_NAME__, __KTS_FILE_VER__)
+
+
+
 import FreeCAD, FreeCADGui, Part
 from FreeCAD import Base
 import imp, os, sys, tempfile, re
@@ -60,7 +82,7 @@ QtWidgets = QtGui
 from pivy import coin
 from threading import Timer
 
-import ksu_locator
+import kts_locator
 # from kicadStepUptools import onLoadBoard, onLoadFootprint
 import math
 from math import sqrt
@@ -172,7 +194,7 @@ def info_msg(msg):
         diag.exec_()
 ##
 
-ksuWBpath = os.path.dirname(ksu_locator.__file__)
+ksuWBpath = os.path.dirname(kts_locator.__file__)
 #sys.path.append(ksuWB + '/Gui')
 ksuWB_icons_path =  os.path.join( ksuWBpath, 'Resources', 'icons')
 
@@ -774,36 +796,24 @@ class ksuToolsPullPCB:
  
     def GetResources(self):
         return {'Pixmap'  : os.path.join( ksuWB_icons_path , 'Sketcher_Pull.svg') , # the name of a svg file available in the resources
-                     'MenuText': "Pull Sketch from PCB" ,
-                     'ToolTip' : "ksu Pull Sketch from PCB Edge"}
+                'MenuText': "Pull Sketch Layer from PCB" ,
+                'ToolTip' : "Pull KiCAD PCB layer into a Sketch"}
  
     def IsActive(self):
-        #if FreeCAD.ActiveDocument == None:
-        #    return False
-        #else:
-        #    return True
-        #import kicadStepUptools
-        return True
+        return True     # Command is always active
  
     def Activated(self):
-        # do something here...
         import kicadStepUptools
         #if not kicadStepUptools.checkInstance():
         #    reload( kicadStepUptools )
         if reload_Gui:
             reload_lib( kicadStepUptools )
-        #from kicadStepUptools import onPushPCB
-        #FreeCAD.Console.PrintWarning( 'active :)\n' )
-        kicadStepUptools.PullPCB()
-        # ppcb=kicadStepUptools.KSUWidget
-        # ppcb.onPushPCB()
- 
-        #onPushPCB()
-        #import kicadStepUptools
 
+        kicadStepUptools.PullPCB()
 
 FreeCADGui.addCommand('ksuToolsPullPCB',ksuToolsPullPCB())
-##
+# END Command - ksuToolsPullPCB
+
 
 #####
 def mk_str_u(input):

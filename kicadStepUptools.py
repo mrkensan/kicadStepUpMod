@@ -467,7 +467,7 @@ import tempfile, errno
 import re
 import time
 
-import ksu_locator
+import kts_locator
 
 if (sys.version_info > (3, 0)):  #py3
     import builtins as builtin  #py3
@@ -6093,6 +6093,8 @@ def onLoadBoard(file_name=None,load_models=None,insert=None):
     SketchLayer = 'Edge.Cuts' #None
     if load_models is None:
         load_models = True
+
+    # This means we load board layer into a sketch
     if load_models == False:
         # layer_list = ['Edge.Cuts','Dwgs.User','Cmts.User','Eco1.User','Eco2.User','Margin']
         layer_list = ['Edge.Cuts','Dwgs.User','Cmts.User','Eco1.User','Eco2.User','Margin', 'F.FillZone', 'F.KeepOutZone', 'F.MaskZone','B.FillZone', 'B.KeepOutZone', 'B.MaskZone',]
@@ -6115,44 +6117,51 @@ def onLoadBoard(file_name=None,load_models=None,insert=None):
             pull_sketch = True
         else:
             print('Cancel')
+
+    # If we either successfully selected a layer, 
+    # or plan to read in the whole board...
     if pull_sketch or load_models:
+        # Determine the target Filename
         default_value='/'
         clear_console()
-        #lastPcb_dir='C:/Cad/Progetti_K/ksu-test'
-        #say(lastPcb_dir+' last Pcb dir')
-        #print(make_string(last_pcb_path))
-        #print (make_unicode(last_pcb_path))
+
         if not os.path.isdir(make_unicode(last_pcb_path)):
             last_pcb_path=u"./"
-        #say(last_pcb_path)
+
         if file_name is not None:
             #export_board_2step=True #for cmd line force exporting to STEP
             name=file_name
         elif test_flag==False:
             Filter=""
-            #minimize main window
-            #self.setWindowState(QtCore.Qt.WindowMinimized)
-            #infoDialog('ciao')
-            #reply = QtGui.QInputDialog.getText(None, "Hello","Enter your thoughts for the day:")
-            #if reply[1]:
-            #        # user clicked OK
-            #        replyText = reply[0]
-            #else:
-            #        # user clicked Cancel
-            #        replyText = reply[0] # which will be "" if they clicked Cancel
-            #restore main window
-            #self.setWindowState(QtCore.Qt.WindowActive)
+                    #minimize main window
+                    #self.setWindowState(QtCore.Qt.WindowMinimized)
+                    #infoDialog('ciao')
+                    #reply = QtGui.QInputDialog.getText(None, "Hello","Enter your thoughts for the day:")
+                    #if reply[1]:
+                    #        # user clicked OK
+                    #        replyText = reply[0]
+                    #else:
+                    #        # user clicked Cancel
+                    #        replyText = reply[0] # which will be "" if they clicked Cancel
+                    #restore main window
+                    #self.setWindowState(QtCore.Qt.WindowActive)
             name, Filter = PySide.QtGui.QFileDialog.getOpenFileName(None, "Open kicad PCB File...",
                 make_unicode(last_pcb_path), "*.kicad_pcb")
         else:
             name="C:/Cad/Progetti_K/ksu-test/multidrill.kicad_pcb"
+
+        # Check if we have a Valid Filename
         if len(name) > 0:
             if os.path.isfile(name):
                 original_filename=name
                 say('opening '+name)
+
+                # Generate Unique tag for layers for THIS board
                 path, fname = os.path.split(name)
                 fname=os.path.splitext(fname)[0]
                 fname_sfx=crc_gen(make_unicode(fname))
+
+                # Name each layer with unique tag
                 top_name='Top'+fname_sfx
                 bot_name='Bot'+fname_sfx
                 topV_name='TopV'+fname_sfx
@@ -6164,6 +6173,7 @@ def onLoadBoard(file_name=None,load_models=None,insert=None):
                 board_name='Board'+fname_sfx
                 boardG_name='Board_Geoms'+fname_sfx
                 LCS_name = 'Local_CS'+fname_sfx
+
                 #say(fname_sfx)
                 #fpth = os.path.dirname(os.path.abspath(__file__))
                 fpth = os.path.dirname(os.path.abspath(name))
@@ -6182,6 +6192,8 @@ def onLoadBoard(file_name=None,load_models=None,insert=None):
                 ##stop utf-8 test
                 ini_vars[10] = last_pcb_path
                 #cfg_update_all()
+
+                # Create new FreeCAD document, or reuse current one
                 test_import = False
                 if override_pcb == True:
                     insert=True
@@ -6216,6 +6228,8 @@ def onLoadBoard(file_name=None,load_models=None,insert=None):
                             say('Pcb not present')
                 else:
                     doc=FreeCAD.newDocument(fname)
+
+                # Open the KiCAD PCB File
                 doc.commitTransaction()
                 doc.openTransaction('opening_kicad')
                 say('opening Transaction \'opening_kicad\'')
@@ -6227,6 +6241,8 @@ def onLoadBoard(file_name=None,load_models=None,insert=None):
                 #filename="C:/Cad/Progetti_K/D-can-term/can-term-test-fcad.kicad_pcb"
                 #filename="c:\\Temp\\backpanel3.kicad_pcb"
                 mypcb = KicadPCB.load(name) #test parser
+
+
                 off_x=0; off_y=0  #offset of the board & modules
                 grid_orig_warn=False
                 if (grid_orig==1):
@@ -6247,6 +6263,8 @@ def onLoadBoard(file_name=None,load_models=None,insert=None):
                     ##off_x=-xp+xmin+(xMax-xmin)/2; off_y=-yp-(ymin+(yMax-ymin)/2)  #offset of the board & modules
                     #off_x=-xp+center_x;off_y=-yp+center_y
                     off_x=-xp;off_y=-yp
+
+
                 if (aux_orig==1):
                     #xp=getAuxAxisOrigin()[0]; yp=-getAuxAxisOrigin()[1]  #offset of the board & modules
                     if hasattr(mypcb, 'setup'):
@@ -6273,6 +6291,8 @@ def onLoadBoard(file_name=None,load_models=None,insert=None):
                 #    ##off_x=-xp+xmin+(xMax-xmin)/2; off_y=-yp-(ymin+(yMax-ymin)/2)  #offset of the board & modules
                 #    off_x=-xp+center_x;off_y=-yp+center_y
                 #    #off_x=-xp;off_y=-yp
+
+
                 modules,nsk = DrawPCB(mypcb,SketchLayer,override_pcb,keep_pcb_sketch)
                 if override_pcb == True:
                     if use_AppPart and not force_oldGroups and not use_LinkGroups:
@@ -6294,8 +6314,12 @@ def onLoadBoard(file_name=None,load_models=None,insert=None):
                 doc.commitTransaction()
                 say('closing Transaction \'opening_kicad\'')
             else:
+                # Specified filename was not located
                 say(name+' missing\r')
                 stop
+
+
+
             ##Placing board at configured position
             # pos objs x,-y
             # pos board xm+(xM-xm)/2
@@ -6718,22 +6742,6 @@ def onLoadBoard(file_name=None,load_models=None,insert=None):
                             ui.setupUi(StepPrefsDlg)
                             reply=StepPrefsDlg.exec_()
                             sayw(msg)
-            # TB reviewed
-            #if 'LinkView' in dir(FreeCADGui):
-            #    FreeCADGui.Selection.clearSelection()
-            #    o=FreeCAD.ActiveDocument.getObject('Board')
-            #    #FreeCADGui.Selection.addSelection('Board')
-            #    FreeCADGui.Selection.addSelection(doc.Name,o.Name)
-            #    #import expTree; #import importlib;importlib.reload(expTree)
-            #    #print('collapsing selection')
-            #    #expTree.collS_Tree() #toggle_Tree()
-            #    clps = Timer (3,collaps_Tree)
-            #    FreeCADGui.Selection.clearSelection()
-            #    o=FreeCAD.ActiveDocument.getObject('Board')
-            #    #FreeCADGui.Selection.addSelection('Board')
-            #    FreeCADGui.Selection.addSelection(doc.Name,o.Name)
-            #    #collaps_Tree()
-            #    clps.start()
             
             #say_time()
             #stop
@@ -11128,7 +11136,7 @@ def DrawPCB(mypcb,lyr=None,rmv_container=None,keep_sketch=None):
     from PySide import QtGui, QtCore
     from math import pi
     
-    say("PCB Loader ")
+    say(sys._getframe().f_code.co_name + "() :PCB Loader ")
     ## NB use always float() to guarantee number not string!!!
     max_edges_admitted = 1500 # after this number, no sketcher would be created
     
@@ -13323,8 +13331,8 @@ QtWidgets = QtGui
 class Ui_STEP_Preferences(object):
     def setupUi(self, STEP_Preferences):
         import os
-        import ksu_locator
-        ksuWBpath = os.path.dirname(ksu_locator.__file__)
+        import kts_locator
+        ksuWBpath = os.path.dirname(kts_locator.__file__)
         #sys.path.append(ksuWB + '/Gui')
         ksuWB_demo_path =  os.path.join( ksuWBpath, 'demo')
         STEP_Preferences.setObjectName("STEP_Preferences")

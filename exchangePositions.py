@@ -8,18 +8,20 @@
 
 __version_exchPos__ = "1.2.2"
 
+from kts_versions import *
 
-import FreeCAD, FreeCADGui,sys, os 
+
+import FreeCAD, FreeCADGui, os 
 from FreeCAD import Base
 import Part
 
 import PySide 
 from PySide import QtGui, QtCore
 #from PySide.QtGui import QTreeWidgetItemIterator
-import ksu_locator
+#!# import ksu_locator
 
 from os.path import expanduser
-import difflib, re, time, datetime
+import difflib, re, datetime
 
 FreeCAD.Console.PrintWarning('MCAD export/check version ='+ str(__version_exchPos__)+'\n')
 
@@ -626,6 +628,7 @@ def cmpPos(doc=None):  ## compare exported positions with the selected doc
 class RemoveSuffixDlg(QtGui.QDialog):
     
     def __init__(self, parent= None):
+
         super(RemoveSuffixDlg, self).__init__(parent, QtCore.Qt.WindowStaysOnTopHint)    
         #QtGui.QMainWindow.__init__(self, None, QtCore.Qt.WindowStaysOnTopHint)
         #icon = style.standardIcon(
@@ -637,8 +640,7 @@ class RemoveSuffixDlg(QtGui.QDialog):
         #icon = QtGui.QIcon()
         #icon.addPixmap(QtGui.QPixmap("icons/157-stats-bars.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         #Widget.setWindowIcon(icon)
-        ksuWBpath = os.path.dirname(ksu_locator.__file__)
-        ksuWB_icons_path =  os.path.join( ksuWBpath, 'Resources', 'icons')
+        ksuWB_icons_path =  kts_mod_icons_path()
         
         self.pix =  QtGui.QLabel()
         self.pix.setText('')
