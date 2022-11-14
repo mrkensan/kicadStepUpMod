@@ -64,7 +64,7 @@
 #****************************************************************************
 
 
-__KTS_FILE_VER__  = "?.?.?"
+__KTS_FILE_VER__  = "2.2.9"
 __KTS_FILE_NAME__ = "KICADSTEPUPCMD"
 
 from kts_PrefsMgmt import prefs_set_file_version
