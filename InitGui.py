@@ -65,7 +65,7 @@ myurlKWB='https://github.com/mrkensan/kicadStepUpModXXX'
 import FreeCADGui
 
 from kicadStepUpCMD import *
-from kts_MenuCMD import *
+from kts_MenuCMD import *  
 
 
 #!# import ksu_locator, os
@@ -109,7 +109,7 @@ class KiCadStepUpWB ( FreeCADGui.Workbench ):      # 'Workbench' defined in Free
                            "ksuToolsImport3DStep","ksuToolsExport3DStep", "ksuToolsPullPCB"])
 
         # Adding KTS Icons to Toolbar
-        self.appendToolbar("New Tools", ["Separator", "ktsPullPcbOutline"])
+        self.appendToolbar("New Tools", ["Separator", "ktsPcbSelect", "ktsPcbImportOutline"])
 
         # Creating a menu for the Workbench
         self.appendMenu("ksu Tools", ["ksuToolsEditPrefs"])
@@ -122,10 +122,15 @@ class KiCadStepUpWB ( FreeCADGui.Workbench ):      # 'Workbench' defined in Free
         # Path to the Icons for this Workbench
         FreeCADGui.addIconPath(kts_mod_icons_path())
         Log ("Loading KiCAD to STEP... done\n")
- 
+
 
     def Activated(self):
         from kts_PrefsMgmt import prefs_get_file_version
+        from kts_StackUpEdit import kts_make_stack_edit_tab
+
+        # Create new Combo View tab for Stackup Editor
+        our_new_tab, tab_index = kts_make_stack_edit_tab()
+        print("Title of 'our_new_tab' = "+str(our_new_tab.tabText(tab_index)))
 
         Msg ("KiCAD to STEP Workbench is Activated ("+ prefs_get_file_version("KTS_WORKBENCH") +")\n")
         

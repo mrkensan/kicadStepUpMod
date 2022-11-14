@@ -51,50 +51,60 @@
 #****************************************************************************
 
 __KTS_FILE_VER__  = "1.0.0"
-__KTS_FILE_NAME__ = "KTS_MENUCMD"
+__KTS_FILE_NAME__ = "KTS_CORETOOLS"
 
 from kts_PrefsMgmt import prefs_set_file_version
 prefs_set_file_version(__KTS_FILE_NAME__, __KTS_FILE_VER__)
 
-import FreeCADGui
+from kts_utils import *     # Helper utility functions
 
-class ktsPcbImportOutline:
-    "Pull outlines from KiCAD PCB layer into Sketch object"
- 
-    def GetResources(self):
-        from kts_locator import kts_mod_path_to_icon
+def select_pcb_file():
+    from kts_PrefsMgmt import prefs_get
+    import os
+    import PySide
+    from fcad_parser import KicadPCB
+    import inspect
+    from collections import OrderedDict
+    from kts_StackUpEdit import KTS_Layers
 
-        return {'Pixmap'  : kts_mod_path_to_icon('PCB_ImportOutline.svg') , # Resources icon for this tool
-                'MenuText': "Create Sketch from PCB Layer" ,
-                'ToolTip' : "Pull KiCAD PCB layer into a Sketch"}
- 
-    def IsActive(self):
-        return True     # Command is always active
- 
-    def Activated(self):
-        import kicadStepUptools
-        kicadStepUptools.PullPCB()
+    
+    this_func_name = inspect.currentframe().f_code.co_name
 
-FreeCADGui.addCommand('ktsPcbImportOutline',ktsPcbImportOutline())
-# END Command - ktsPcbImportOutline
+    prefs = prefs_get()
 
+    # Start at the folder of the last opened PCB, or home dir.
+    pcb_start_folder = prefs.GetString('pcb_prev_folder')
+    if not os.path.isdir(make_unicode(pcb_start_folder)):
+        pcb_start_folder = os.path.expanduser("~")
+    say("Starting Folder = "+pcb_start_folder)
 
-class ktsPcbSelect:
-    "Select PCB File we will use for our operations"
- 
-    def GetResources(self):
-        from kts_locator import kts_mod_path_to_icon
+    pcb_selected_file, Filter = PySide.QtGui.QFileDialog.getOpenFileName(None, "Open KiCAD PCB File...", make_unicode(pcb_start_folder), "*.kicad_pcb")
 
-        return {'Pixmap'  : kts_mod_path_to_icon('PCB_Select.svg') , # Resources icon for this tool
-                'MenuText': "Select PCB File" ,
-                'ToolTip' : "All operations are performed with this PCB file"}
- 
-    def IsActive(self):
-        return True     # Command is always active
- 
-    def Activated(self):
-        import kts_CoreTools
-        kts_CoreTools.select_pcb_file()
+    # Check for Valid Filename
+    if len(pcb_selected_file) > 0:
+        if os.path.isfile(pcb_selected_file):
+            pcb_file = os.path.basename(pcb_selected_file)
+            say('opening: '+pcb_file)
+            pcb_folder = os.path.dirname(pcb_selected_file)
+            say('from folder: '+pcb_folder)
+            #default_prefix3d = re.sub("\\\\", "/", default_prefix3d)
 
-FreeCADGui.addCommand('ktsPcbSelect',ktsPcbSelect())
-# END Command - ktsPcbSelect
+            prefs.SetString('pcb_prev_folder', pcb_folder)
+            prefs.SetString('pcb_prev_file', pcb_file)
+        else:
+            say('Not a File: '+pcb_selected_file)
+    else:
+        say('Cancelled')
+
+    say(this_func_name)
+    say_inline("\nReading PCB...")
+    kicad_pcb = KicadPCB.load(pcb_selected_file)
+    if hasattr(kicad_pcb, 'version'):
+        say(" KiCAD Version = "+str(kicad_pcb.version))
+    if hasattr(kicad_pcb, 'setup'):
+        say("Found setup... Copper Finish is: "+kicad_pcb.setup.stackup.copper_finish)
+
+    KTS_Layers.init(kicad_pcb)
+
+    return
+
