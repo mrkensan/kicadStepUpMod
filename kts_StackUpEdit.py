@@ -68,14 +68,15 @@
 #*      layer_thk:  Finished thickness of layer in microns (um)
 #*      layer_matl: material type of layer (FR4, Polyimide, Prepreg, etc.)
 #*      layer_region: region of PCB project layer is used on {flex, rigid}
-        
-#*    kts_Layers - KTS layer definition & purpose for PCBA                  *
+#*                                                                          *
+#*    KiCAD_Layers - KTS layer definition & purpose for PCBA                *
 #*      kicad_num:  Absolute numeric ID of layer from kicad app
 #*      kicad_enum: Symbolic enum used for each layer
-#*      kts_dscr:   User-defined name from KTS domain
 #*      kicad_dscr: User-defined name from KiCAD PCB file
 #*
 #*  Dictionaries
+#*      kts_dscr:   User-defined name from KTS domain
+
 #*      kts_LayerTypes: enum {Silk, Adhes, SolMask, etc.}
 #*                                                                          *
 #*      kts_Materials:  enum {FR4, Polyimide, Prepreg, etc.}
@@ -94,8 +95,7 @@ from kts_PrefsMgmt import prefs_set_file_version
 prefs_set_file_version(__KTS_FILE_NAME__, __KTS_FILE_VER__)
 
 
-# Read KTS_Layers db from kicad_prl file
-class KTS_Layers():
+class KiCAD_Layers():
     """Create and maintain a dictionary of the activated layers
        in the selected PCB. Methods to look up layer info by
        either KiCAD layer number or layer Mnemonic."""
@@ -105,27 +105,29 @@ class KTS_Layers():
     def init(kicad_pcb):
         if not hasattr(kicad_pcb, 'layers'):
             # Make this into an "Alert"
-            print("KTS_Layers: No Layers found in PCB file." )
+            print("KiCAD_Layers: No Layers found in PCB file." )
         else:
-            print("KTS_Layers: Layers List found: ", len(kicad_pcb.layers), " layers." )
+            print("KiCAD_Layers: Found: ", len(kicad_pcb.layers), " layers." )
 
             for lyr in kicad_pcb.layers:
                 # Add mnemonic->number mapping
-                KTS_Layers.layer_dict[(kicad_pcb.layers[lyr])[0].replace('"', '')] = lyr
+                KiCAD_Layers.layer_dict[(kicad_pcb.layers[lyr])[0].replace('"', '')] = lyr
 
                 # Add number->[mnemonic, given_name]
                 if (len(kicad_pcb.layers[lyr]) > 2):
-                    KTS_Layers.layer_dict[lyr] = [(kicad_pcb.layers[lyr])[0].replace('"', ''), (kicad_pcb.layers[lyr])[2].replace('"', '')]
+                    KiCAD_Layers.layer_dict[lyr] = [(kicad_pcb.layers[lyr])[0].replace('"', ''), (kicad_pcb.layers[lyr])[2].replace('"', '')]
                 else:
-                    KTS_Layers.layer_dict[lyr] = [(kicad_pcb.layers[lyr])[0].replace('"', ''), None]
+                    KiCAD_Layers.layer_dict[lyr] = [(kicad_pcb.layers[lyr])[0].replace('"', ''), None]
         return
 
     def kts_layer_get(lyr:str) -> str:
         try:
-            return (KTS_Layers.layer_dict[lyr])
+            return (KiCAD_Layers.layer_dict[lyr])
         except:
             return (None)
         
+# END - class KiCAD_Layers
+
 
 
 
@@ -383,7 +385,7 @@ class CustomTableModel(QAbstractTableModel):
 
 
 """
-        self.kts_Layers_json = {
+        self.KiCAD_Layers_json = {
             {'kicad_num': "0",  'kicad_enum': "F.Cu",      'kts_dscr': "", 'kicad_dscr': ""}
             {'kicad_num': "1",  'kicad_enum': "In1.Cu",    'kts_dscr': "", 'kicad_dscr': ""}
             {'kicad_num': "2",  'kicad_enum': "In2.Cu",    'kts_dscr': "", 'kicad_dscr': ""}
