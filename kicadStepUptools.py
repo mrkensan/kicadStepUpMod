@@ -469,6 +469,10 @@ import time
 
 import kts_locator
 
+# This is where we are putting the small "helper" functions
+from kts_utils import *
+
+
 if (sys.version_info > (3, 0)):  #py3
     import builtins as builtin  #py3
     import gzip as gz
@@ -708,20 +712,20 @@ except:
     FreeCAD.Console.PrintWarning("PoM not present\n")
 
 ##
-def say_inline(msg):
-    FreeCAD.Console.PrintMessage(msg+' ')
-
-def say(msg):
-    FreeCAD.Console.PrintMessage(msg)
-    FreeCAD.Console.PrintMessage('\n')
-
-def sayw(msg):
-    FreeCAD.Console.PrintWarning(msg)
-    FreeCAD.Console.PrintWarning('\n')
-    
-def sayerr(msg):
-    FreeCAD.Console.PrintError(msg)
-    FreeCAD.Console.PrintMessage('\n')
+#!#def say_inline(msg):
+#!#    FreeCAD.Console.PrintMessage(msg+' ')
+#!#
+#!#def say(msg):
+#!#    FreeCAD.Console.PrintMessage(msg)
+#!#    FreeCAD.Console.PrintMessage('\n')
+#!#
+#!#def sayw(msg):
+#!#    FreeCAD.Console.PrintWarning(msg)
+#!#    FreeCAD.Console.PrintWarning('\n')
+#!#    
+#!#def sayerr(msg):
+#!#    FreeCAD.Console.PrintError(msg)
+#!#    FreeCAD.Console.PrintMessage('\n')
 ##
 
 global use_AppPart, use_Links, use_LinkGroups
@@ -1374,19 +1378,19 @@ def open(filename,insert=None):
         KSUWidget.raise_()
         onLoadFootprint(filename)
 
-def make_unicode(input):
-    if (sys.version_info > (3, 0)):  #py3
-        if isinstance(input, str):
-            return input
-        else:
-            input =  input.decode('utf-8')
-            return input
-#!#   else: #py2
-#!#       if type(input) != unicode:
-#!#           input =  input.decode('utf-8')
-#!#           return input
-#!#       else:
-#!#           return input
+#!#def make_unicode(input):
+#!#    if (sys.version_info > (3, 0)):  #py3
+#!#        if isinstance(input, str):
+#!#            return input
+#!#        else:
+#!#            input =  input.decode('utf-8')
+#!#            return input
+#!##!#   else: #py2
+#!##!#       if type(input) != unicode:
+#!##!#           input =  input.decode('utf-8')
+#!##!#           return input
+#!##!#       else:
+#!##!#           return input
 
 def make_string(input):
     if (sys.version_info > (3, 0)):  #py3
@@ -6306,7 +6310,7 @@ def onLoadBoard(file_name=None,load_models=None,insert=None):
                 else:
                     pcbThickness=1.6
                 ## stop  #test parser
-                check_requirements()
+                check_requirements()    #!# Check FreeCAD version, and whether Assy module is present
                 #stop
                 #pcbThickness,modules,board_elab,mod_lines,mod_arcs,mod_circles=LoadKicadBoard(name)
                 #say(modules)
