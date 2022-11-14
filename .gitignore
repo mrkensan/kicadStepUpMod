@@ -25,10 +25,14 @@ $RECYCLE.BIN/
 *.vs
 *.pyproj*
 *.sln
-
+pyrightconfig.json
 
 # SourceTrail Generated Files
 *.srctr*
+
+# Misc Files/Folders
+Unused
+junk.txt
 
 # =========================
 # Operating System Files
