@@ -126,11 +126,6 @@ class KiCadStepUpWB ( FreeCADGui.Workbench ):      # 'Workbench' defined in Free
 
     def Activated(self):
         from kts_PrefsMgmt import prefs_get_file_version
-        from kts_StackUpEdit import kts_make_stack_edit_tab
-
-        # Create new Combo View tab for Stackup Editor
-        our_new_tab, tab_index = kts_make_stack_edit_tab()
-        print("Title of 'our_new_tab' = "+str(our_new_tab.tabText(tab_index)))
 
         Msg ("KiCAD to STEP Workbench is Activated ("+ prefs_get_file_version("KTS_WORKBENCH") +")\n")
         

@@ -65,7 +65,7 @@ def select_pcb_file():
     from fcad_parser import KicadPCB
     import inspect
     from collections import OrderedDict
-    from kts_StackUpEdit import KiCAD_Layers
+    from kts_StackUpEdit import KiCAD_Layers, KTS_Stackup
 
     
     this_func_name = inspect.currentframe().f_code.co_name
@@ -105,6 +105,8 @@ def select_pcb_file():
         say("Found setup... Copper Finish is: "+kicad_pcb.setup.stackup.copper_finish)
 
     KiCAD_Layers.init(kicad_pcb)
+    KTS_Stackup.init(kicad_pcb)
+
 
     return
 

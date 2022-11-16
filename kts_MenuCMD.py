@@ -94,7 +94,16 @@ class ktsPcbSelect:
  
     def Activated(self):
         import kts_CoreTools
+        from kts_StackUpEdit import kts_make_stack_edit_tab, KTS_Stackup
+
+        # User dialog to select and open a PCB file
+        # Parses the file into internal data structures
         kts_CoreTools.select_pcb_file()
+        stackup = KTS_Stackup.get()
+
+        # Create new Combo View tab for Stackup Editor
+        our_new_tab, tab_index = kts_make_stack_edit_tab(stackup)
+        print("Title of 'our_new_tab' = "+str(our_new_tab.tabText(tab_index)))
 
 FreeCADGui.addCommand('ktsPcbSelect',ktsPcbSelect())
 # END Command - ktsPcbSelect
