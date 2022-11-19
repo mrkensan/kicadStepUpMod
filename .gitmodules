@@ -1,0 +1,3 @@
+[submodule "fcad_pcb"]
+	path = fcad_pcb
+	url = https://github.com/realthunder/fcad_pcb.git
