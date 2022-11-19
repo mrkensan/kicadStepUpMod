@@ -178,6 +178,7 @@ def _prefs_first_time_init(prefs):
     """Initialize user preferences for KiCAD to STEP Workbench"""
 
     import FreeCAD
+    import time
     import os, re
     from sys import platform as _platform
 
@@ -199,20 +200,14 @@ def _prefs_first_time_init(prefs):
     prefs.SetBool("updateChecking", 1)
     prefs.SetInt("updateCheckInterval", 1)   # days
     prefs.SetInt("updateLastChecked", int(time.time())) # seconds
-    #!# prefs.SetInt("dockingMode", 0)
-    prefs.SetString("versionWorkbench", KTS_WORKBENCH_VER)
-    prefs.SetString("versionPrefs", KTS_PREFS_VER)
+
+    # ToDo: Install Prefs in these files and remove from here
     prefs.SetString("versionTracks", '')
     prefs.SetString("versionKicadParser", '')
-
+    
     prefs.SetString("last_pcb_path", '')
     prefs.SetString("last_3d_path", '')
     prefs.SetString("lastUserPath", '')
-    prefs.SetString("versionPrefs", KTS_PREFS_VER)
-    prefs.SetString("versionPrefs", KTS_PREFS_VER)
-    prefs.SetString("versionPrefs", KTS_PREFS_VER)
-    prefs.SetString("versionPrefs", KTS_PREFS_VER)
-    prefs.SetString("versionPrefs", KTS_PREFS_VER)
 
     # Set Import/Export Settings
     #prefs.SetString('prefix3d_1',make_string(default_prefix3d))
@@ -253,6 +248,9 @@ def _prefs_first_time_init(prefs):
     prefs.SetString('name_3d_macro',u'')
     prefs.SetString('path_3d_macro',u'')
 
+    #stack_up = prefs.GetGroup("StackUp")
+    #stack_up.SetString('ColorToQColor',u'')
+
     FreeCAD.saveParameter()     # Immediately save the new prefs to user.cfg
 
 ### END - _prefs_first_time_init()
@@ -265,6 +263,12 @@ def prefs_get():
     prefs = FreeCAD.ParamGet(_workbench_prefs_folder())
     if prefs.IsEmpty():
         _prefs_first_time_init(prefs)
+        # Set version of PrefMgmt for first-time
+        vers = prefs.GetGroup("Versions")
+        vers.SetString(__KTS_PREFS_NAME__, __KTS_PREFS_VER__)
+    else:
+        # Check to see if we need update stored prefs
+        _prefs_check_version(prefs)
 
     '''
         tnow = int(time.time())
@@ -297,12 +301,11 @@ def prefs_set_file_version(filename: str, version: str):
  
     import FreeCAD
 
-    # Assure there is a preferences store present for our Workbench
-    prefs_get()
-    
-    vers = FreeCAD.ParamGet(_workbench_prefs_folder()+"/Versions")
+    prefs = prefs_get()                 # Get the root preferences store for our Workbench
+    vers = prefs.GetGroup("Versions")   # Get the "group" for file versions
     vers.SetString(filename, version)
-    FreeCAD.saveParameter()     # Immediately save the new prefs to user.cfg
+    FreeCAD.saveParameter()             # Immediately save the new prefs to user.cfg
+    return None
 
 ### END - prefs_set_file_version()
 
@@ -310,18 +313,30 @@ def prefs_set_file_version(filename: str, version: str):
 def prefs_get_file_version(filename: str):
     """Add current version of named file to user preferences store."""
  
-    import FreeCAD
-
-    # Assure there is a preferences store present for our Workbench
-    prefs_get()
-    
-    vers = FreeCAD.ParamGet(_workbench_prefs_folder()+"/Versions")
+    prefs = prefs_get()                 # Get the root preferences store for our Workbench
+    vers = prefs.GetGroup("Versions")   # Get the "group" for file versions
     return (vers.GetString(filename))
 
 ### END - prefs_get_file_version()
 
-# This goes at the end for kts_PrefsMgmt so it is run AFTER function Def'n
-prefs_set_file_version(__KTS_PREFS_NAME__, __KTS_PREFS_VER__)
+
+def _prefs_check_version(prefs):
+    """Check version of prefs stored vs. kts_PrefsMgmt version"""
+
+    vers = prefs.GetGroup("Versions")   # Get the "group" for file versions
+    if (vers.GetString(__KTS_PREFS_NAME__) < __KTS_PREFS_VER__):
+        vers.SetString("PREFS_IS", "OLD")
+        # Here we update it
+    elif (vers.GetString(__KTS_PREFS_NAME__) > __KTS_PREFS_VER__):
+        # This should never happen, but it's an error
+        vers.SetString("PREFS_IS", "TOO NEW")
+    else:
+        # Just overwrite with the version of this file. 
+        vers.SetString(__KTS_PREFS_NAME__, __KTS_PREFS_VER__)
+        vers.RemString("PREFS_IS")
+    return None
+
+### END - _prefs_check_version()
 
 
 '''
