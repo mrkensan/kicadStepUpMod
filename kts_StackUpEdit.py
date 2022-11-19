@@ -96,15 +96,8 @@ from kts_PrefsMgmt import prefs_set_file_version
 prefs_set_file_version(__KTS_FILE_NAME__, __KTS_FILE_VER__)
 
 
-#class KtsLayerType:
-#    """Dictonary of layer types used/supported by KiCAD to STEP"""
-
-#    #def __init__(self):
-#    #    self.kts_layer_types = {
-#    #        ''}
-
-def kts_layer_type(lyr: str) -> str:
-    """Returns the generic type of stackup-layer"""
+def kts_guess_layer_type(lyr: str) -> str:
+    """Guesses the generic type of stackup-layer"""
     if ('Cu' in lyr):
         return "Copper"
     if ('SilkS' in lyr):
@@ -118,8 +111,8 @@ def kts_layer_type(lyr: str) -> str:
     return ""
 
 
-def kts_material_type(matl: str) -> str:
-    """Returns the generic type of stackup-layer material"""
+def kts_guess_material_type(matl: str) -> str:
+    """Guesses the generic type of stackup-layer material"""
 
     # Dielectric Materials
     if ('FR4' in matl.upper()):
@@ -141,18 +134,42 @@ def kts_material_type(matl: str) -> str:
     if (('EPOXY' in matl.upper()) | ('SCREEN' in matl.upper())):
         return "Epoxy"
     if (('DIRECT' in matl.upper()) | ('PRINTING' in matl.upper())):
-        return "AcrylicInk"
-    return ""
+        return "Ink"
 
-
-def kts_layer_function(matl: str) -> str:
-    """Returns either the type of layer or "name" of the layer """
-    if ('COVER' in matl.upper()):
-        return "FlexCover"
-    if ('FLEX' in matl.upper()):
-        return "FlexCore"
+    # Conductive Materials
     if ('COPPER' in matl.upper()):
         return "Copper"
+
+    return ""
+
+#****************************************************************************
+#*  These "Layer Function" definitions are guesses as to what the purpose   *
+#*  of a physical layer is in the stackup. These are based on the type of   *
+#*  material the layer is composed of and any "hint" contained in the name  *
+#*  of the material. These same name hints, ideally, are used when naming   *
+#*  drawing-layers. This helps to inform guesses as to which drawing-layer  *
+#*  to consider as a cut-pattern (outline) for that stackup physical layer. *
+#*                                                                          *
+#*  After parsing the entire PCB stackup, we refine our guesses to add some *
+#*  additional layer functions, once we understand the topology.            *
+#*      FlexCoverlayMask - applied to soldermask when a "flex_only" stackup *
+#****************************************************************************
+
+def kts_guess_layer_function(matl: str) -> str:
+    """Guesses either the type of layer or "name" of the layer """
+
+    if ('COPPER' in matl.upper()):
+        return "Copper"
+
+    # Clues we're on a "flex" stackup-layer
+    if (('COVER' in matl.upper()) or ('POLYIMIDE' in matl.upper()) or ('FLEX' in matl.upper())):
+        if (('COVER' in matl.upper()) or (('PREPREG' in matl.upper()) and ('POLYIMIDE' in matl.upper()))):
+            return "FlexCoverlay"
+
+        if ((('POLYIMIDE' in matl.upper()) or ('FLEX' in matl.upper())) and ('CORE' in matl.upper())):
+            return "FlexCore"
+
+    # Remaining "Typical" physical-layers
     if ('CORE' in matl.upper()):
         return "RigidCore"
     if ('PREPREG' in matl.upper()):
@@ -162,6 +179,76 @@ def kts_layer_function(matl: str) -> str:
     if ('SILK' in matl.upper()):
         return "Silkscreen"
     return ""
+
+
+def kts_guess_layer_color(color: str) -> str:
+    """Guesses the 'color' the layer should be rendered in"""
+    if (('POLYIMIDE' in color.upper()) or ('KAPTON' in color.upper())):
+        return "Kapton"
+    if ('RED' in color.upper()):
+        return "Red"
+    if ('GREEN' in color.upper()):
+        return "Green"
+    if ('BLUE' in color.upper()):
+        return "Blue"
+    if ('YELLOW' in color.upper()):
+        return "Yellow"
+    if ('PURPLE' in color.upper()):
+        return "Purple"
+    if ('BLACK' in color.upper()):
+        return "Black"
+    if ('WHITE' in color.upper()):
+        return "White"
+    if ('PREPREG' in color.upper()):
+        return "PrePreg"
+    if ('FR4' in color.upper()):
+        return "FR4"
+    if ('COPPER' in color.upper()):
+        return "Copper"
+    return "???"
+
+
+
+#****************************************************************************
+#*                                                                          *
+#*  KtsColor - Map KTS colors to Qt colors for rendering                    *
+#*                                                                          *
+#*    Here we create a dict() then provide the function to query. We take   *
+#*    this approach for two reasons:                                        *
+#*      1. Return value is a QColor object                                  *
+#*      2. We would like to overwrite this list with stored values,         *
+#*         either from the PCB or Workbench defaults.                       *
+#*    By allowing update of the dict() we only look in one place for colors.*
+#****************************************************************************
+
+class KtsColor:
+    from collections import defaultdict
+    from PySide.QtGui import QColor
+
+    kts_layer_color_map = { "Kapton"  : '#C4911C',
+                            "Red"     : '#A2161E',
+                            "Green"   : '#008700',
+                            "Blue"    : '#164191',
+                            "Yellow"  : '#FFD439',
+                            "Purple"  : '#542D70',
+                            "Black"   : '#1A2127',
+                            "White"   : '#EDF0F5',
+                            "FR4"     : '#82AA8A',
+                            "PrePreg" : '#9FD0A9',
+                            "Copper"  : '#EFB18F'}
+
+    def to_QColor(color: str) -> QColor:
+        """Translate the 'layer-color' to Qt Colors"""
+        return (QColor(KtsColor.kts_layer_color_map.get(color, '#808080')))
+
+# END - class KtsColor
+
+        #junk = {'Blue': '#0000FF', 'Red': '#FF0000', 'Green': '#00FF00'}
+        #junk2 = str(junk)
+        #my_dict = eval(junk2)
+        #pprint.pprint(my_dict)
+
+
 
 
 #****************************************************************************
@@ -305,7 +392,7 @@ class KiCAD_Layers:
 #*                                                                          *
 #****************************************************************************
 
-from dataclasses import dataclass, fields, field
+from dataclasses import dataclass
 from typing import List
 
 @dataclass
@@ -332,53 +419,188 @@ class KTS_Stackup:
        Provides access methods for extracting this info
        for use when rendering a 3D model of the PCBA."""
 
+    from typing import Tuple    # For return type hinting
+
     kts_stackup: List[KTS_StackUpRecord] = []   # Init empty class-local layer list
 
 
     def init(kicad_pcb):
+        # Init empty layer list each time we init()
+        # so we don't accumulate multiple copies of board
+        KTS_Stackup.kts_stackup: List[KTS_StackUpRecord] = []
         kts_stackup = KTS_Stackup.kts_stackup
+
+        # Flags used to refine guesses about layers
+        has_flex   = False
+        has_rigid  = False
+        flex_only  = False
+        rigid_only = False
+        has_both   = False
+
         if not hasattr(kicad_pcb.setup, 'stackup'):
             # ToDo: Make this into an "Alert"
             print("KTS_Stackup.init: No Stackup found in PCB file." )
         else:
             copper_finish = (kicad_pcb.setup.stackup.copper_finish).replace('"', '')
+            copper_finish = copper_finish if(not 'None' in copper_finish) else 'Bare'
+            print("Stackup Sections:")
+            print(*kicad_pcb.setup.stackup['layer'])
+            print("****************************************************")
 
             for lyr in kicad_pcb.setup.stackup.layer:
                 # Look for layers with no "purpose" and skip them
-                if (kts_layer_type(lyr[0].replace('"', '')) == ""):
+                if (kts_guess_layer_type(lyr[0].replace('"', '')) == ""):
                     continue
-                kts_stackup.append(KTS_StackUpRecord("", "", "", "", 0, "", "", "", "", "", ""))
 
-                kts_stackup[-1].content = lyr[0].replace('"', '')
-                kts_stackup[-1].lyr_type = kts_layer_type(lyr[0].replace('"', ''))
-                if (kts_stackup[-1].lyr_type == 'Copper'):
-                    kts_stackup[-1].finish = copper_finish
-                if hasattr(lyr, "thickness"):
-                    kts_stackup[-1].thkness = lyr.thickness
-                raw_material = ""
-                if hasattr(lyr, "material"):
-                    kts_stackup[-1].material = kts_material_type((lyr.material).replace('"', ''))
-                    raw_material = (lyr.material).replace('"', '')
-                if hasattr(lyr, "color"):
-                    kts_stackup[-1].color = (lyr.color).replace('"', '')
-                raw_type = ""
-                if hasattr(lyr, "type"):
-                    raw_type = (lyr.type).replace('"', '')
-                kts_stackup[-1].lyr_func = kts_layer_function(raw_material + raw_type)
+                # 'layer' objects are Lists & Lists-of-Lists at their core
+                # Due to the way "sublayers" are parsed, the keys on a layer
+                # can refer to a single string or a List object. 
 
-                # Now look through the drawing-layers to see if we have any tagged
-                # with a name which contains a specific stackup-layer purpose.
-                # When we can be confident that there is a drawing-layer specifically
-                # intended for this stackup-layer, we assign it. If there is ambiguity,
-                # we leave it empty for the user to assign. These are ultimately read
-                # from the KTS vars in the Project file, so they are overwritten once
-                # assigned. We "guess" here to make it easier on the user, and also to
-                # keep as much of the definition process in the PCB file rather than Project.
+                if(kts_guess_layer_type(lyr[0].replace('"', '')) == "Dielec"):
+                    print("===================\n", lyr[0].replace('"', ''))
+                    print (*lyr)
+                    print ("Length lyr = ", len(lyr))
+                    print ("Length lyr.type = ", len(lyr.type))
+                    print (*lyr.type)
+                    print ("Length lyr.material = ", len(lyr.material))
+                    print ("Type lyr.material = ", type(lyr.material))
+                    print (*lyr.material)
+                    if (type(lyr.thickness) is int):
+                        print ("Type lyr.thickness = ", type(lyr.thickness))
+                        print (lyr.thickness)
+                    else:
+                        print ("Length lyr.thickness = ", len(lyr.thickness))
+                        print ("Type lyr.thickness = ", type(lyr.thickness))
+                        print (*lyr.thickness)
+                    print("+++++++++++++++++")
+                    idx = 0
+                    for itm in lyr:
+                        print(itm)
+                        if (itm == 0):
+                            print('inside itm[0]:', " (idx = ", idx, ")")
+                            #local = lyr[0]
+                            pprint.pprint(lyr[0])
+                        if (itm == 1):
+                            print('inside itm[1]:', " (idx = ", idx, ")")
+                            print(lyr.addsublayer)
+                            print(lyr[1])
+                            print(*lyr.material)
+                            print(*lyr['material'])
+                            print(len(lyr['material']))
+                            junk = lyr.thickness
+                            pprint.pprint(junk[0])
+                            pprint.pprint(" = ")
+                            pprint.pprint(junk[1])
+                            pprint.pprint(junk[2])
+                            print('\n')
+                            #local = lyr[1]
+                            #pprint.pprint(local.material)
+                        idx = idx + 1
 
-            print("KTS_Stackup.init: ", len(kts_stackup), " stackup layers imported from PCB." )
 
-            pprint.pprint(kts_stackup)
+        print("KTS_Stackup.init: ", len(kts_stackup), " stackup layers imported from PCB." )
+
+            #pprint.pprint(kts_stackup)
         return
+            ## Now with the physical stackup imported from the PCB, we make a guess
+            ## as to the "region" represented as either being "flex" or "rigid".
+            ## These guesses are made available to the user to adjust in the event
+            ## that we guessed wrong. Eventually, we may "force" sufficient hinting
+            ## in the PCB file to eliminate the need to allow user adjustments here.
+ 
+            #flex_only  = True if (has_flex and not has_rigid) else False
+            #rigid_only = True if (has_rigid and not has_flex) else False
+            #has_both   = True if (has_rigid and has_flex) else False
+
+            #print("has_flex = ", has_flex)
+            #print("has_rigid = ", has_rigid)
+            #print("flex_only = ", flex_only)
+            #print("rigid_only = ", rigid_only)
+            #print("has_both = ", has_both)
+
+
+
+            ## We also perform some additional "guessing" to refine our first-pass
+            ## for layer characteristics. For instance, on a flex-only board, the
+            ## solder mask is also the coverlay. 
+
+            #for lyr in kts_stackup:
+            #    if ('Silk' in lyr.lyr_type):
+            #        lyr.region = 'Flex' if (flex_only) else '?'
+            #        lyr.region = 'Rigid' if (rigid_only or has_both) else '?'
+            #        lyr.color  = lyr.color if (not lyr.color == '???') else 'White' # Handle unspecified Silkscreen color
+            #    if ('Mask' in lyr.lyr_type):
+            #        lyr.region = 'Flex' if (flex_only) else '?'
+            #        lyr.region = 'Rigid' if (rigid_only or has_both) else '?'
+            #        lyr.color  = lyr.color if (not lyr.color == '???') else 'Green' # Handle unspecified Solder Mask color
+            #        if (flex_only):
+            #            lyr.lyr_func = 'FlexCoverlayMask'
+            #            lyr.color    = 'Kapton'
+            #    if ('Dielec' in lyr.lyr_type):
+            #        lyr.region = 'Flex'  if (flex_only) else lyr.region
+            #        lyr.region = 'Rigid' if (rigid_only) else lyr.region
+            #        if (has_both):
+            #            lyr.region = 'Flex'  if ('Flex' in lyr.lyr_func) else lyr.region
+            #            lyr.region = 'Rigid'  if ('Rigid' in lyr.lyr_func) else lyr.region
+
+
+            ## Now look through the drawing-layers to see if we have any tagged
+            ## with a name which contains a specific stackup-layer purpose.
+            ## When we can be confident that there is a drawing-layer specifically
+            ## intended for this stackup-layer, we assign it. If there is ambiguity,
+            ## we leave it empty for the user to assign. These are ultimately read
+            ## from the KTS vars in the Project file, so they are overwritten once
+            ## assigned. We "guess" here to make it easier on the user, and also to
+            ## keep as much of the definition process in the PCB file rather than Project.
+
+
+
+
+    # Here we extract the primary information from the KiCAD Stackup
+    # We only are called if there is a valid layer to parse.
+
+    def _parse_stackup_layer(lyr, lyr_id: int) -> Tuple[bool, bool]:
+        # Make new row in our KTS Physical Stackup
+        kts_stackup = KTS_Stackup.kts_stackup
+        kts_stackup.append(KTS_StackUpRecord("", "", "", "", 0, "", "", "", "", "", ""))
+
+        # Get KiCAD-assigned stackup-layer/drawing-layer & guess a stackup-layer "type".
+        # We will refine this later in the next step.
+        kts_stackup[-1].content = lyr[0].replace('"', '')
+        kts_stackup[-1].lyr_type = kts_guess_layer_type(kts_stackup[-1].content)
+
+        if (kts_stackup[-1].lyr_type == 'Copper'):
+            kts_stackup[-1].finish = copper_finish
+
+        if hasattr(lyr, "thickness"):
+            kts_stackup[-1].thkness = lyr.thickness
+
+        raw_material = ""
+        if hasattr(lyr, "material"):
+            kts_stackup[-1].material = kts_guess_material_type((lyr.material).replace('"', ''))
+            raw_material = (lyr.material).replace('"', '')
+        else:
+            kts_stackup[-1].material = kts_guess_material_type(kts_stackup[-1].lyr_type) 
+                
+        raw_type = ""
+        if hasattr(lyr, "type"):
+            raw_type = (lyr.type).replace('"', '')
+        kts_stackup[-1].lyr_func = kts_guess_layer_function(raw_material + raw_type)
+
+        pcb_color = (lyr.color).replace('"', '') if hasattr(lyr, "color") else ""
+        kts_stackup[-1].color = kts_guess_layer_color(pcb_color + raw_type + kts_stackup[-1].material + kts_stackup[-1].lyr_type)
+
+        # Look at Dielectric types to guess what kind of PCBA this is
+        #print('Layer Func is: ', kts_stackup[-1].lyr_func)
+
+        if ('Dielec' in kts_stackup[-1].lyr_type):
+            print('Dielec Layer')
+            has_flex   = True if ('Flex'  in kts_stackup[-1].lyr_func) else False
+            has_rigid  = True if ('Rigid' in kts_stackup[-1].lyr_func) else False
+
+        return (lyr_has_flex, lyr_has_rigid)
+
+
 
     def get():
         return (KTS_Stackup.kts_stackup)
@@ -410,6 +632,10 @@ def _getComboView(main_window):
            return i.findChild(QtGui.QTabWidget)
    raise Exception ("'Combo View' widget found")
 
+
+#### ToDo: Only open Window when it's time to Edit stackup
+#### ToDo: Make OK & Cancel (and a Save button) do the "right thing"
+#### ToDo: Make an Edit-Stackup command button to show our editor
 
 def kts_make_stack_edit_tab(stackup: KTS_Stackup):
     combo_view_tabs = _getComboView(FreeCADGui.getMainWindow())
@@ -463,12 +689,18 @@ def kts_make_stack_edit_tab(stackup: KTS_Stackup):
 from PySide.QtGui import QDialog, QDialogButtonBox, QVBoxLayout, QHBoxLayout, QBoxLayout, QLabel, QGraphicsRectItem, QGraphicsScene, QGraphicsView, QPushButton
 from PySide.QtGui import QPen, QColor, QBrush, QFrame, QComboBox, QLineEdit, QFont, QLabel
 from PySide.QtCore import QRectF
+#from kts_StackUpEdit import KtsColor
 
-class StackUpEditDialog(QDialog):       # We subclass QDialog, do we have to?
+
+# We subclass QDialog here in order override some
+# built-in methods like accept() & cancel(), etc..
+class StackUpEditDialog(QDialog):
+    """Create the 'Stackup Editor' tab in
+       the 'Combo View' Panel of the UI."""
+
     def __init__(self, stackup: KTS_Stackup):
         super().__init__()
-
-        self.setFixedHeight(300)
+        #self.setFixedHeight(300)
 
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
 
@@ -490,7 +722,13 @@ class StackUpEditDialog(QDialog):       # We subclass QDialog, do we have to?
 
         scene = QGraphicsScene(self)
         #scene.addRect(my_rect, Qt.NoPen, Qt.red)
-        scene.addRect(0,0,50,layer_height, Qt.NoPen, Qt.red)
+        my_color = QColor('#008080')
+        #junk = my_color.setRgb(0x008080)
+        print("my_color = ", my_color)
+        #junk = my_color.setRgbF(0.0, 1.0, 0.0, 1.0)
+        scene.addRect(0,0,50,layer_height, Qt.NoPen, KtsColor.to_QColor("Purple"))
+        print("Qt.green = ", Qt.green)
+        #print("junk = ", junk)
         
         view = QGraphicsView(scene)
         view.setFrameStyle(QFrame.NoFrame)
@@ -551,21 +789,34 @@ class StackUpEditDialog(QDialog):       # We subclass QDialog, do we have to?
 
         #row_layout.setMaximumHeight(100)
 
-        self.layout = QVBoxLayout() # We use a Vertical Box layout to stack the layers
-        self.layout.setSpacing(layer_spacing)   # No vertical space between elements
 
         message = QLabel("Something happened, is that OK?")
         message.setFixedHeight(20)
 
         message2 = QLabel("Something happened, is that OK?")
 
-        row_layout3 = self._build_stackup_row(stackup[0])
+        stackup_header_row = self._build_stackup_row_header()
+        #row_layout4 = self._build_stackup_row(stackup[0])
 
-        self.layout.addWidget(message)
-        self.layout.addLayout(row_layout)
-        self.layout.addLayout(row_layout2)
-        self.layout.addLayout(row_layout3)
-        self.layout.addWidget(message2)
+        #self.layout.addWidget(message)
+        #self.layout.addLayout(row_layout)
+        #self.layout.addLayout(row_layout2)
+
+
+
+        self.layout = QVBoxLayout() # We use a Vertical Box layout to stack the layers
+        self.layout.setSpacing(layer_spacing)   # No vertical space between elements
+        #self.layout.setMargin(0)   # No vertical space between elements
+        #self.layout.setContentsMargins(0,0,0,0)
+
+        # Add a header, and content row for each physical stackup-layer
+        self.layout.addLayout(stackup_header_row)
+        for lyr in stackup:
+            self.layout.addLayout(self._build_stackup_row(lyr))
+
+        #self.layout.addLayout(row_layout4)
+        #self.layout.addWidget(message2)
+        self.layout.addStretch()
         self.layout.addWidget(self.buttonBox)
         self.setLayout(self.layout)
 
@@ -573,71 +824,101 @@ class StackUpEditDialog(QDialog):       # We subclass QDialog, do we have to?
 
 
     def _build_stackup_row(self, layer: KTS_StackUpRecord): # Returns a QHBoxLayout element
-        vert_ht  = 13
-        vert_spc = 4
-        horz_spc = 10
-        stack_icon_wd = 50
+        item_vert_ht  = 13
+        item_horz_wd = 60
+        item_horz_spc = 10
+        items = []
+
+        # We do this because we can't iterate over the items in 'layer'
+        layer_col_vals = []
+        layer_col_vals.append(layer.content)
+        layer_col_vals.append(layer.outline)
+        layer_col_vals.append(layer.lyr_type)
+        layer_col_vals.append(str(layer.thkness))
+        layer_col_vals.append(layer.material)
+        layer_col_vals.append(layer.region)
+        layer_col_vals.append(layer.color)
+        layer_col_vals.append(layer.finish)
+        layer_col_vals.append(layer.lyr_func)
 
         # A colored rectangle representing the material of layer
-        rect = QGraphicsScene(self)                             # Create container (scene) for graphics element
-        rect.addRect(0, 0, stack_icon_wd, vert_ht, Qt.NoPen, Qt.red)   # Add a rectangle to scene
+        rect = QGraphicsScene(self)                     # Create container (scene) for graphics element
+        rect.addRect(0, 0, item_horz_wd, item_vert_ht, 
+                     Qt.NoPen, KtsColor.to_QColor(layer.color))  # Add a rectangle to scene
         
         # Adjust characteristics of the containing view object
-        layer_rect = QGraphicsView(rect)                    # New view containing rectangle
-        layer_rect.setFrameStyle(QFrame.NoFrame)            # Remove "frame" around view
-        layer_rect.setFixedHeight(vert_ht)                  # Adjust Height to absolute
-        layer_rect.setFixedWidth(50)                        # ... and width
+        items.append(QGraphicsView(rect))           # New view containing rectangle
+        items[-1].setFrameStyle(QFrame.NoFrame)     # Remove "frame" around view
+        items[-1].setFixedHeight(item_vert_ht)      # Adjust Height to absolute
+        items[-1].setFixedWidth(item_horz_wd)       # ... and width
 
-        # Construct text elements for Row
-        content_text = QLabel()
-        content_text.setText(layer.content)
+        # We want a Bold header font
+        #header_font = QtGui.QFont()
+        #header_font.setBold(True)
 
-        outline_text = QLabel()
-        outline_text.setText(layer.outline)
-
-        lyr_type_text = QLabel()
-        lyr_type_text.setText(layer.lyr_type)
-
-        thkness_text = QLabel()
-        thkness_text.setText(str(layer.thkness))
-
-        material_text = QLabel()
-        material_text.setText(layer.material)
-
-        region_text = QLabel()
-        region_text.setText(layer.region)
-
-        color_text = QLabel()
-        color_text.setText(layer.color)
-
-        finish_text = QLabel()
-        finish_text.setText(layer.finish)
-
-        lyr_func_text = QLabel()
-        lyr_func_text.setText(layer.lyr_func)
+        for col in layer_col_vals:
+            # Construct text elements for Row
+            items.append(QLabel())
+            items[-1].setText(col)
+            items[-1].setAlignment(Qt.AlignCenter)
+            #items[-1].setFont(header_font)
+            items[-1].setFixedHeight(item_vert_ht)
+            items[-1].setFixedWidth(item_horz_wd)
+            #items[-1].setStyleSheet("border: 1px solid black;")
 
         # Create row object
         row_layout = QHBoxLayout()
-        row_layout.setSpacing(horz_spc) # No Horiz space between elements
-        row_layout.setMargin(0)         # No Horiz space between elements
+        row_layout.setSpacing(item_horz_spc) # Horiz space between elements
+        row_layout.setMargin(0)              # No Horiz margin inside elements
         row_layout.setContentsMargins(0, 0, 0, 0)
 
         # Build actual row
-        row_layout.addStretch()
-        row_layout.addWidget(layer_rect)
-        row_layout.addWidget(content_text)
-        row_layout.addWidget(outline_text)
-        row_layout.addWidget(lyr_type_text)
-        row_layout.addWidget(thkness_text)
-        row_layout.addWidget(material_text)
-        row_layout.addWidget(region_text)
-        row_layout.addWidget(color_text)
-        row_layout.addWidget(finish_text)
-        row_layout.addWidget(lyr_func_text)
+        for col in items:
+            row_layout.addWidget(col)
         row_layout.addStretch()
 
         return (row_layout)
 
+# END - _build_stackup_row()
+
+
+    def _build_stackup_row_header(self): # Returns a QHBoxLayout element
+        item_vert_ht  = 13
+        item_horz_wd = 60
+        item_horz_spc = 10
+
+        headers = []
+        column_labels = ["Stack Up", "Content", "Outline", "Type", "Thickness", 
+                         "Material", "Region", "STEP Color", "Cu Finish", "Function"]
+
+        # We want a Bold header font
+        header_font = QtGui.QFont()
+        header_font.setBold(True)
+
+        for col in column_labels:
+            # Construct text elements for Row
+            headers.append(QLabel())
+            headers[-1].setText(col)
+            headers[-1].setAlignment(Qt.AlignCenter)
+            headers[-1].setFont(header_font)
+            headers[-1].setFixedHeight(item_vert_ht)
+            headers[-1].setFixedWidth(item_horz_wd)
+            #headers[-1].setStyleSheet("border: 1px solid black;")
+        
+        # Create row object
+        row_layout = QHBoxLayout()
+        row_layout.setSpacing(item_horz_spc) # No Horiz space between elements
+        row_layout.setMargin(0)         # No Horiz space between elements
+        row_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Build actual row
+        for col in headers:
+            row_layout.addWidget(col)
+        row_layout.addStretch()
+
+        return (row_layout)
+
+# END - _build_stackup_row_header()
 
 
 
