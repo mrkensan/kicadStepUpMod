@@ -62,3 +62,13 @@ junk.txt
 Network Trash Folder
 Temporary Items
 .apdisk
+/kicad_parser/test.py
+/kicad_parser/test.kicad_pcb
+/kicad_parser/sexp_parser/test.py
+/kicad_parser/sexp_parser/Readme.rst
+/kicad_parser/sexp_parser/LICENSE
+/kicad_parser/sexp_parser/.gitignore
+/kicad_parser/Readme.rst
+/kicad_parser/LICENSE
+/kicad_parser/.gitmodules
+/kicad_parser/.gitignore
