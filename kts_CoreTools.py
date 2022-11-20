@@ -62,7 +62,7 @@ def select_pcb_file():
     from kts_PrefsMgmt import prefs_get
     import os
     import PySide
-    from fcad_parser import KicadPCB
+    from kicad_parser import KicadPCB
     import inspect
     from collections import OrderedDict
     from kts_StackUpEdit import KiCAD_Layers, KTS_Stackup
