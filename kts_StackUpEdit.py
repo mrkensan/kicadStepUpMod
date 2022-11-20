@@ -95,6 +95,9 @@ __KTS_FILE_NAME__ = "KTS_STACKUPEDIT"
 from kts_PrefsMgmt import prefs_set_file_version
 prefs_set_file_version(__KTS_FILE_NAME__, __KTS_FILE_VER__)
 
+def unquote(item: str) -> str:
+    return (item.replace('"', ''))
+
 
 def kts_guess_layer_type(lyr: str) -> str:
     """Guesses the generic type of stackup-layer"""
@@ -106,6 +109,8 @@ def kts_guess_layer_type(lyr: str) -> str:
         return ""
     if ('Mask' in lyr):
         return "SolMask"
+    if ('Dielec' in lyr):
+        return "Dielec"
     if ('dielectric' in lyr):
         return "Dielec"
     return ""
@@ -441,31 +446,111 @@ class KTS_Stackup:
             # ToDo: Make this into an "Alert"
             print("KTS_Stackup.init: No Stackup found in PCB file." )
         else:
-            copper_finish = (kicad_pcb.setup.stackup.copper_finish).replace('"', '')
+            copper_finish = unquote(kicad_pcb.setup.stackup.copper_finish)
             copper_finish = copper_finish if(not 'None' in copper_finish) else 'Bare'
+
+            print("****************************************************")
             print("Stackup Sections:")
-            print(*kicad_pcb.setup.stackup['layer'])
+            print(*kicad_pcb.setup.stackup['layer'], sep = "\n")
             print("****************************************************")
 
             for lyr in kicad_pcb.setup.stackup.layer:
-                # Look for layers with no "purpose" and skip them
-                if (kts_guess_layer_type(lyr[0].replace('"', '')) == ""):
+                # Skip physical-layers not used in construction of PCB (like solder paste)
+                if (kts_guess_layer_type(unquote(lyr[0])) == ""):
                     continue
 
-                # 'layer' objects are Lists & Lists-of-Lists at their core
-                # Due to the way "sublayers" are parsed, the keys on a layer
-                # can refer to a single string or a List object. 
+                # 'layer' objects are Lists & Lists-of-Lists at their core, 
+                # this is how the Sexp parser works.
+                # Due to the way "sublayers" are expressed in the PCB file, 
+                # 'sublayers' are not distinct. All items with the same key
+                # are compiled into a List, in order or encounter by the parser.
+                # This means a key can refer to a single item, or to a list of 
+                # such items which exist on that layer. 
 
-                if(kts_guess_layer_type(lyr[0].replace('"', '')) == "Dielec"):
-                    print("===================\n", lyr[0].replace('"', ''))
+                # This is relevant in the case of Dielectric layers, which 
+                # contain "sublayers" rather than distinct layers for each 
+                # specified in the stackup. For Dielectric layers to make sense,
+                # we must require that the user compltely specify the parts
+                # of all dielectric sublayers in order to assign attributes
+                # correctly. 
+
+                # In order to normalize processing of all layers, we will 
+                # construct a canonical layer 'spec' used to populate the
+                # KTS stackup data structs. For layers with no "addsublayer"
+                # tag, it'll be a List with a single dict() entry. For layers
+                # which include sub-layers, we construct a List of dict()s
+                # so we can process each layer or sub-layer consistently as
+                # we build the KTS view of the stackup.
+
+                # We use the fact that the SexpParser uses 'int' keys for any
+                # "orphaned" keys it finds. These are keys found with no value.
+                # As currently implemented, these are placed at the "end" of the
+                # list. We can determine how many "sub-layers" exist by looking
+                # at the integer key value at the end of the List for a Dielectric
+                # layer. 
+                from kicad_parser import SexpList 
+
+                # Extract values from fields, if they exist, in the PCB-layer
+                def _add_if(key:str, pcb_lyr:SexpList, idx=None) -> str:
+                    if (idx == None):
+                        return unquote(str(pcb_lyr[key])) if key in pcb_lyr else ""
+                    else:
+                        return unquote(str((pcb_lyr[key])[idx])) if ((key in pcb_lyr) and (idx < len(pcb_lyr[key]))) else ""
+
+                # Here we pull layer params into a standard List-of-Lists
+                # We do this as a prior step to parsing the info because
+                # KiCAD treats Dielectric stackup-layers differently than
+                # other layers. We standardize this to keep the parser simple.
+                # The ID value has an index appended if it has 'sublayers'.
+                def _extract_layer(lyr: SexpList, idx=None):
+                    return {'ID'        : unquote(lyr[0]) + (('.'+str(idx+1)) if idx!=None else ""),
+                            'TYPE'      : _add_if('type', lyr, idx),
+                            'MATERIAL'  : _add_if('material', lyr, idx),
+                            'THICKNESS' : _add_if('thickness', lyr, idx),
+                            'COLOR'     : _add_if('color', lyr, idx)}
+
+                # Look for a layer which has "un-named values" and check
+                # that one of them is "addsublayer". This tells us that
+                # we'll pull multiple KTS-layers from this one PCB-layer.
+                if ((type([*lyr][-1]) is int) and ("addsublayer" in lyr[[*lyr][-1]])):
+                    print (">>>>>> Found ", [*lyr][-1], " sublayer(s)")
+                    # Iterate over what should be the number of total layers here
+                    for idx in range([*lyr][-1]+1):
+                        layer_data = _extract_layer(lyr, idx)
+                        layer_data['ID'] = layer_data['ID'].replace('dielectric ', 'Dielec_')
+                        has_flex, has_rigid = KTS_Stackup._parse_stackup_layer(layer_data, copper_finish)
+                else:
+                    # Process a single PCB-layer which maps to one KTS-layer
+                    layer_data = _extract_layer(lyr)
+                    layer_data['ID'] = layer_data['ID'].replace('dielectric ', 'Dielec_')
+                    has_flex, has_rigid = KTS_Stackup._parse_stackup_layer(layer_data, copper_finish)
+
+
+
+
+                if (kts_guess_layer_type(unquote(lyr[0])) == "Dielec"):
+                    print("===================", unquote(lyr[0]), "===================")
                     print (*lyr)
+                    print ("type of lyr = ", type(lyr))
                     print ("Length lyr = ", len(lyr))
+                    lyr_keys = [*lyr]
+                    print("my_lyr = ", lyr_keys)
+                    print ("Last item in my_lyr = ", lyr_keys[-1])
+                    if (type(lyr_keys[-1]) is int):
+                        print ("\tPerhaps we have a sublayer...")
+                        if ("addsublayer" in lyr[lyr_keys[-1]]):
+                            print ("\t\tYES, we found a sublayer")
+                    for item in [*lyr]:
+                        print ("\t\t", item, " = ", lyr[item])
+                        if isinstance(lyr[item], SexpList):
+                           print("\t\t\t has len ", len(lyr[item]) )
+                    print ("\t\tFound ", [lyr[key] for key in [*lyr]].count("addsublayer"), " sublayers")
                     print ("Length lyr.type = ", len(lyr.type))
                     print (*lyr.type)
                     print ("Length lyr.material = ", len(lyr.material))
                     print ("Type lyr.material = ", type(lyr.material))
                     print (*lyr.material)
-                    if (type(lyr.thickness) is int):
+                    if ((type(lyr.thickness) is int) or (type(lyr.thickness) is float)):
                         print ("Type lyr.thickness = ", type(lyr.thickness))
                         print (lyr.thickness)
                     else:
@@ -482,7 +567,7 @@ class KTS_Stackup:
                             pprint.pprint(lyr[0])
                         if (itm == 1):
                             print('inside itm[1]:', " (idx = ", idx, ")")
-                            print(lyr.addsublayer)
+                            #print(lyr.addsublayer)
                             print(lyr[1])
                             print(*lyr.material)
                             print(*lyr['material'])
@@ -491,115 +576,115 @@ class KTS_Stackup:
                             pprint.pprint(junk[0])
                             pprint.pprint(" = ")
                             pprint.pprint(junk[1])
-                            pprint.pprint(junk[2])
+                            #pprint.pprint(junk[2])
                             print('\n')
                             #local = lyr[1]
                             #pprint.pprint(local.material)
                         idx = idx + 1
 
 
+            # Now with the physical stackup imported from the PCB, we make a guess
+            # as to the "region" represented as either being "flex" or "rigid".
+            # These guesses are made available to the user to adjust in the event
+            # that we guessed wrong. Eventually, we may "force" sufficient hinting
+            # in the PCB file to eliminate the need to allow user adjustments here.
+ 
+            flex_only  = True if (has_flex and not has_rigid) else False
+            rigid_only = True if (has_rigid and not has_flex) else False
+            has_both   = True if (has_rigid and has_flex) else False
+
+            print("has_flex = ", has_flex)
+            print("has_rigid = ", has_rigid)
+            print("flex_only = ", flex_only)
+            print("rigid_only = ", rigid_only)
+            print("has_both = ", has_both)
+
+
+
+            # We also perform some additional "guessing" to refine our first-pass
+            # for layer characteristics. For instance, on a flex-only board, the
+            # solder mask is also the coverlay. 
+
+            for lyr in kts_stackup:
+                if ('Silk' in lyr.lyr_type):
+                    lyr.region = 'Flex' if (flex_only) else '?'
+                    lyr.region = 'Rigid' if (rigid_only or has_both) else '?'
+                    lyr.color  = lyr.color if (not lyr.color == '???') else 'White' # Handle unspecified Silkscreen color
+                if ('Mask' in lyr.lyr_type):
+                    lyr.region = 'Flex' if (flex_only) else '?'
+                    lyr.region = 'Rigid' if (rigid_only or has_both) else '?'
+                    lyr.color  = lyr.color if (not lyr.color == '???') else 'Green' # Handle unspecified Solder Mask color
+                    if (flex_only):
+                        lyr.lyr_func = 'FlexCoverlayMask'
+                        lyr.color    = 'Kapton'
+                if ('Dielec' in lyr.lyr_type):
+                    lyr.region = 'Flex'  if (flex_only) else lyr.region
+                    lyr.region = 'Rigid' if (rigid_only) else lyr.region
+                    if (has_both):
+                        lyr.region = 'Flex'  if ('Flex' in lyr.lyr_func) else lyr.region
+                        lyr.region = 'Rigid'  if ('Rigid' in lyr.lyr_func) else lyr.region
+
+
+            # Now look through the drawing-layers to see if we have any tagged
+            # with a name which contains a specific stackup-layer purpose.
+            # When we can be confident that there is a drawing-layer specifically
+            # intended for this stackup-layer, we assign it. If there is ambiguity,
+            # we leave it empty for the user to assign. These are ultimately read
+            # from the KTS vars in the Project file, so they are overwritten once
+            # assigned. We "guess" here to make it easier on the user, and also to
+            # keep as much of the definition process in the PCB file rather than Project.
+
         print("KTS_Stackup.init: ", len(kts_stackup), " stackup layers imported from PCB." )
 
             #pprint.pprint(kts_stackup)
         return
-            ## Now with the physical stackup imported from the PCB, we make a guess
-            ## as to the "region" represented as either being "flex" or "rigid".
-            ## These guesses are made available to the user to adjust in the event
-            ## that we guessed wrong. Eventually, we may "force" sufficient hinting
-            ## in the PCB file to eliminate the need to allow user adjustments here.
- 
-            #flex_only  = True if (has_flex and not has_rigid) else False
-            #rigid_only = True if (has_rigid and not has_flex) else False
-            #has_both   = True if (has_rigid and has_flex) else False
-
-            #print("has_flex = ", has_flex)
-            #print("has_rigid = ", has_rigid)
-            #print("flex_only = ", flex_only)
-            #print("rigid_only = ", rigid_only)
-            #print("has_both = ", has_both)
-
-
-
-            ## We also perform some additional "guessing" to refine our first-pass
-            ## for layer characteristics. For instance, on a flex-only board, the
-            ## solder mask is also the coverlay. 
-
-            #for lyr in kts_stackup:
-            #    if ('Silk' in lyr.lyr_type):
-            #        lyr.region = 'Flex' if (flex_only) else '?'
-            #        lyr.region = 'Rigid' if (rigid_only or has_both) else '?'
-            #        lyr.color  = lyr.color if (not lyr.color == '???') else 'White' # Handle unspecified Silkscreen color
-            #    if ('Mask' in lyr.lyr_type):
-            #        lyr.region = 'Flex' if (flex_only) else '?'
-            #        lyr.region = 'Rigid' if (rigid_only or has_both) else '?'
-            #        lyr.color  = lyr.color if (not lyr.color == '???') else 'Green' # Handle unspecified Solder Mask color
-            #        if (flex_only):
-            #            lyr.lyr_func = 'FlexCoverlayMask'
-            #            lyr.color    = 'Kapton'
-            #    if ('Dielec' in lyr.lyr_type):
-            #        lyr.region = 'Flex'  if (flex_only) else lyr.region
-            #        lyr.region = 'Rigid' if (rigid_only) else lyr.region
-            #        if (has_both):
-            #            lyr.region = 'Flex'  if ('Flex' in lyr.lyr_func) else lyr.region
-            #            lyr.region = 'Rigid'  if ('Rigid' in lyr.lyr_func) else lyr.region
-
-
-            ## Now look through the drawing-layers to see if we have any tagged
-            ## with a name which contains a specific stackup-layer purpose.
-            ## When we can be confident that there is a drawing-layer specifically
-            ## intended for this stackup-layer, we assign it. If there is ambiguity,
-            ## we leave it empty for the user to assign. These are ultimately read
-            ## from the KTS vars in the Project file, so they are overwritten once
-            ## assigned. We "guess" here to make it easier on the user, and also to
-            ## keep as much of the definition process in the PCB file rather than Project.
-
-
 
 
     # Here we extract the primary information from the KiCAD Stackup
     # We only are called if there is a valid layer to parse.
 
-    def _parse_stackup_layer(lyr, lyr_id: int) -> Tuple[bool, bool]:
-        # Make new row in our KTS Physical Stackup
-        kts_stackup = KTS_Stackup.kts_stackup
-        kts_stackup.append(KTS_StackUpRecord("", "", "", "", 0, "", "", "", "", "", ""))
+    def _parse_stackup_layer(lyr, copper_finish) -> Tuple[bool, bool]:
+        # Make new row in our KTS Physical Stackup...
+        # ...and grab reference to the newly added row
+        KTS_Stackup.kts_stackup.append(KTS_StackUpRecord("", "", "", "", 0, "", "", "", "", "", ""))
+        stack_btm = KTS_Stackup.kts_stackup[-1]
 
         # Get KiCAD-assigned stackup-layer/drawing-layer & guess a stackup-layer "type".
         # We will refine this later in the next step.
-        kts_stackup[-1].content = lyr[0].replace('"', '')
-        kts_stackup[-1].lyr_type = kts_guess_layer_type(kts_stackup[-1].content)
+        stack_btm.content = lyr['ID']
+        stack_btm.lyr_type = kts_guess_layer_type(stack_btm.content)
 
-        if (kts_stackup[-1].lyr_type == 'Copper'):
-            kts_stackup[-1].finish = copper_finish
+        if (stack_btm.lyr_type == 'Copper'):
+            stack_btm.finish = copper_finish
 
-        if hasattr(lyr, "thickness"):
-            kts_stackup[-1].thkness = lyr.thickness
+        stack_btm.thkness = lyr['THICKNESS']
 
-        raw_material = ""
-        if hasattr(lyr, "material"):
-            kts_stackup[-1].material = kts_guess_material_type((lyr.material).replace('"', ''))
-            raw_material = (lyr.material).replace('"', '')
+        if (lyr['MATERIAL'] != ""):
+            stack_btm.material = kts_guess_material_type(lyr['MATERIAL'])
+            raw_material = lyr['MATERIAL']
         else:
-            kts_stackup[-1].material = kts_guess_material_type(kts_stackup[-1].lyr_type) 
+            if ((stack_btm.lyr_type == 'Silk') or 
+                (stack_btm.lyr_type == 'SolMask') or 
+                (stack_btm.lyr_type == 'Dielec')):
+                stack_btm.material = '???'
+            else:
+                stack_btm.material = kts_guess_material_type(stack_btm.lyr_type)
+            raw_material = ""
                 
-        raw_type = ""
-        if hasattr(lyr, "type"):
-            raw_type = (lyr.type).replace('"', '')
-        kts_stackup[-1].lyr_func = kts_guess_layer_function(raw_material + raw_type)
+        raw_type = lyr['TYPE']
+        stack_btm.lyr_func = kts_guess_layer_function(raw_material + raw_type)
+        stack_btm.lyr_func = stack_btm.lyr_func if stack_btm.lyr_func!="" else '???'
 
-        pcb_color = (lyr.color).replace('"', '') if hasattr(lyr, "color") else ""
-        kts_stackup[-1].color = kts_guess_layer_color(pcb_color + raw_type + kts_stackup[-1].material + kts_stackup[-1].lyr_type)
+        pcb_color = lyr['COLOR']
+        stack_btm.color = kts_guess_layer_color(pcb_color + raw_type + stack_btm.material + stack_btm.lyr_type)
 
         # Look at Dielectric types to guess what kind of PCBA this is
-        #print('Layer Func is: ', kts_stackup[-1].lyr_func)
+        #print('Layer Func is: ', stack_btm.lyr_func)
 
-        if ('Dielec' in kts_stackup[-1].lyr_type):
-            print('Dielec Layer')
-            has_flex   = True if ('Flex'  in kts_stackup[-1].lyr_func) else False
-            has_rigid  = True if ('Rigid' in kts_stackup[-1].lyr_func) else False
+        lyr_has_flex   = True if ('Flex'  in stack_btm.lyr_func) else False
+        lyr_has_rigid  = True if ('Rigid' in stack_btm.lyr_func) else False
 
         return (lyr_has_flex, lyr_has_rigid)
-
 
 
     def get():
@@ -852,16 +937,15 @@ class StackUpEditDialog(QDialog):
         items[-1].setFixedHeight(item_vert_ht)      # Adjust Height to absolute
         items[-1].setFixedWidth(item_horz_wd)       # ... and width
 
-        # We want a Bold header font
-        #header_font = QtGui.QFont()
-        #header_font.setBold(True)
-
         for col in layer_col_vals:
             # Construct text elements for Row
             items.append(QLabel())
             items[-1].setText(col)
             items[-1].setAlignment(Qt.AlignCenter)
-            #items[-1].setFont(header_font)
+            # Highlight potential errors for the user to resolve
+            # ToDo: Add a "hover tip" to help the user know how to resolve it
+            if (col == '???') or (col == '0'):
+                items[-1].setStyleSheet("background-color: #FFEC22; font-weight: bold")
             items[-1].setFixedHeight(item_vert_ht)
             items[-1].setFixedWidth(item_horz_wd)
             #items[-1].setStyleSheet("border: 1px solid black;")
@@ -891,16 +975,12 @@ class StackUpEditDialog(QDialog):
         column_labels = ["Stack Up", "Content", "Outline", "Type", "Thickness", 
                          "Material", "Region", "STEP Color", "Cu Finish", "Function"]
 
-        # We want a Bold header font
-        header_font = QtGui.QFont()
-        header_font.setBold(True)
-
         for col in column_labels:
             # Construct text elements for Row
             headers.append(QLabel())
             headers[-1].setText(col)
             headers[-1].setAlignment(Qt.AlignCenter)
-            headers[-1].setFont(header_font)
+            headers[-1].setStyleSheet("font-weight: bold")
             headers[-1].setFixedHeight(item_vert_ht)
             headers[-1].setFixedWidth(item_horz_wd)
             #headers[-1].setStyleSheet("border: 1px solid black;")
