@@ -343,14 +343,19 @@ class KiCAD_Layers:
             if ("F."  in mnemonic): continue        # KiCAD 'F.' don't have outlines
             if ("cut" in mnemonic.lower()):         # A layer that spec's 'cut' could be an outline
                 outline_list.append(mnemonic)
+                continue
             if ("cut" in mnemonic.lower()):         # A layer that spec's 'cut' could be an outline
                 outline_list.append(given_name)     # in case user renamed "Edge.Cuts"
+                continue
             if ("cut" in given_name.lower()):       # A layer that spec's 'cut' could be an outline
                 outline_list.append(given_name)
+                continue
             if ("out" in given_name):               # A layer that spec's 'out' could be an outline
                 outline_list.append(given_name)
+                continue
             if ("user." in mnemonic.lower()):       # A 'user' layer could be an outline
                 outline_list.append(given_name)
+                continue
             if (".Cu" in mnemonic): continue        # Copper layers don't have outlines
 
         return outline_list
