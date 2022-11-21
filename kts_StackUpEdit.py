@@ -149,6 +149,7 @@ def kts_guess_material_type(matl: str) -> str:
 
     return ""
 
+
 #****************************************************************************
 #*  These "Layer Function" definitions are guesses as to what the purpose   *
 #*  of a physical layer is in the stackup. These are based on the type of   *
@@ -174,13 +175,13 @@ def kts_guess_layer_function(matl: str) -> str:
              (('POLYIMIDE' in matl.upper()) or ('KAPTON' in matl.upper())) ):
 
             if ('MASK' in matl.upper()):
-                return "FlexCoverMask"      # For Flex-only boards, the coverlay and soldermask may be the same entity
+                return "FlexCoverMask"  # For Flex-only boards, the coverlay and soldermask may be the same entity
             else:
-                return "FlexCoverlay"       # For Rigid-Flex boards, coverlay represents its own layer(s) spec'd by drawing-layer(s)
+                return "FlexCoverlay"   # For Rigid-Flex boards, coverlay represents its own layer(s) spec'd by drawing-layer(s)
 
         if ( ((  'CORE'    in matl.upper()) or ('FLEX' in matl.upper())) and
              (('POLYIMIDE' in matl.upper()) or ('KAPTON' in matl.upper())) ):
-            return "FlexCore"               # This is a layer to which the copper is attached
+            return "FlexCore"           # This is a layer to which the copper is attached
 
     # Remaining "Typical" physical-layers
     if ('CORE' in matl.upper()):        # On Dielectrics with sublayers, the "material" name in KiCAD must include 'Core'
@@ -221,7 +222,6 @@ def kts_guess_layer_color(color: str) -> str:
     if ('COPPER' in color.upper()):
         return "Copper"
     return "???"
-
 
 
 #****************************************************************************
@@ -355,9 +355,6 @@ class KiCAD_Layers:
 
         return outline_list
 
-
-
-        
 # END - class KiCAD_Layers
 
 
@@ -497,7 +494,7 @@ class KTS_Stackup:
                 # this is how the Sexp parser works.
                 # Due to the way "sublayers" are expressed in the PCB file, 
                 # 'sublayers' are not distinct. All items with the same key
-                # are compiled into a List, in order or encounter by the parser.
+                # are compiled into a List in order-of-encounter by the parser.
                 # This means a key can refer to a single item, or to a list of 
                 # such items which exist on that layer. 
 
@@ -518,10 +515,9 @@ class KTS_Stackup:
 
                 # We use the fact that the SexpParser uses 'int' keys for any
                 # "orphaned" keys it finds. These are keys found with no value.
-                # As currently implemented, these are placed at the "end" of the
-                # list. We can determine how many "sub-layers" exist by looking
-                # at the integer key value at the end of the List for a Dielectric
-                # layer. 
+                # As currently implemented, these are placed at "end" of the list.
+                # We can determine how many "sub-layers" exist by looking at the
+                # integer key value at the end of the List for a Dielectric layer. 
                 from kicad_parser import SexpList 
 
                 # Extract values from fields, if they exist, in the PCB-layer
@@ -534,7 +530,7 @@ class KTS_Stackup:
                 # Here we pull layer params into a standard List-of-Lists
                 # We do this as a prior step to parsing the info because
                 # KiCAD treats Dielectric stackup-layers differently than
-                # other layers. We standardize this to keep the parser simple.
+                # other layers. We standardize this to keep our parser simple.
                 # The ID value has an index appended if it has 'sublayers'.
                 def _extract_layer(lyr: SexpList, idx=None):
                     return {'ID'        : unquote(lyr[0]) + (('.'+str(idx+1)) if idx!=None else ""),
@@ -545,7 +541,7 @@ class KTS_Stackup:
 
                 # Look for a layer which has "un-named values" and check
                 # that one of them is "addsublayer". This tells us that
-                # we'll pull multiple KTS-layers from this one PCB-layer.
+                # we'll pull multiple KTS-layers from this one KiCAD-layer.
                 if ((type([*lyr][-1]) is int) and ("addsublayer" in lyr[[*lyr][-1]])):
                     print (">>>>>> Found ", [*lyr][-1], " sublayer(s)")
                     # Iterate over what should be the number of total layers here
@@ -554,72 +550,14 @@ class KTS_Stackup:
                         layer_data['ID'] = layer_data['ID'].replace('dielectric ', 'Dielec_')
                         lyr_has_flex, lyr_has_rigid = KTS_Stackup._parse_stackup_layer(layer_data, copper_finish)
                 else:
-                    # Process a single PCB-layer which maps to one KTS-layer
+                    # Process as a single KiCAD-layer which maps to one KTS-layer
                     layer_data = _extract_layer(lyr)
                     layer_data['ID'] = layer_data['ID'].replace('dielectric ', 'Dielec_')
                     lyr_has_flex, lyr_has_rigid = KTS_Stackup._parse_stackup_layer(layer_data, copper_finish)
-
+                
+                # Running tally of entire stackup
                 stack_has_flex  = True if lyr_has_flex else stack_has_flex
                 stack_has_rigid = True if lyr_has_rigid else stack_has_rigid
-
-            # END - parsing PCB stackup laye
-
-
-
-                #if (kts_guess_layer_type(unquote(lyr[0])) == "Dielec"):
-                #    print("===================", unquote(lyr[0]), "===================")
-                #    print (*lyr)
-                #    print ("type of lyr = ", type(lyr))
-                #    print ("Length lyr = ", len(lyr))
-                #    lyr_keys = [*lyr]
-                #    print("my_lyr = ", lyr_keys)
-                #    print ("Last item in my_lyr = ", lyr_keys[-1])
-                #    if (type(lyr_keys[-1]) is int):
-                #        print ("\tPerhaps we have a sublayer...")
-                #        if ("addsublayer" in lyr[lyr_keys[-1]]):
-                #            print ("\t\tYES, we found a sublayer")
-                #    for item in [*lyr]:
-                #        print ("\t\t", item, " = ", lyr[item])
-                #        if isinstance(lyr[item], SexpList):
-                #           print("\t\t\t has len ", len(lyr[item]) )
-                #    print ("\t\tFound ", [lyr[key] for key in [*lyr]].count("addsublayer"), " sublayers")
-                #    print ("Length lyr.type = ", len(lyr.type))
-                #    print (*lyr.type)
-                #    print ("Length lyr.material = ", len(lyr.material))
-                #    print ("Type lyr.material = ", type(lyr.material))
-                #    print (*lyr.material)
-                #    if ((type(lyr.thickness) is int) or (type(lyr.thickness) is float)):
-                #        print ("Type lyr.thickness = ", type(lyr.thickness))
-                #        print (lyr.thickness)
-                #    else:
-                #        print ("Length lyr.thickness = ", len(lyr.thickness))
-                #        print ("Type lyr.thickness = ", type(lyr.thickness))
-                #        print (*lyr.thickness)
-                #    print("+++++++++++++++++")
-                #    idx = 0
-                #    for itm in lyr:
-                #        print(itm)
-                #        if (itm == 0):
-                #            print('inside itm[0]:', " (idx = ", idx, ")")
-                #            #local = lyr[0]
-                #            pprint.pprint(lyr[0])
-                #        if (itm == 1):
-                #            print('inside itm[1]:', " (idx = ", idx, ")")
-                #            #print(lyr.addsublayer)
-                #            print(lyr[1])
-                #            print(*lyr.material)
-                #            print(*lyr['material'])
-                #            print(len(lyr['material']))
-                #            junk = lyr.thickness
-                #            pprint.pprint(junk[0])
-                #            pprint.pprint(" = ")
-                #            pprint.pprint(junk[1])
-                #            #pprint.pprint(junk[2])
-                #            print('\n')
-                #            #local = lyr[1]
-                #            #pprint.pprint(local.material)
-                #        idx = idx + 1
-
 
             # Now with the physical stackup imported from the PCB, we make a guess
             # as to the "region" represented as either being "flex" or "rigid".
@@ -636,8 +574,6 @@ class KTS_Stackup:
             print("stack_flex_only  = ", stack_flex_only)
             print("stack_rigid_only = ", stack_rigid_only)
             print("stack_has_both   = ", stack_has_both)
-
-
 
             # We also perform some additional "guessing" to refine our first-pass
             # for layer characteristics. For instance, on a flex-only board, the
@@ -673,8 +609,6 @@ class KTS_Stackup:
             # keep as much of the definition process in the PCB file rather than Project.
 
         print("KTS_Stackup.init: ", len(kts_stackup), " stackup layers imported from PCB." )
-
-            #pprint.pprint(kts_stackup)
         return
 
 
@@ -729,12 +663,6 @@ class KTS_Stackup:
     def get():
         return (KTS_Stackup.kts_stackup)
 
-    #def kts_layer_get(lyr:str) -> str:
-    #    try:
-    #        return (KiCAD_Layers.layer_dict[lyr])
-    #    except:
-    #        return (None)
-        
 # END - class KiCAD_Layers
 
 
@@ -766,46 +694,21 @@ def kts_make_stack_edit_tab(stackup: KTS_Stackup):
 
     if (combo_view_tabs == None):
         print("Combo View Not Found")
+        return None
 
-    """
-    #our_new_tab = QtGui.QDialog()
-    our_new_tab = QtGui.QTableView()
-    #cell = our_new_tab.QTableWidget.cellWidget(1,1)
-    pprint.pprint(dir(our_new_tab))
-    """
-    #our_new_tab = QtGui.QDialog()
     our_new_tab = StackUpEditDialog(stackup)
-    
-    # Getting the data Model
-    model = CustomTableModel()
-
-    # Creating a QTableView
-    table_view = QtGui.QTableView()
-    table_view.setModel(model)
-
-    #our_new_tab = table_view
-
-    #combo_view.addTab(our_new_tab,"Stackup Editor")
     tab_index = combo_view_tabs.addTab(our_new_tab,"Stackup Editor")
     print("Tab Index = "+str(tab_index))
     print("Index of 'our_new_tab' = "+str(combo_view_tabs.indexOf(our_new_tab)))
     print("Text of 'our_new_tab' = "+str(combo_view_tabs.tabText(tab_index)))
 
-    
-    #uic.loadUi("/myTaskPanelforTabs.ui",combo)
-    #our_new_tab.show()
-    #combo_view_tabs.removeTab(tab_index)
-    #combo_view_tabs.setTabEnabled(tab_index, True)
-    #combo_view_tabs.setTabVisible(tab_index, False)
-
     dw=combo_view_tabs.findChildren(QtGui.QDialog)
     for i in dw:
        print(str(i.objectName()))
 
-
     return combo_view_tabs, tab_index;
-
 # END - kts_make_stack_edit_tab()
+
 
 from PySide.QtGui import QComboBox
 
@@ -828,18 +731,13 @@ class CutOutlineSelector(QComboBox):
 # END - class CutOutlineSelector
 
 
-
-
-#from PySide import QtWidgets
-#from PySide2.QtWidgets import QApplication, QDialog, QMainWindow, QPushButton, QDialogButtonBox, QVBoxLayout, QLabel
 from PySide.QtGui import QDialog, QDialogButtonBox, QVBoxLayout, QHBoxLayout, QBoxLayout, QLabel, QGraphicsRectItem, QGraphicsScene, QGraphicsView, QPushButton
 from PySide.QtGui import QPen, QColor, QBrush, QFrame, QComboBox, QLineEdit, QFont, QLabel
-from PySide.QtCore import QRectF
-#from kts_StackUpEdit import KtsColor
-
+from PySide.QtCore import Qt
 
 # We subclass QDialog here in order override some
 # built-in methods like accept() & cancel(), etc..
+
 class StackUpEditDialog(QDialog):
     """Create the 'Stackup Editor' tab in
        the 'Combo View' Panel of the UI."""
@@ -853,139 +751,45 @@ class StackUpEditDialog(QDialog):
     header_horz_spc = item_horz_spc
     drop_down_ht = item_vert_ht + 3
     layer_spacing = 4
-    #    layer_height = 13
 
 
     def __init__(self, stackup: KTS_Stackup):
         super().__init__()
-        #self.setFixedHeight(300)
 
+        # Create buttons to accept or reject the changes
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
 
         self.buttonBox = QDialogButtonBox(QBtn)
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
 
-
-        #my_rect = QGraphicsRectItem(0,0,100,100)
-        #print(my_rect)
-        #print(my_rect.isWidget())
-        #scene.addItem(my_rect)
-
-
-        #my_rect = QRectF(0,0,50,self.item_vert_ht)
-
-        #scene = QGraphicsScene(self)
-        ##scene.addRect(my_rect, Qt.NoPen, Qt.red)
-        #my_color = QColor('#008080')
-        ##junk = my_color.setRgb(0x008080)
-        #print("my_color = ", my_color)
-        ##junk = my_color.setRgbF(0.0, 1.0, 0.0, 1.0)
-        #scene.addRect(0,0,50,self.item_vert_ht, Qt.NoPen, KtsColor.to_QColor("Purple"))
-        #print("Qt.green = ", Qt.green)
-        ##print("junk = ", junk)
-        
-        #view = QGraphicsView(scene)
-        #view.setFrameStyle(QFrame.NoFrame)
-        ##view.setMaximumWidth(200)
-        ##view.setMaximumHeight(100)
-        #view.setFixedHeight(self.item_vert_ht)
-        #view.setFixedWidth(50)
-
-        #combobox = QComboBox()
-        #font = combobox.font()
-        #print("Combo Font Size is: ", font.pointSize())
-        #print("Combo Font name is: ", font.rawName())
-        #print("Combo sixeHint is: ", combobox.sizeHint())
-        #font.setPointSize(7)
-        #combobox.setFont(font)
-        #combobox.setFixedHeight(self.item_vert_ht)
-
-
-        #combobox.resize(61,15)
-        ##combobox.adjustSize()
-        ##font = QFont('Arial', 10)
-        #combobox.addItems(['One', 'Two', 'Three', 'Four'])
-        ##combobox.setFixedHeight(layer_height-15)
-        #combobox2 = QComboBox()
-        #combobox2.addItems(['Two', 'Three', 'Four'])
-        ##combobox2.setFixedHeight(layer_height-10)
-        ##combobox.setFixedWidth(50)
-
-        #entry = QLineEdit()
-        #entry.setFixedHeight(self.item_vert_ht)
-
-
-        #scene2 = QGraphicsScene(self)
-        #scene2.addRect(my_rect, Qt.NoPen, Qt.blue)
-
-        #view2 = QGraphicsView(scene2)
-        #view2.setFrameStyle(QFrame.NoFrame)
-        #view2.setFixedHeight(self.item_vert_ht)
-
-        #text_box = QLabel()
-        #text_box.setText("Here's some text")
-
-        #row_layout = QHBoxLayout()
-        #row_layout.setSpacing(2)   # No Horiz space between elements
-        #row_layout.setMargin(0)   # No Horiz space between elements
-        #row_layout.setContentsMargins(0, 0, 0, 0)
-
-        #row_layout.addStretch()
-        #row_layout.addWidget(text_box)
-        #row_layout.addWidget(entry)
-        #row_layout.addWidget(view)
-        #row_layout.addWidget(combobox)
-        #row_layout.addStretch()
-
-        
-        #row_layout2 = QHBoxLayout()
-        #row_layout2.addWidget(view2)
-
-        #row_layout.setMaximumHeight(100)
-
-
-        #message = QLabel("Something happened, is that OK?")
-        #message.setFixedHeight(20)
-
-        #message2 = QLabel("Something happened, is that OK?")
-
+        # Build row of col titles
         stackup_header_row = self._build_stackup_row_header()
-        #row_layout4 = self._build_stackup_row(stackup[0])
 
-        #self.layout.addWidget(message)
-        #self.layout.addLayout(row_layout)
-        #self.layout.addLayout(row_layout2)
-
-
-
-        self.layout = QVBoxLayout() # We use a Vertical Box layout to stack the layers
-        self.layout.setSpacing(self.layer_spacing)   # No vertical space between elements
-        #self.layout.setMargin(0)   # No vertical space between elements
+        self.layout = QVBoxLayout()                 # We use a Vertical Box layout to stack the layers
+        self.layout.setSpacing(self.layer_spacing)
+        #self.layout.setMargin(0)                   # No vertical space between elements
         #self.layout.setContentsMargins(0,0,0,0)
 
-        # Add a header, and content row for each physical stackup-layer
+        # Add header first, then content row for each physical stackup-layer
         self.layout.addLayout(stackup_header_row)
         for lyr in stackup:
             self.layout.addLayout(self._build_stackup_row(lyr))
 
-        #self.layout.addLayout(row_layout4)
-        #self.layout.addWidget(message2)
-        self.layout.addStretch()
-        self.layout.addWidget(self.buttonBox)
-        self.setLayout(self.layout)
+        self.layout.addStretch()                    # Required to allow rows above to "relax" to assigned spacing
+        self.layout.addWidget(self.buttonBox)       # These will be stuck to the lower right corner
+        self.setLayout(self.layout)                 # Commit the layout to our new tab in the "Combo View"
 
-        return
-
+        return None
+    # END - __init__()
 
 
     def _build_stackup_row(self, layer: KTS_StackUpRecord): # Returns a QHBoxLayout element
         items = []
 
-        # We do this because we can't iterate over the items in 'layer'
+        # These are the columns we want to iteratively render, in order
         layer_col_vals = []
         layer_col_vals.append(layer.content)
-        #layer_col_vals.append(layer.outline)
         layer_col_vals.append(layer.lyr_type)
         layer_col_vals.append(str(layer.thkness))
         layer_col_vals.append(layer.material)
@@ -996,14 +800,15 @@ class StackUpEditDialog(QDialog):
 
         # Colored rectangle representing the material of layer
         rect = QGraphicsScene(self)                     # Create container (scene) for graphics element
-        rect.addRect(0, 0, self.item_horz_wd, self.item_box_ht, 
-                     Qt.NoPen, KtsColor.to_QColor(layer.color))  # Add a rectangle to scene
+        rect.addRect(0, 0, self.item_horz_wd,           # Add a rectangle to the scene
+                     self.item_box_ht, Qt.NoPen,
+                     KtsColor.to_QColor(layer.color))  
 
         # Create view object for rectangle and set display params 
         rect_view = QGraphicsView(rect)             # Add view containing rectangle
         rect_view.setFrameStyle(QFrame.NoFrame)     # Remove "frame" around view
-        rect_view.setFixedHeight(self.item_box_ht)       # Adjust Height...
-        rect_view.setFixedWidth(self.item_horz_wd)       # ... and width to absolute
+        rect_view.setFixedHeight(self.item_box_ht)  # Adjust Height...
+        rect_view.setFixedWidth(self.item_horz_wd)  # ... and width to absolute
         items.append(rect_view)                     # Add column for view containing rectangle
 
         # Drop-down list for user selection of drawing-layer to associate with stackup-layer
@@ -1013,17 +818,18 @@ class StackUpEditDialog(QDialog):
             outline_menu.PopulateList("Three", KiCAD_Layers.get_outline_items())
 
             font = outline_menu.font()
-            font.setPointSize(7)                        # Set font to fit in our row without clipping
+            font.setPointSize(7)                            # Set font to fit in our row without clipping
             outline_menu.setFont(font)
-            outline_menu.setFixedHeight(self.drop_down_ht)   # Adjust Height...
-            outline_menu.setFixedWidth(self.item_horz_wd)    # ... and width to absolute
-            items.append(outline_menu)                  # Add column for view containing Drop-down list
+            outline_menu.setFixedHeight(self.drop_down_ht)  # Adjust Height...
+            outline_menu.setFixedWidth(self.item_horz_wd)   # ... and width to absolute
+            items.append(outline_menu)                      # Add column for view containing Drop-down list
         else:
             # Add a "Blank Spot" instead of the drop-down for this stackup-layer
             items.append(QLabel())
             items[-1].setFixedHeight(self.item_vert_ht)
             items[-1].setFixedWidth(self.item_horz_wd)
 
+        # Iterate through the remaining columns, rendering the text into QLabel objects
         for col in layer_col_vals:
             # Construct text elements for Row
             items.append(QLabel())                  # Add column for field text
@@ -1035,24 +841,27 @@ class StackUpEditDialog(QDialog):
                 items[-1].setStyleSheet("background-color: #FFEC22; font-weight: bold; ")
             items[-1].setFixedHeight(self.item_vert_ht)
             items[-1].setFixedWidth(self.item_horz_wd)
+            #items[-1].setStyleSheet(items[-1].styleSheet() + "background-color: #EDF0F5; ")    # Just for debugging use to check alignments
 
-            items[-1].setStyleSheet(items[-1].styleSheet() + "background-color: #EDF0F5; ")
-
-        # Create row object
+        # Create an empty row object
         row_layout = QHBoxLayout()
-        row_layout.setSpacing(self.item_horz_spc)        # Horiz space between elements
+        row_layout.setSpacing(self.item_horz_spc)   # Horiz space between elements
+                                                    # We may want to set a minimum width for the row
+                                                    # (if this is possible) to prevent smooshing stuff
+
+        # Probably don't need this...
         #row_layout.setAlignment(Qt.AlignCenter)     # Align placement of ELEMENT inside cell
         #row_layout.setMargin(0)                     # No Horiz margin inside elements
         #row_layout.setContentsMargins(0, 0, 0, 0)   # or? No Horiz margin inside elements
 
-        # Build actual row
+        # Add elements, in order left-to-right, to the new row
         for col in items:
             row_layout.addWidget(col)
-        row_layout.addStretch()
+        
+        row_layout.addStretch()         # Required to allow colums to respect their fixed spacing
 
         return (row_layout)
-
-# END - _build_stackup_row()
+    # END - _build_stackup_row()
 
 
     def _build_stackup_row_header(self): # Returns a QHBoxLayout element
@@ -1075,18 +884,16 @@ class StackUpEditDialog(QDialog):
         
         # Create row object
         row_layout = QHBoxLayout()
-        row_layout.setSpacing(self.header_horz_spc)  # No Horiz space between elements
-        row_layout.setMargin(0)                 # No Horiz space between elements
-        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.setSpacing(self.header_horz_spc)     # Horiz space between elements
 
-        # Build actual row
+        # Add elements, in order left-to-right, to the new row
         for col in headers:
             row_layout.addWidget(col)
-        row_layout.addStretch()
+
+        row_layout.addStretch()         # Required to allow colums to respect their fixed spacing
 
         return (row_layout)
-
-# END - _build_stackup_row_header()
+    # END - _build_stackup_row_header()
 
 
     # Overrides the builtin accept() method
@@ -1096,144 +903,4 @@ class StackUpEditDialog(QDialog):
 
 # END - class StackUpEditDialog
 
-
-#class StackUpEditDialog(QDialog):
-#    def __init__(self):
-#        super().__init__()
-
-#        okButton = QPushButton('OK')
-#        cancelButton = QPushButton('Cancel')
-        
-#        hbox = QHBoxLayout()
-#        hbox.addStretch(1)
-#        hbox.addWidget(okButton)
-#        hbox.addWidget(cancelButton)
-
-#        vbox = QVBoxLayout()
-#        message = QLabel("Something happened, is that OK?")
-#        vbox.addLayout(message)
-#        vbox.addStretch(1)
-#        vbox.addLayout(hbox)
-#        self.setLayout(vbox)
-
-
-#    # This overrides the builtin accept() method
-#    def accept(stuff):
-#        print("Accepted", stuff)
-#        pprint.pprint(stuff)
-
-## END - class StackUpEditDialog
-
-
-
-# This reimplements methods from the "QAbstractTableModel" class
-# This is required to provide a "data model" to the TableView
-
-from PySide.QtCore import Qt, QAbstractTableModel
-from PySide.QtGui import QColor
-
-headers = ["Scientist name", "Birthdate", "Contribution"]
-rows =    [("Newton", "1643-01-04", "Classical mechanics"),
-           ("Einstein", "1879-03-14", "Relativity"),
-           ("Darwin", "1809-02-12", "Evolution")]
-
-class CustomTableModel(QAbstractTableModel):
-    # The methods below must be implemented here in order to
-    # understand our data. Via these methods, our data is
-    # imported into the inteneral data represenation of the
-    # 'QAbstractTableModel' which supplies data to QTableView.
-
-    def rowCount(self, parent):
-        # Must return the number of rows in the dataset
-        return len(rows)
-
-    def columnCount(self, parent):
-        # Must return the number of columns in the dataset
-        return len(headers)
-
-    def headerData(self, section, orientation, role):
-        if role != Qt.DisplayRole:
-            return None
-        if orientation == Qt.Horizontal:
-            # Returns the header data for the given column
-            return headers[section]
-        else:
-            return "{}".format(section)
-
-    def data(self, index, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole:
-            # returns the cell value at the given index
-            # (index specifies row & col)
-            return rows[index.row()][index.column()]
-        elif role == Qt.BackgroundRole:
-            return QColor(Qt.white)
-        elif role == Qt.TextAlignmentRole:
-            return Qt.AlignRight
-
-        return None
-
-# END - class CustomTableModel()
-
-
-"""
-        self.KiCAD_Layers_json = {
-            {'kicad_num': "0",  'kicad_enum': "F.Cu",      'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "1",  'kicad_enum': "In1.Cu",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "2",  'kicad_enum': "In2.Cu",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "3",  'kicad_enum': "In3.Cu",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "4",  'kicad_enum': "In4.Cu",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "5",  'kicad_enum': "In5.Cu",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "6",  'kicad_enum': "In6.Cu",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "7",  'kicad_enum': "In7.Cu",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "8",  'kicad_enum': "In8.Cu",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "9",  'kicad_enum': "In9.Cu",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "10", 'kicad_enum': "In10.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "11", 'kicad_enum': "In11.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "12", 'kicad_enum': "In12.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "13", 'kicad_enum': "In13.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "14", 'kicad_enum': "In14.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "15", 'kicad_enum': "In15.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "16", 'kicad_enum': "In16.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "17", 'kicad_enum': "In17.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "18", 'kicad_enum': "In18.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "19", 'kicad_enum': "In19.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "20", 'kicad_enum': "In20.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "21", 'kicad_enum': "In21.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "22", 'kicad_enum': "In22.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "23", 'kicad_enum': "In23.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "24", 'kicad_enum': "In24.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "25", 'kicad_enum': "In25.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "26", 'kicad_enum': "In26.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "27", 'kicad_enum': "In27.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "28", 'kicad_enum': "In28.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "29", 'kicad_enum': "In29.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "30", 'kicad_enum': "In30.Cu",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "31", 'kicad_enum': "B.Cu",      'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "32", 'kicad_enum': "B.Adhes",   'kts_dscr': "", 'kicad_dscr': "B.Adhesive"}
-            {'kicad_num': "33", 'kicad_enum': "F.Adhes",   'kts_dscr': "", 'kicad_dscr': "F.Adhesive"}
-            {'kicad_num': "34", 'kicad_enum': "B.Paste",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "35", 'kicad_enum': "F.Paste",   'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "36", 'kicad_enum': "B.SilkS",   'kts_dscr': "", 'kicad_dscr': "B.Silkscreen"}
-            {'kicad_num': "37", 'kicad_enum': "F.SilkS",   'kts_dscr': "", 'kicad_dscr': "F.Silkscreen"}
-            {'kicad_num': "38", 'kicad_enum': "B.Mask",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "39", 'kicad_enum': "F.Mask",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "40", 'kicad_enum': "Dwgs.User", 'kts_dscr': "", 'kicad_dscr': "User.Drawings"}
-            {'kicad_num': "41", 'kicad_enum': "Cmts.User", 'kts_dscr': "", 'kicad_dscr': "User.Comments"}
-            {'kicad_num': "42", 'kicad_enum': "Eco1.User", 'kts_dscr': "", 'kicad_dscr': "User.Eco1"}
-            {'kicad_num': "43", 'kicad_enum': "Eco2.User", 'kts_dscr': "", 'kicad_dscr': "User.Eco2"}
-            {'kicad_num': "44", 'kicad_enum': "Edge.Cuts", 'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "45", 'kicad_enum': "Margin",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "46", 'kicad_enum': "B.CrtYd",   'kts_dscr': "", 'kicad_dscr': "B.Courtyard"}
-            {'kicad_num': "47", 'kicad_enum': "F.CrtYd",   'kts_dscr': "", 'kicad_dscr': "F.Courtyard"}
-            {'kicad_num': "48", 'kicad_enum': "B.Fab",     'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "49", 'kicad_enum': "F.Fab",     'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "50", 'kicad_enum': "User.1",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "51", 'kicad_enum': "User.2",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "52", 'kicad_enum': "User.3",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "53", 'kicad_enum': "User.4",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "54", 'kicad_enum': "User.5",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "55", 'kicad_enum': "User.6",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "56", 'kicad_enum': "User.7",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "57", 'kicad_enum': "User.8",    'kts_dscr': "", 'kicad_dscr': ""}
-            {'kicad_num': "58", 'kicad_enum': "User.9",    'kts_dscr': "", 'kicad_dscr': ""}}
-"""
+# END_MODULE - kts_StackUpEdit
