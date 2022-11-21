@@ -122,6 +122,8 @@ def kts_guess_material_type(matl: str) -> str:
     # Dielectric Materials
     if ('FR4' in matl.upper()):
         return "FR4"
+    if ('PREPREG' in matl.upper()):
+        return "PrePreg"
     if (('POLYIMIDE' in matl.upper()) | ('KAPTON' in matl.upper()) | ('COVER' in matl.upper())):
         return "Polyimide"
     if (('PTFE' in matl.upper()) | ('TEFLON' in matl.upper())):
@@ -167,27 +169,35 @@ def kts_guess_layer_function(matl: str) -> str:
         return "Copper"
 
     # Clues we're on a "flex" stackup-layer
-    if (('COVER' in matl.upper()) or ('POLYIMIDE' in matl.upper()) or ('FLEX' in matl.upper())):
-        if (('COVER' in matl.upper()) or (('PREPREG' in matl.upper()) and ('POLYIMIDE' in matl.upper()))):
-            return "FlexCoverlay"
+    if ( ('COVER' in matl.upper()) or ('FLEX' in matl.upper()) or ('POLYIMIDE' in matl.upper()) or ('KAPTON' in matl.upper()) ):
+        if ( (( 'PREPREG'  in matl.upper()) or ('COVER' in matl.upper())) and 
+             (('POLYIMIDE' in matl.upper()) or ('KAPTON' in matl.upper())) ):
 
-        if ((('POLYIMIDE' in matl.upper()) or ('FLEX' in matl.upper())) and ('CORE' in matl.upper())):
-            return "FlexCore"
+            if ('MASK' in matl.upper()):
+                return "FlexCoverMask"      # For Flex-only boards, the coverlay and soldermask may be the same entity
+            else:
+                return "FlexCoverlay"       # For Rigid-Flex boards, coverlay represents its own layer(s) spec'd by drawing-layer(s)
+
+        if ( ((  'CORE'    in matl.upper()) or ('FLEX' in matl.upper())) and
+             (('POLYIMIDE' in matl.upper()) or ('KAPTON' in matl.upper())) ):
+            return "FlexCore"               # This is a layer to which the copper is attached
 
     # Remaining "Typical" physical-layers
-    if ('CORE' in matl.upper()):
+    if ('CORE' in matl.upper()):        # On Dielectrics with sublayers, the "material" name in KiCAD must include 'Core'
         return "RigidCore"
-    if ('PREPREG' in matl.upper()):
+    if ('PREPREG' in matl.upper()):     # On Dielectrics with sublayers, the "material" name in KiCAD must include 'PrePreg'
         return "RigidPrepreg"
-    if ('MASK' in matl.upper()):
+    if ('MASK' in matl.upper()):        # This will refer to 'typical' soldermash on a Rigid substrate
         return "SolderMask"
-    if ('SILK' in matl.upper()):
-        return "Silkscreen"
+    if ('SILK' in matl.upper()):        # This will refer to Silkscreen on outermost layer(s). 
+        return "Silkscreen"             # Kicad doesn't have a good way to specify "inner" Silkscreen layers.
     return ""
 
 
 def kts_guess_layer_color(color: str) -> str:
     """Guesses the 'color' the layer should be rendered in"""
+    if ('COVER' in color.upper()):
+        return "Coverlay"
     if (('POLYIMIDE' in color.upper()) or ('KAPTON' in color.upper())):
         return "Kapton"
     if ('RED' in color.upper()):
@@ -230,7 +240,8 @@ class KtsColor:
     from collections import defaultdict
     from PySide.QtGui import QColor
 
-    kts_layer_color_map = { "Kapton"  : '#C4911C',
+    kts_layer_color_map = { "Kapton"  : '#B38419', #C4911C
+                            "Coverlay": '#D9A01E',
                             "Red"     : '#A2161E',
                             "Green"   : '#008700',
                             "Blue"    : '#164191',
@@ -240,20 +251,13 @@ class KtsColor:
                             "White"   : '#EDF0F5',
                             "FR4"     : '#82AA8A',
                             "PrePreg" : '#9FD0A9',
-                            "Copper"  : '#EFB18F'}
+                            "Copper"  : '#EF8E76'}  #EFB18F
 
     def to_QColor(color: str) -> QColor:
         """Translate the 'layer-color' to Qt Colors"""
         return (QColor(KtsColor.kts_layer_color_map.get(color, '#808080')))
 
 # END - class KtsColor
-
-        #junk = {'Blue': '#0000FF', 'Red': '#FF0000', 'Green': '#00FF00'}
-        #junk2 = str(junk)
-        #my_dict = eval(junk2)
-        #pprint.pprint(my_dict)
-
-
 
 
 #****************************************************************************
@@ -296,7 +300,6 @@ class KiCAD_Layers:
     layer_dict = dict()     # Init empty class-local dictionary
 
     def init(kicad_pcb):
-        import pprint
         if not hasattr(kicad_pcb, 'layers'):
             # ToDo: Make this into an "Alert"
             print("KiCAD_Layers.init: No Layers found in PCB file." )
@@ -304,25 +307,56 @@ class KiCAD_Layers:
             print("KiCAD_Layers.init: Found ", len(kicad_pcb.layers), " drawing layers." )
 
             for lyr in kicad_pcb.layers:
-                # Add KiCAD mnemonic->number mapping
-                KiCAD_Layers.layer_dict[(kicad_pcb.layers[lyr])[0].replace('"', '')] = lyr
+                layer_mnemonic = unquote((kicad_pcb.layers[lyr])[0])
 
-                # Add 'user layer name'->number mapping
                 if (len(kicad_pcb.layers[lyr]) > 2):
-                    KiCAD_Layers.layer_dict[(kicad_pcb.layers[lyr])[2].replace('"', '')] = lyr
-
-                # Add number->[mnemonic, given_name]
-                if (len(kicad_pcb.layers[lyr]) > 2):
-                    KiCAD_Layers.layer_dict[lyr] = [(kicad_pcb.layers[lyr])[0].replace('"', ''), (kicad_pcb.layers[lyr])[2].replace('"', '')]
+                    layer_given_name = unquote((kicad_pcb.layers[lyr])[2])
                 else:
-                    KiCAD_Layers.layer_dict[lyr] = [(kicad_pcb.layers[lyr])[0].replace('"', ''), None]
+                    layer_given_name = layer_mnemonic
+
+                # Add KiCAD mnemonic -> layer_given_name
+                # If no given name, will just map to the KiCAD mnemonic
+                KiCAD_Layers.layer_dict[layer_mnemonic] = layer_given_name
+
+                # Add layer_given_name -> KiCAD mnemonic
+                if (len(kicad_pcb.layers[lyr]) > 2):
+                    KiCAD_Layers.layer_dict[layer_given_name] = layer_mnemonic
+
+                # Add number -> KiCAD mnemonic
+                # Note: lyr is type str, despite it looking like a number
+                KiCAD_Layers.layer_dict[lyr] = layer_mnemonic
         return
 
-    def kts_layer_get(lyr:str) -> str:
-        try:
-            return (KiCAD_Layers.layer_dict[lyr])
-        except:
-            return (None)
+    def get(lyr:str) -> str:
+        return KiCAD_Layers.layer_dict.get(lyr, "")
+
+    # Return list of candidate outline layers
+    def get_outline_items():
+        outline_list = []
+
+        for idx in range(0, 64):
+            mnemonic   = KiCAD_Layers.get(str(idx))
+            given_name = KiCAD_Layers.get(mnemonic)
+
+            if (""    == mnemonic): continue        # Numbered layer not present
+            if ("B."  in mnemonic): continue        # KiCAD 'B.' don't have outlines
+            if ("F."  in mnemonic): continue        # KiCAD 'F.' don't have outlines
+            if ("cut" in mnemonic.lower()):         # A layer that spec's 'cut' could be an outline
+                outline_list.append(mnemonic)
+            if ("cut" in mnemonic.lower()):         # A layer that spec's 'cut' could be an outline
+                outline_list.append(given_name)     # in case user renamed "Edge.Cuts"
+            if ("cut" in given_name.lower()):       # A layer that spec's 'cut' could be an outline
+                outline_list.append(given_name)
+            if ("out" in given_name):               # A layer that spec's 'out' could be an outline
+                outline_list.append(given_name)
+            if ("user." in mnemonic.lower()):       # A 'user' layer could be an outline
+                outline_list.append(given_name)
+            if (".Cu" in mnemonic): continue        # Copper layers don't have outlines
+
+        return outline_list
+
+
+
         
 # END - class KiCAD_Layers
 
@@ -436,11 +470,11 @@ class KTS_Stackup:
         kts_stackup = KTS_Stackup.kts_stackup
 
         # Flags used to refine guesses about layers
-        has_flex   = False
-        has_rigid  = False
-        flex_only  = False
-        rigid_only = False
-        has_both   = False
+        stack_has_flex   = False
+        stack_has_rigid  = False
+        stack_flex_only  = False
+        stack_rigid_only = False
+        stack_has_both   = False
 
         if not hasattr(kicad_pcb.setup, 'stackup'):
             # ToDo: Make this into an "Alert"
@@ -504,7 +538,7 @@ class KTS_Stackup:
                 # The ID value has an index appended if it has 'sublayers'.
                 def _extract_layer(lyr: SexpList, idx=None):
                     return {'ID'        : unquote(lyr[0]) + (('.'+str(idx+1)) if idx!=None else ""),
-                            'TYPE'      : _add_if('type', lyr, idx),
+                            'TYPE'      : _add_if('type', lyr, idx) if idx==None else "",
                             'MATERIAL'  : _add_if('material', lyr, idx),
                             'THICKNESS' : _add_if('thickness', lyr, idx),
                             'COLOR'     : _add_if('color', lyr, idx)}
@@ -518,69 +552,73 @@ class KTS_Stackup:
                     for idx in range([*lyr][-1]+1):
                         layer_data = _extract_layer(lyr, idx)
                         layer_data['ID'] = layer_data['ID'].replace('dielectric ', 'Dielec_')
-                        has_flex, has_rigid = KTS_Stackup._parse_stackup_layer(layer_data, copper_finish)
+                        lyr_has_flex, lyr_has_rigid = KTS_Stackup._parse_stackup_layer(layer_data, copper_finish)
                 else:
                     # Process a single PCB-layer which maps to one KTS-layer
                     layer_data = _extract_layer(lyr)
                     layer_data['ID'] = layer_data['ID'].replace('dielectric ', 'Dielec_')
-                    has_flex, has_rigid = KTS_Stackup._parse_stackup_layer(layer_data, copper_finish)
+                    lyr_has_flex, lyr_has_rigid = KTS_Stackup._parse_stackup_layer(layer_data, copper_finish)
+
+                stack_has_flex  = True if lyr_has_flex else stack_has_flex
+                stack_has_rigid = True if lyr_has_rigid else stack_has_rigid
+
+            # END - parsing PCB stackup laye
 
 
 
-
-                if (kts_guess_layer_type(unquote(lyr[0])) == "Dielec"):
-                    print("===================", unquote(lyr[0]), "===================")
-                    print (*lyr)
-                    print ("type of lyr = ", type(lyr))
-                    print ("Length lyr = ", len(lyr))
-                    lyr_keys = [*lyr]
-                    print("my_lyr = ", lyr_keys)
-                    print ("Last item in my_lyr = ", lyr_keys[-1])
-                    if (type(lyr_keys[-1]) is int):
-                        print ("\tPerhaps we have a sublayer...")
-                        if ("addsublayer" in lyr[lyr_keys[-1]]):
-                            print ("\t\tYES, we found a sublayer")
-                    for item in [*lyr]:
-                        print ("\t\t", item, " = ", lyr[item])
-                        if isinstance(lyr[item], SexpList):
-                           print("\t\t\t has len ", len(lyr[item]) )
-                    print ("\t\tFound ", [lyr[key] for key in [*lyr]].count("addsublayer"), " sublayers")
-                    print ("Length lyr.type = ", len(lyr.type))
-                    print (*lyr.type)
-                    print ("Length lyr.material = ", len(lyr.material))
-                    print ("Type lyr.material = ", type(lyr.material))
-                    print (*lyr.material)
-                    if ((type(lyr.thickness) is int) or (type(lyr.thickness) is float)):
-                        print ("Type lyr.thickness = ", type(lyr.thickness))
-                        print (lyr.thickness)
-                    else:
-                        print ("Length lyr.thickness = ", len(lyr.thickness))
-                        print ("Type lyr.thickness = ", type(lyr.thickness))
-                        print (*lyr.thickness)
-                    print("+++++++++++++++++")
-                    idx = 0
-                    for itm in lyr:
-                        print(itm)
-                        if (itm == 0):
-                            print('inside itm[0]:', " (idx = ", idx, ")")
-                            #local = lyr[0]
-                            pprint.pprint(lyr[0])
-                        if (itm == 1):
-                            print('inside itm[1]:', " (idx = ", idx, ")")
-                            #print(lyr.addsublayer)
-                            print(lyr[1])
-                            print(*lyr.material)
-                            print(*lyr['material'])
-                            print(len(lyr['material']))
-                            junk = lyr.thickness
-                            pprint.pprint(junk[0])
-                            pprint.pprint(" = ")
-                            pprint.pprint(junk[1])
-                            #pprint.pprint(junk[2])
-                            print('\n')
-                            #local = lyr[1]
-                            #pprint.pprint(local.material)
-                        idx = idx + 1
+                #if (kts_guess_layer_type(unquote(lyr[0])) == "Dielec"):
+                #    print("===================", unquote(lyr[0]), "===================")
+                #    print (*lyr)
+                #    print ("type of lyr = ", type(lyr))
+                #    print ("Length lyr = ", len(lyr))
+                #    lyr_keys = [*lyr]
+                #    print("my_lyr = ", lyr_keys)
+                #    print ("Last item in my_lyr = ", lyr_keys[-1])
+                #    if (type(lyr_keys[-1]) is int):
+                #        print ("\tPerhaps we have a sublayer...")
+                #        if ("addsublayer" in lyr[lyr_keys[-1]]):
+                #            print ("\t\tYES, we found a sublayer")
+                #    for item in [*lyr]:
+                #        print ("\t\t", item, " = ", lyr[item])
+                #        if isinstance(lyr[item], SexpList):
+                #           print("\t\t\t has len ", len(lyr[item]) )
+                #    print ("\t\tFound ", [lyr[key] for key in [*lyr]].count("addsublayer"), " sublayers")
+                #    print ("Length lyr.type = ", len(lyr.type))
+                #    print (*lyr.type)
+                #    print ("Length lyr.material = ", len(lyr.material))
+                #    print ("Type lyr.material = ", type(lyr.material))
+                #    print (*lyr.material)
+                #    if ((type(lyr.thickness) is int) or (type(lyr.thickness) is float)):
+                #        print ("Type lyr.thickness = ", type(lyr.thickness))
+                #        print (lyr.thickness)
+                #    else:
+                #        print ("Length lyr.thickness = ", len(lyr.thickness))
+                #        print ("Type lyr.thickness = ", type(lyr.thickness))
+                #        print (*lyr.thickness)
+                #    print("+++++++++++++++++")
+                #    idx = 0
+                #    for itm in lyr:
+                #        print(itm)
+                #        if (itm == 0):
+                #            print('inside itm[0]:', " (idx = ", idx, ")")
+                #            #local = lyr[0]
+                #            pprint.pprint(lyr[0])
+                #        if (itm == 1):
+                #            print('inside itm[1]:', " (idx = ", idx, ")")
+                #            #print(lyr.addsublayer)
+                #            print(lyr[1])
+                #            print(*lyr.material)
+                #            print(*lyr['material'])
+                #            print(len(lyr['material']))
+                #            junk = lyr.thickness
+                #            pprint.pprint(junk[0])
+                #            pprint.pprint(" = ")
+                #            pprint.pprint(junk[1])
+                #            #pprint.pprint(junk[2])
+                #            print('\n')
+                #            #local = lyr[1]
+                #            #pprint.pprint(local.material)
+                #        idx = idx + 1
 
 
             # Now with the physical stackup imported from the PCB, we make a guess
@@ -588,16 +626,16 @@ class KTS_Stackup:
             # These guesses are made available to the user to adjust in the event
             # that we guessed wrong. Eventually, we may "force" sufficient hinting
             # in the PCB file to eliminate the need to allow user adjustments here.
- 
-            flex_only  = True if (has_flex and not has_rigid) else False
-            rigid_only = True if (has_rigid and not has_flex) else False
-            has_both   = True if (has_rigid and has_flex) else False
 
-            print("has_flex = ", has_flex)
-            print("has_rigid = ", has_rigid)
-            print("flex_only = ", flex_only)
-            print("rigid_only = ", rigid_only)
-            print("has_both = ", has_both)
+            stack_flex_only  = True if (stack_has_flex and not stack_has_rigid) else False
+            stack_rigid_only = True if (stack_has_rigid and not stack_has_flex) else False
+            stack_has_both   = True if (stack_has_rigid and stack_has_flex) else False
+
+            print("stack_has_flex   = ", stack_has_flex)
+            print("stack_has_rigid  = ", stack_has_rigid)
+            print("stack_flex_only  = ", stack_flex_only)
+            print("stack_rigid_only = ", stack_rigid_only)
+            print("stack_has_both   = ", stack_has_both)
 
 
 
@@ -607,20 +645,20 @@ class KTS_Stackup:
 
             for lyr in kts_stackup:
                 if ('Silk' in lyr.lyr_type):
-                    lyr.region = 'Flex' if (flex_only) else '?'
-                    lyr.region = 'Rigid' if (rigid_only or has_both) else '?'
+                    lyr.region = 'Flex' if (stack_flex_only) else '?'
+                    lyr.region = 'Rigid' if (stack_rigid_only or stack_has_both) else '?'
                     lyr.color  = lyr.color if (not lyr.color == '???') else 'White' # Handle unspecified Silkscreen color
                 if ('Mask' in lyr.lyr_type):
-                    lyr.region = 'Flex' if (flex_only) else '?'
-                    lyr.region = 'Rigid' if (rigid_only or has_both) else '?'
+                    lyr.region = 'Flex' if (stack_flex_only) else '?'
+                    lyr.region = 'Rigid' if (stack_rigid_only or stack_has_both) else '?'
                     lyr.color  = lyr.color if (not lyr.color == '???') else 'Green' # Handle unspecified Solder Mask color
-                    if (flex_only):
-                        lyr.lyr_func = 'FlexCoverlayMask'
-                        lyr.color    = 'Kapton'
+                    if (stack_flex_only):
+                        lyr.lyr_func = 'FlexCoverMask'
+                        lyr.color    = 'Coverlay'
                 if ('Dielec' in lyr.lyr_type):
-                    lyr.region = 'Flex'  if (flex_only) else lyr.region
-                    lyr.region = 'Rigid' if (rigid_only) else lyr.region
-                    if (has_both):
+                    lyr.region = 'Flex'  if (stack_flex_only) else lyr.region
+                    lyr.region = 'Rigid' if (stack_rigid_only) else lyr.region
+                    if (stack_has_both):
                         lyr.region = 'Flex'  if ('Flex' in lyr.lyr_func) else lyr.region
                         lyr.region = 'Rigid'  if ('Rigid' in lyr.lyr_func) else lyr.region
 
@@ -647,42 +685,43 @@ class KTS_Stackup:
         # Make new row in our KTS Physical Stackup...
         # ...and grab reference to the newly added row
         KTS_Stackup.kts_stackup.append(KTS_StackUpRecord("", "", "", "", 0, "", "", "", "", "", ""))
-        stack_btm = KTS_Stackup.kts_stackup[-1]
+        stack_this = KTS_Stackup.kts_stackup[-1]
 
         # Get KiCAD-assigned stackup-layer/drawing-layer & guess a stackup-layer "type".
         # We will refine this later in the next step.
-        stack_btm.content = lyr['ID']
-        stack_btm.lyr_type = kts_guess_layer_type(stack_btm.content)
+        stack_this.content = lyr['ID']
+        stack_this.lyr_type = kts_guess_layer_type(stack_this.content)
 
-        if (stack_btm.lyr_type == 'Copper'):
-            stack_btm.finish = copper_finish
+        if (stack_this.lyr_type == 'Copper'):
+            stack_this.finish = copper_finish
 
-        stack_btm.thkness = lyr['THICKNESS']
+        stack_this.thkness = lyr['THICKNESS']
+        raw_material = lyr['MATERIAL']
 
-        if (lyr['MATERIAL'] != ""):
-            stack_btm.material = kts_guess_material_type(lyr['MATERIAL'])
-            raw_material = lyr['MATERIAL']
+        #print ("raw_material = ", raw_material)
+        if (raw_material != ""):
+            stack_this.material = kts_guess_material_type(lyr['MATERIAL'])
         else:
-            if ((stack_btm.lyr_type == 'Silk') or 
-                (stack_btm.lyr_type == 'SolMask') or 
-                (stack_btm.lyr_type == 'Dielec')):
-                stack_btm.material = '???'
+            if ((stack_this.lyr_type == 'Silk') or 
+                (stack_this.lyr_type == 'SolMask') or 
+                (stack_this.lyr_type == 'Dielec')):
+                stack_this.material = '???'
             else:
-                stack_btm.material = kts_guess_material_type(stack_btm.lyr_type)
+                stack_this.material = kts_guess_material_type(stack_this.lyr_type)
             raw_material = ""
                 
         raw_type = lyr['TYPE']
-        stack_btm.lyr_func = kts_guess_layer_function(raw_material + raw_type)
-        stack_btm.lyr_func = stack_btm.lyr_func if stack_btm.lyr_func!="" else '???'
+        stack_this.lyr_func = kts_guess_layer_function(raw_material + raw_type)
+        stack_this.lyr_func = stack_this.lyr_func if stack_this.lyr_func!="" else '???'
 
-        pcb_color = lyr['COLOR']
-        stack_btm.color = kts_guess_layer_color(pcb_color + raw_type + stack_btm.material + stack_btm.lyr_type)
+        raw_color = lyr['COLOR']
+        stack_this.color = kts_guess_layer_color(raw_color + raw_type + stack_this.material + stack_this.lyr_type + stack_this.lyr_func)
 
         # Look at Dielectric types to guess what kind of PCBA this is
-        #print('Layer Func is: ', stack_btm.lyr_func)
+        #print('Layer Func is: ', stack_this.lyr_func)
 
-        lyr_has_flex   = True if ('Flex'  in stack_btm.lyr_func) else False
-        lyr_has_rigid  = True if ('Rigid' in stack_btm.lyr_func) else False
+        lyr_has_flex   = True if ('Flex'  in stack_this.lyr_func) else False
+        lyr_has_rigid  = True if ('Rigid' in stack_this.lyr_func) else False
 
         return (lyr_has_flex, lyr_has_rigid)
 
@@ -768,6 +807,28 @@ def kts_make_stack_edit_tab(stackup: KTS_Stackup):
 
 # END - kts_make_stack_edit_tab()
 
+from PySide.QtGui import QComboBox
+
+class CutOutlineSelector(QComboBox):
+    this_layer = ""
+
+    def __init__(self, layer):
+        super().__init__()
+        self.this_layer = layer
+
+    def PopulateList(self, selected, outline_layers):
+        print("Making a combo layer: ", self.this_layer.content, ". Defaulting to: ", selected)
+        self.addItems(outline_layers)
+        self.setCurrentText(selected)
+        self.currentTextChanged.connect(self._user_selection)
+
+    def _user_selection(self, selected):
+        print("Outline drawing for:", self.this_layer.content, " is :", selected)
+        return 
+# END - class CutOutlineSelector
+
+
+
 
 #from PySide import QtWidgets
 #from PySide2.QtWidgets import QApplication, QDialog, QMainWindow, QPushButton, QDialogButtonBox, QVBoxLayout, QLabel
@@ -782,6 +843,18 @@ from PySide.QtCore import QRectF
 class StackUpEditDialog(QDialog):
     """Create the 'Stackup Editor' tab in
        the 'Combo View' Panel of the UI."""
+
+    item_vert_ht = 13
+    item_box_ht  = 15
+    item_horz_wd = 70
+    item_horz_spc = 10
+    header_vert_ht  = 2 * item_vert_ht
+    header_horz_wd = item_horz_wd
+    header_horz_spc = item_horz_spc
+    drop_down_ht = item_vert_ht + 3
+    layer_spacing = 4
+    #    layer_height = 13
+
 
     def __init__(self, stackup: KTS_Stackup):
         super().__init__()
@@ -799,86 +872,83 @@ class StackUpEditDialog(QDialog):
         #print(my_rect.isWidget())
         #scene.addItem(my_rect)
 
-        layer_height = 13
-        layer_spacing = 4
-        combo_list_height = 15
 
-        my_rect = QRectF(0,0,50,layer_height)
+        #my_rect = QRectF(0,0,50,self.item_vert_ht)
 
-        scene = QGraphicsScene(self)
-        #scene.addRect(my_rect, Qt.NoPen, Qt.red)
-        my_color = QColor('#008080')
-        #junk = my_color.setRgb(0x008080)
-        print("my_color = ", my_color)
-        #junk = my_color.setRgbF(0.0, 1.0, 0.0, 1.0)
-        scene.addRect(0,0,50,layer_height, Qt.NoPen, KtsColor.to_QColor("Purple"))
-        print("Qt.green = ", Qt.green)
-        #print("junk = ", junk)
+        #scene = QGraphicsScene(self)
+        ##scene.addRect(my_rect, Qt.NoPen, Qt.red)
+        #my_color = QColor('#008080')
+        ##junk = my_color.setRgb(0x008080)
+        #print("my_color = ", my_color)
+        ##junk = my_color.setRgbF(0.0, 1.0, 0.0, 1.0)
+        #scene.addRect(0,0,50,self.item_vert_ht, Qt.NoPen, KtsColor.to_QColor("Purple"))
+        #print("Qt.green = ", Qt.green)
+        ##print("junk = ", junk)
         
-        view = QGraphicsView(scene)
-        view.setFrameStyle(QFrame.NoFrame)
-        #view.setMaximumWidth(200)
-        #view.setMaximumHeight(100)
-        view.setFixedHeight(layer_height)
-        view.setFixedWidth(50)
+        #view = QGraphicsView(scene)
+        #view.setFrameStyle(QFrame.NoFrame)
+        ##view.setMaximumWidth(200)
+        ##view.setMaximumHeight(100)
+        #view.setFixedHeight(self.item_vert_ht)
+        #view.setFixedWidth(50)
 
-        combobox = QComboBox()
-        font = combobox.font()
-        print("Combo Font Size is: ", font.pointSize())
-        print("Combo Font name is: ", font.rawName())
-        print("Combo sixeHint is: ", combobox.sizeHint())
-        font.setPointSize(7)
-        combobox.setFont(font)
-        combobox.setFixedHeight(layer_height)
-
-
-        combobox.resize(61,15)
-        #combobox.adjustSize()
-        #font = QFont('Arial', 10)
-        combobox.addItems(['One', 'Two', 'Three', 'Four'])
-        #combobox.setFixedHeight(layer_height-15)
-        combobox2 = QComboBox()
-        combobox2.addItems(['Two', 'Three', 'Four'])
-        #combobox2.setFixedHeight(layer_height-10)
-        #combobox.setFixedWidth(50)
-
-        entry = QLineEdit()
-        entry.setFixedHeight(layer_height)
+        #combobox = QComboBox()
+        #font = combobox.font()
+        #print("Combo Font Size is: ", font.pointSize())
+        #print("Combo Font name is: ", font.rawName())
+        #print("Combo sixeHint is: ", combobox.sizeHint())
+        #font.setPointSize(7)
+        #combobox.setFont(font)
+        #combobox.setFixedHeight(self.item_vert_ht)
 
 
-        scene2 = QGraphicsScene(self)
-        scene2.addRect(my_rect, Qt.NoPen, Qt.blue)
+        #combobox.resize(61,15)
+        ##combobox.adjustSize()
+        ##font = QFont('Arial', 10)
+        #combobox.addItems(['One', 'Two', 'Three', 'Four'])
+        ##combobox.setFixedHeight(layer_height-15)
+        #combobox2 = QComboBox()
+        #combobox2.addItems(['Two', 'Three', 'Four'])
+        ##combobox2.setFixedHeight(layer_height-10)
+        ##combobox.setFixedWidth(50)
 
-        view2 = QGraphicsView(scene2)
-        view2.setFrameStyle(QFrame.NoFrame)
-        view2.setFixedHeight(layer_height)
+        #entry = QLineEdit()
+        #entry.setFixedHeight(self.item_vert_ht)
 
-        text_box = QLabel()
-        text_box.setText("Here's some text")
 
-        row_layout = QHBoxLayout()
-        row_layout.setSpacing(2)   # No Horiz space between elements
-        row_layout.setMargin(0)   # No Horiz space between elements
-        row_layout.setContentsMargins(0, 0, 0, 0)
+        #scene2 = QGraphicsScene(self)
+        #scene2.addRect(my_rect, Qt.NoPen, Qt.blue)
 
-        row_layout.addStretch()
-        row_layout.addWidget(text_box)
-        row_layout.addWidget(entry)
-        row_layout.addWidget(view)
-        row_layout.addWidget(combobox)
-        row_layout.addStretch()
+        #view2 = QGraphicsView(scene2)
+        #view2.setFrameStyle(QFrame.NoFrame)
+        #view2.setFixedHeight(self.item_vert_ht)
+
+        #text_box = QLabel()
+        #text_box.setText("Here's some text")
+
+        #row_layout = QHBoxLayout()
+        #row_layout.setSpacing(2)   # No Horiz space between elements
+        #row_layout.setMargin(0)   # No Horiz space between elements
+        #row_layout.setContentsMargins(0, 0, 0, 0)
+
+        #row_layout.addStretch()
+        #row_layout.addWidget(text_box)
+        #row_layout.addWidget(entry)
+        #row_layout.addWidget(view)
+        #row_layout.addWidget(combobox)
+        #row_layout.addStretch()
 
         
-        row_layout2 = QHBoxLayout()
-        row_layout2.addWidget(view2)
+        #row_layout2 = QHBoxLayout()
+        #row_layout2.addWidget(view2)
 
         #row_layout.setMaximumHeight(100)
 
 
-        message = QLabel("Something happened, is that OK?")
-        message.setFixedHeight(20)
+        #message = QLabel("Something happened, is that OK?")
+        #message.setFixedHeight(20)
 
-        message2 = QLabel("Something happened, is that OK?")
+        #message2 = QLabel("Something happened, is that OK?")
 
         stackup_header_row = self._build_stackup_row_header()
         #row_layout4 = self._build_stackup_row(stackup[0])
@@ -890,7 +960,7 @@ class StackUpEditDialog(QDialog):
 
 
         self.layout = QVBoxLayout() # We use a Vertical Box layout to stack the layers
-        self.layout.setSpacing(layer_spacing)   # No vertical space between elements
+        self.layout.setSpacing(self.layer_spacing)   # No vertical space between elements
         #self.layout.setMargin(0)   # No vertical space between elements
         #self.layout.setContentsMargins(0,0,0,0)
 
@@ -908,16 +978,14 @@ class StackUpEditDialog(QDialog):
         return
 
 
+
     def _build_stackup_row(self, layer: KTS_StackUpRecord): # Returns a QHBoxLayout element
-        item_vert_ht  = 13
-        item_horz_wd = 60
-        item_horz_spc = 10
         items = []
 
         # We do this because we can't iterate over the items in 'layer'
         layer_col_vals = []
         layer_col_vals.append(layer.content)
-        layer_col_vals.append(layer.outline)
+        #layer_col_vals.append(layer.outline)
         layer_col_vals.append(layer.lyr_type)
         layer_col_vals.append(str(layer.thkness))
         layer_col_vals.append(layer.material)
@@ -926,35 +994,56 @@ class StackUpEditDialog(QDialog):
         layer_col_vals.append(layer.finish)
         layer_col_vals.append(layer.lyr_func)
 
-        # A colored rectangle representing the material of layer
+        # Colored rectangle representing the material of layer
         rect = QGraphicsScene(self)                     # Create container (scene) for graphics element
-        rect.addRect(0, 0, item_horz_wd, item_vert_ht, 
+        rect.addRect(0, 0, self.item_horz_wd, self.item_box_ht, 
                      Qt.NoPen, KtsColor.to_QColor(layer.color))  # Add a rectangle to scene
+
+        # Create view object for rectangle and set display params 
+        rect_view = QGraphicsView(rect)             # Add view containing rectangle
+        rect_view.setFrameStyle(QFrame.NoFrame)     # Remove "frame" around view
+        rect_view.setFixedHeight(self.item_box_ht)       # Adjust Height...
+        rect_view.setFixedWidth(self.item_horz_wd)       # ... and width to absolute
+        items.append(rect_view)                     # Add column for view containing rectangle
+
+        # Drop-down list for user selection of drawing-layer to associate with stackup-layer
+        if (('Dielec' in layer.content) or ('Polyimide' in layer.material)):
+            outline_menu = CutOutlineSelector(layer)    # Init object for this particular stackup layer
         
-        # Adjust characteristics of the containing view object
-        items.append(QGraphicsView(rect))           # New view containing rectangle
-        items[-1].setFrameStyle(QFrame.NoFrame)     # Remove "frame" around view
-        items[-1].setFixedHeight(item_vert_ht)      # Adjust Height to absolute
-        items[-1].setFixedWidth(item_horz_wd)       # ... and width
+            outline_menu.PopulateList("Three", KiCAD_Layers.get_outline_items())
+
+            font = outline_menu.font()
+            font.setPointSize(7)                        # Set font to fit in our row without clipping
+            outline_menu.setFont(font)
+            outline_menu.setFixedHeight(self.drop_down_ht)   # Adjust Height...
+            outline_menu.setFixedWidth(self.item_horz_wd)    # ... and width to absolute
+            items.append(outline_menu)                  # Add column for view containing Drop-down list
+        else:
+            # Add a "Blank Spot" instead of the drop-down for this stackup-layer
+            items.append(QLabel())
+            items[-1].setFixedHeight(self.item_vert_ht)
+            items[-1].setFixedWidth(self.item_horz_wd)
 
         for col in layer_col_vals:
             # Construct text elements for Row
-            items.append(QLabel())
+            items.append(QLabel())                  # Add column for field text
             items[-1].setText(col)
             items[-1].setAlignment(Qt.AlignCenter)
             # Highlight potential errors for the user to resolve
             # ToDo: Add a "hover tip" to help the user know how to resolve it
             if (col == '???') or (col == '0'):
-                items[-1].setStyleSheet("background-color: #FFEC22; font-weight: bold")
-            items[-1].setFixedHeight(item_vert_ht)
-            items[-1].setFixedWidth(item_horz_wd)
-            #items[-1].setStyleSheet("border: 1px solid black;")
+                items[-1].setStyleSheet("background-color: #FFEC22; font-weight: bold; ")
+            items[-1].setFixedHeight(self.item_vert_ht)
+            items[-1].setFixedWidth(self.item_horz_wd)
+
+            items[-1].setStyleSheet(items[-1].styleSheet() + "background-color: #EDF0F5; ")
 
         # Create row object
         row_layout = QHBoxLayout()
-        row_layout.setSpacing(item_horz_spc) # Horiz space between elements
-        row_layout.setMargin(0)              # No Horiz margin inside elements
-        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.setSpacing(self.item_horz_spc)        # Horiz space between elements
+        #row_layout.setAlignment(Qt.AlignCenter)     # Align placement of ELEMENT inside cell
+        #row_layout.setMargin(0)                     # No Horiz margin inside elements
+        #row_layout.setContentsMargins(0, 0, 0, 0)   # or? No Horiz margin inside elements
 
         # Build actual row
         for col in items:
@@ -967,28 +1056,27 @@ class StackUpEditDialog(QDialog):
 
 
     def _build_stackup_row_header(self): # Returns a QHBoxLayout element
-        item_vert_ht  = 13
-        item_horz_wd = 60
-        item_horz_spc = 10
-
         headers = []
-        column_labels = ["Stack Up", "Content", "Outline", "Type", "Thickness", 
-                         "Material", "Region", "STEP Color", "Cu Finish", "Function"]
+        column_labels = ["Stack Up", "Cut\nOutline", "Content", "Type", "Thickness", 
+                         "Material", "Region", "Stack Up\nColor", "Cu Finish", "Function"]
 
         for col in column_labels:
             # Construct text elements for Row
             headers.append(QLabel())
             headers[-1].setText(col)
-            headers[-1].setAlignment(Qt.AlignCenter)
-            headers[-1].setStyleSheet("font-weight: bold")
-            headers[-1].setFixedHeight(item_vert_ht)
-            headers[-1].setFixedWidth(item_horz_wd)
-            #headers[-1].setStyleSheet("border: 1px solid black;")
+            headers[-1].setAlignment(Qt.AlignCenter | Qt.AlignBottom)
+            headers[-1].setContentsMargins(0, 0, 0, 0)
+            #headers[-1].setAlignment(Qt.AlignBottom)
+            headers[-1].setStyleSheet("font-weight: bold; padding :0px; ")
+            headers[-1].setFixedHeight(self.header_vert_ht)
+            headers[-1].setFixedWidth(self.header_horz_wd)
+
+            headers[-1].setStyleSheet(headers[-1].styleSheet() + "background-color: #EDF0F5; ")
         
         # Create row object
         row_layout = QHBoxLayout()
-        row_layout.setSpacing(item_horz_spc) # No Horiz space between elements
-        row_layout.setMargin(0)         # No Horiz space between elements
+        row_layout.setSpacing(self.header_horz_spc)  # No Horiz space between elements
+        row_layout.setMargin(0)                 # No Horiz space between elements
         row_layout.setContentsMargins(0, 0, 0, 0)
 
         # Build actual row
@@ -1001,10 +1089,7 @@ class StackUpEditDialog(QDialog):
 # END - _build_stackup_row_header()
 
 
-
-
-
-    # This overrides the builtin accept() method
+    # Overrides the builtin accept() method
     def accept(stuff):
         print("Accepted", stuff)
         pprint.pprint(stuff)
