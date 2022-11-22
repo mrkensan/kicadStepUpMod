@@ -237,7 +237,6 @@ def kts_guess_layer_color(color: str) -> str:
 #****************************************************************************
 
 class KtsColor:
-    from collections import defaultdict
     from PySide.QtGui import QColor
 
     kts_layer_color_map = { "Kapton"  : '#B38419', #C4911C
@@ -255,7 +254,7 @@ class KtsColor:
 
     def to_QColor(color: str) -> QColor:
         """Translate the 'layer-color' to Qt Colors"""
-        return (QColor(KtsColor.kts_layer_color_map.get(color, '#808080')))
+        return (KtsColor.QColor(KtsColor.kts_layer_color_map.get(color, '#808080')))
 
 # END - class KtsColor
 
@@ -671,23 +670,17 @@ class KTS_Stackup:
 # END - class KiCAD_Layers
 
 
-
-# create new Tab in ComboView
-from PySide import QtGui    # In FreeCAD the QtWidgets module is subsumed into QtGui (https://wiki.freecadweb.org/PySide)
-import FreeCADGui
-#from PySide import uic
-import pprint
-
-
 def _getComboView(main_window):
-   dock_widgets = main_window.findChildren(QtGui.QDockWidget)
-   for i in dock_widgets:
-       #print(str(i.objectName()))
-       if str(i.objectName()) == "Combo View":
-           return i.findChild(QtGui.QTabWidget)
-       elif str(i.objectName()) == "Python Console":
-           return i.findChild(QtGui.QTabWidget)
-   raise Exception ("'Combo View' widget found")
+    from PySide import QtGui
+
+    dock_widgets = main_window.findChildren(QtGui.QDockWidget)
+    for i in dock_widgets:
+        #print(str(i.objectName()))
+        if str(i.objectName()) == "Combo View":
+            return i.findChild(QtGui.QTabWidget)
+        elif str(i.objectName()) == "Python Console":
+            return i.findChild(QtGui.QTabWidget)
+    raise Exception ("'Combo View' widget found")
 
 
 #### ToDo: Only open Window when it's time to Edit stackup
@@ -695,6 +688,9 @@ def _getComboView(main_window):
 #### ToDo: Make an Edit-Stackup command button to show our editor
 
 def kts_make_stack_edit_tab(stackup: KTS_Stackup):
+    import FreeCADGui
+    from PySide import QtGui
+
     combo_view_tabs = _getComboView(FreeCADGui.getMainWindow())
 
     if (combo_view_tabs == None):
@@ -736,16 +732,12 @@ class CutOutlineSelector(QComboBox):
 # END - class CutOutlineSelector
 
 
-from PySide.QtGui import QDialog, QDialogButtonBox, QVBoxLayout, QHBoxLayout, QBoxLayout, QLabel, QGraphicsRectItem, QGraphicsScene, QGraphicsView, QPushButton
-from PySide.QtGui import QPen, QColor, QBrush, QFrame, QComboBox, QLineEdit, QFont, QLabel
-from PySide.QtCore import Qt
-
 # We subclass QDialog here in order override some
 # built-in methods like accept() & cancel(), etc..
+from PySide.QtGui import QDialog
 
 class StackUpEditDialog(QDialog):
-    """Create the 'Stackup Editor' tab in
-       the 'Combo View' Panel of the UI."""
+    """Create the 'Stackup Editor' tab in \nthe 'Combo View' Panel of the UI."""
 
     item_vert_ht = 13
     item_box_ht  = 15
@@ -759,6 +751,8 @@ class StackUpEditDialog(QDialog):
 
 
     def __init__(self, stackup: KTS_Stackup):
+        from PySide.QtGui import QDialogButtonBox, QVBoxLayout
+
         super().__init__()
 
         # Create buttons to accept or reject the changes
@@ -789,7 +783,45 @@ class StackUpEditDialog(QDialog):
     # END - __init__()
 
 
+    def _build_stackup_row_header(self): # Returns a QHBoxLayout element
+        from PySide.QtGui  import QLabel, QHBoxLayout
+        from PySide.QtCore import Qt
+
+        headers = []
+        column_labels = ["Stack Up", "Cut\nOutline", "Content", "Type", "Thickness", 
+                         "Material", "Region", "Stack Up\nColor", "Cu Finish", "Function"]
+
+        for col in column_labels:
+            # Construct text elements for Row
+            headers.append(QLabel())
+            headers[-1].setText(col)
+            headers[-1].setAlignment(Qt.AlignCenter | Qt.AlignBottom)
+            headers[-1].setContentsMargins(0, 0, 0, 0)
+            #headers[-1].setAlignment(Qt.AlignBottom)
+            headers[-1].setStyleSheet("font-weight: bold; padding :0px; ")
+            headers[-1].setFixedHeight(self.header_vert_ht)
+            headers[-1].setFixedWidth(self.header_horz_wd)
+
+            headers[-1].setStyleSheet(headers[-1].styleSheet() + "background-color: #EDF0F5; ")
+        
+        # Create row object
+        row_layout = QHBoxLayout()
+        row_layout.setSpacing(self.header_horz_spc)     # Horiz space between elements
+
+        # Add elements, in order left-to-right, to the new row
+        for col in headers:
+            row_layout.addWidget(col)
+
+        row_layout.addStretch()         # Required to allow colums to respect their fixed spacing
+
+        return (row_layout)
+    # END - _build_stackup_row_header()
+
+
     def _build_stackup_row(self, layer: KTS_StackUpRecord): # Returns a QHBoxLayout element
+        from PySide.QtGui import QLabel, QHBoxLayout, QGraphicsScene, QGraphicsView, QFrame
+        from PySide.QtCore import Qt
+
         items = []
 
         # These are the columns we want to iteratively render, in order
@@ -867,38 +899,6 @@ class StackUpEditDialog(QDialog):
 
         return (row_layout)
     # END - _build_stackup_row()
-
-
-    def _build_stackup_row_header(self): # Returns a QHBoxLayout element
-        headers = []
-        column_labels = ["Stack Up", "Cut\nOutline", "Content", "Type", "Thickness", 
-                         "Material", "Region", "Stack Up\nColor", "Cu Finish", "Function"]
-
-        for col in column_labels:
-            # Construct text elements for Row
-            headers.append(QLabel())
-            headers[-1].setText(col)
-            headers[-1].setAlignment(Qt.AlignCenter | Qt.AlignBottom)
-            headers[-1].setContentsMargins(0, 0, 0, 0)
-            #headers[-1].setAlignment(Qt.AlignBottom)
-            headers[-1].setStyleSheet("font-weight: bold; padding :0px; ")
-            headers[-1].setFixedHeight(self.header_vert_ht)
-            headers[-1].setFixedWidth(self.header_horz_wd)
-
-            headers[-1].setStyleSheet(headers[-1].styleSheet() + "background-color: #EDF0F5; ")
-        
-        # Create row object
-        row_layout = QHBoxLayout()
-        row_layout.setSpacing(self.header_horz_spc)     # Horiz space between elements
-
-        # Add elements, in order left-to-right, to the new row
-        for col in headers:
-            row_layout.addWidget(col)
-
-        row_layout.addStretch()         # Required to allow colums to respect their fixed spacing
-
-        return (row_layout)
-    # END - _build_stackup_row_header()
 
 
     # Overrides the builtin accept() method
