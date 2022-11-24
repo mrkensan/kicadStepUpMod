@@ -56,10 +56,16 @@ __KTS_FILE_NAME__ = "KTS_MENUCMD"
 from kts_PrefsMgmt import prefs_set_file_version
 prefs_set_file_version(__KTS_FILE_NAME__, __KTS_FILE_VER__)
 
-import FreeCADGui
+#import FreeCADGui
+from kts_ModState import *
 
-class ktsPcbImportOutline:
-    "Pull outlines from KiCAD PCB layer into Sketch object"
+
+class ktsPcbImportOutline(KtsState):
+    """Pull outlines from KiCAD PCB layer into Sketch object"""
+    WbGlobal = None     # Reference to our "global" state for this workbook
+
+    def __init__(self, WbState):
+        self.WbGlobal = WbState
  
     def GetResources(self):
         from kts_locator import kts_mod_path_to_icon
@@ -75,12 +81,16 @@ class ktsPcbImportOutline:
         import kicadStepUptools
         kicadStepUptools.PullPCB()
 
-FreeCADGui.addCommand('ktsPcbImportOutline',ktsPcbImportOutline())
-# END Command - ktsPcbImportOutline
+# END class - ktsPcbImportOutline
 
 
-class ktsPcbSelect:
-    "Select PCB File we will use for our operations"
+class ktsPcbSelect(KtsState):
+    """Select PCB File we will use for our operations"""
+    WbGlobal = None     # Reference to our "global" state for this workbook
+
+    def __init__(self, WbState):
+        self.WbGlobal = WbState
+        print("State Stuff Initialized with: ", self.WbGlobal)
  
     def GetResources(self):
         from kts_locator import kts_mod_path_to_icon
@@ -94,16 +104,64 @@ class ktsPcbSelect:
  
     def Activated(self):
         import kts_CoreTools
-        from kts_StackUpEdit import kts_make_stack_edit_tab, KTS_Stackup
+        from kicad_parser import KicadPCB
+        from kts_StackUpEdit import kts_make_stack_edit_tab, KTS_Stackup, KiCAD_Layers
 
-        # User dialog to select and open a PCB file
-        # Parses the file into internal data structures
-        kts_CoreTools.select_pcb_file()
-        stackup = KTS_Stackup.get()
+        # User dialog to select and open a PCB file... Checks file validity, fails gracefully
+        if (self.WbGlobal.myState('kicad_pcb_filename') != None):             # If we have an active pcb already...
+            kicad_pcb_filename = self.WbGlobal.myState('kicad_pcb_filename')  #   just grab name from global state
+            print("We have already read in a PCB!!! >> ", kicad_pcb_filename)
+        else:
+            self.WbGlobal.delStateItem('kicad_pcb_obj')           
+            self.WbGlobal.delStateItem('kts_pcb_layers')           
+            self.WbGlobal.delStateItem('kts_pcb_stackup')           
+            kicad_pcb_filename = kts_CoreTools.select_pcb_file()    # Otherwise, prompt user to open PCB
+            if (kicad_pcb_filename != None):
+                self.WbGlobal.myState('kicad_pcb_filename', kicad_pcb_filename)
+            else:
+                print("No PCB File Selected. Cancelling...")
+                return None
 
+        # Parse/grab KiCAD PCB S-Exp Data structure  
+        if (self.WbGlobal.myState('kicad_pcb_obj') != None):        # If we have an active pcb already...
+            kicad_pcb_obj = self.WbGlobal.myState('kicad_pcb_obj')  #   just grab is from global state
+            print("We have already parsed the PCB!!!")
+        else:
+            self.WbGlobal.delStateItem('kts_pcb_layers')           
+            self.WbGlobal.delStateItem('kts_pcb_stackup')
+            kicad_pcb_obj = KicadPCB.load(kicad_pcb_filename)
+            if (kicad_pcb_obj != None):
+                self.WbGlobal.myState('kicad_pcb_obj', kicad_pcb_obj)
+            else:
+                print("PCB File is Damaged. Cancelling...")
+                return None
+        
+        # Parse the loaded PCB into KTS_Stackup & KTS_Layers
+        if ( (self.WbGlobal.myState('kts_pcb_layers') != None) and
+             (self.WbGlobal.myState('kts_pcb_stackup') != None) ):      # If we have already built a stackup...
+            kts_pcb_layers = self.WbGlobal.myState('kts_pcb_layers')    # grab it!
+            kts_pcb_stackup = self.WbGlobal.myState('kts_pcb_stackup')  # grab it!
+            print("We have a Stackup!!!")
+        else:
+            kts_pcb_layers = KiCAD_Layers.load_layers(kicad_pcb_obj)    # Otherwise, make it from the selected file
+            kts_pcb_stackup = KTS_Stackup.load_PCB(kicad_pcb_obj)
+
+            if ( (kts_pcb_layers != None) and (kts_pcb_stackup != None) ):
+                self.WbGlobal.myState('kts_pcb_layers', kts_pcb_layers)
+                self.WbGlobal.myState('kts_pcb_stackup', kts_pcb_stackup)
+            else:
+                print ("PCB Stackup Creation Failed")
+                return None
+        
         # Create new Combo View tab for Stackup Editor
-        our_new_tab, tab_index = kts_make_stack_edit_tab(stackup)
-        print("Title of 'our_new_tab' = "+str(our_new_tab.tabText(tab_index)))
+        if (self.WbGlobal.myState('kts_stackup_edit_tab') != None):
+            our_new_tab, tab_index = self.WbGlobal.myState('kts_stackup_edit_tab')
+            print ("We already have an open stackup editor tab!")
+        else:
+            our_new_tab, tab_index = kts_make_stack_edit_tab(kts_pcb_stackup)
+            self.WbGlobal.myState('kts_stackup_edit_tab', [our_new_tab, tab_index])
 
-FreeCADGui.addCommand('ktsPcbSelect',ktsPcbSelect())
-# END Command - ktsPcbSelect
+        print("Title of 'our_new_tab' = "+str(our_new_tab.tabText(tab_index)))
+        return
+
+# END class - ktsPcbSelect

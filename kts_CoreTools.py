@@ -62,13 +62,6 @@ def select_pcb_file():
     from kts_PrefsMgmt import prefs_get
     import os
     import PySide
-    from kicad_parser import KicadPCB
-    import inspect
-    from collections import OrderedDict
-    from kts_StackUpEdit import KiCAD_Layers, KTS_Stackup
-
-    
-    this_func_name = inspect.currentframe().f_code.co_name
 
     prefs = prefs_get()
 
@@ -87,26 +80,35 @@ def select_pcb_file():
             say('opening: '+pcb_file)
             pcb_folder = os.path.dirname(pcb_selected_file)
             say('from folder: '+pcb_folder)
-            #default_prefix3d = re.sub("\\\\", "/", default_prefix3d)
 
             prefs.SetString('pcb_prev_folder', pcb_folder)
             prefs.SetString('pcb_prev_file', pcb_file)
         else:
             say('Not a File: '+pcb_selected_file)
+            return None
     else:
-        say('Cancelled')
+        say('PCB Select: Cancelled')
+        return None
 
-    say(this_func_name)
-    say_inline("\nReading PCB...")
-    kicad_pcb = KicadPCB.load(pcb_selected_file)
-    if hasattr(kicad_pcb, 'version'):
-        say(" KiCAD Version = "+str(kicad_pcb.version))
-    if hasattr(kicad_pcb, 'setup'):
-        say("Found setup... Copper Finish is: "+kicad_pcb.setup.stackup.copper_finish)
-
-    KiCAD_Layers.init(kicad_pcb)
-    KTS_Stackup.init(kicad_pcb)
+    return pcb_selected_file if pcb_file_is_valid(pcb_selected_file) else None
 
 
-    return
+def pcb_file_is_valid(pcb_file):
+    #import inspect
+    from kicad_parser import KicadPCB
+
+    #this_func_name = inspect.currentframe().f_code.co_name
+
+    say_inline("Checking PCB...")
+
+    try:
+        kicad_pcb = KicadPCB.load(pcb_file)
+    except:
+        kicad_pcb = None
+        say(" Failed. PCB file is damaged.\n")
+        return False
+    else:
+        if hasattr(kicad_pcb, 'version'):
+            say(" Success! KiCAD PCB File Version = "+str(kicad_pcb.version)+"\n")
+        return True
 

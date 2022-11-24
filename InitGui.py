@@ -65,7 +65,8 @@ myurlKWB='https://github.com/mrkensan/kicadStepUpModXXX'
 import FreeCADGui
 
 from kicadStepUpCMD import *
-from kts_MenuCMD import *  
+
+#from kts_MenuCMD import *  
 
 
 #!# import ksu_locator, os
@@ -98,10 +99,26 @@ class KiCadStepUpWB ( FreeCADGui.Workbench ):      # 'Workbench' defined in Free
     def GetClassName(self):
         return "Gui::PythonWorkbench"
 
-
     def Initialize(self):
+        import kts_ModState
         import FreeCADGui
+        from kts_MenuCMD import ktsPcbImportOutline, ktsPcbSelect
+
         from kts_locator import kts_mod_ui_path, kts_mod_icons_path
+
+        self.WbState = kts_ModState.KtsState()
+        self.WbState.myState()
+
+        # We add our commands here, because they have to be present in
+        # FreeCADGui namespace before they are appended to the toolbar
+
+        # We call them here so that we can add a reference to an object
+        # which holds "state" for the entire Workbench. An object of this
+        # Class is created and maintained as long as the Workbench is active.
+        # "Commands" are created as "new" objects when a UI action is invoked.
+
+        FreeCADGui.addCommand('ktsPcbImportOutline', ktsPcbImportOutline(self.WbState))
+        FreeCADGui.addCommand('ktsPcbSelect', ktsPcbSelect(self.WbState))
 
         # Adding KSU Icons to Toolbar
         self.appendToolbar("ksu Tools", ["ksuToolsEditPrefs","ksuToolsOpenBoard",\

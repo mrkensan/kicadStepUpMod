@@ -298,10 +298,11 @@ class KiCAD_Layers:
 
     layer_dict = dict()     # Init empty class-local dictionary
 
-    def init(kicad_pcb):
+    def load_layers(kicad_pcb):
         if not hasattr(kicad_pcb, 'layers'):
             # ToDo: Make this into an "Alert"
             print("KiCAD_Layers.init: No Layers found in PCB file." )
+            return None
         else:
             print("KiCAD_Layers.init: Found ", len(kicad_pcb.layers), " drawing layers." )
 
@@ -324,10 +325,13 @@ class KiCAD_Layers:
                 # Add number -> KiCAD mnemonic
                 # Note: lyr is type str, despite it looking like a number
                 KiCAD_Layers.layer_dict[lyr] = layer_mnemonic
-        return
+
+        return (KiCAD_Layers.layer_dict)
+
 
     def get(lyr:str) -> str:
         return KiCAD_Layers.layer_dict.get(lyr, "")
+
 
     # Return list of candidate outline layers
     def get_outline_items():
@@ -463,8 +467,7 @@ class KTS_Stackup:
 
     kts_stackup: List[KTS_StackUpRecord] = []   # Init empty class-local layer list
 
-
-    def init(kicad_pcb):
+    def load_PCB(kicad_pcb):
         # Init empty layer list each time we init()
         # so we don't accumulate multiple copies of board
         KTS_Stackup.kts_stackup: List[KTS_StackUpRecord] = []
@@ -480,6 +483,7 @@ class KTS_Stackup:
         if not hasattr(kicad_pcb.setup, 'stackup'):
             # ToDo: Make this into an "Alert"
             print("KTS_Stackup.init: No Stackup found in PCB file." )
+            return None
         else:
             copper_finish = unquote(kicad_pcb.setup.stackup.copper_finish)
             copper_finish = copper_finish if(not 'None' in copper_finish) else 'Bare'
@@ -613,7 +617,8 @@ class KTS_Stackup:
             # keep as much of the definition process in the PCB file rather than Project.
 
         print("KTS_Stackup.init: ", len(kts_stackup), " stackup layers imported from PCB." )
-        return
+
+        return KTS_Stackup.kts_stackup
 
 
     # Here we extract the primary information from the KiCAD Stackup
