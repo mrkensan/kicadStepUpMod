@@ -63,20 +63,27 @@ from kts_ModState import *
 class ktsPcbImportOutline(KtsState):
     """Pull outlines from KiCAD PCB layer into Sketch object"""
     WbGlobal = None     # Reference to our "global" state for this workbook
+    #check_count = 0
 
     def __init__(self, WbState):
         self.WbGlobal = WbState
  
-    def GetResources(self):
+    def GetResources(self):     # Resources icon for this tool (Icon, menu text, tool tip, etc...)
         from kts_locator import kts_mod_path_to_icon
-
-        return {'Pixmap'  : kts_mod_path_to_icon('PCB_ImportOutline.svg') , # Resources icon for this tool
+        return {'Pixmap'  : kts_mod_path_to_icon('PCB_ImportOutline.svg') ,
                 'MenuText': "Create Sketch from PCB Layer" ,
                 'ToolTip' : "Pull KiCAD PCB layer into a Sketch"}
  
     def IsActive(self):
         return True     # Command is always active
- 
+
+        #print(">>>>>>>> ktsPcbImportOutline: IsActive Checked [", self.check_count ,"] <<<<<<<<")
+        #self.check_count += 1
+        #if (self.check_count < 6):
+        #    return True     # Command is always active
+        #else:
+        #    return False
+
     def Activated(self):
         import kicadStepUptools
         kicadStepUptools.PullPCB()
@@ -90,7 +97,6 @@ class ktsPcbSelect(KtsState):
 
     def __init__(self, WbState):
         self.WbGlobal = WbState
-        print("State Stuff Initialized with: ", self.WbGlobal)
  
     def GetResources(self):
         from kts_locator import kts_mod_path_to_icon
@@ -100,6 +106,7 @@ class ktsPcbSelect(KtsState):
                 'ToolTip' : "All operations are performed with this PCB file"}
  
     def IsActive(self):
+        #print(">>>>>>>> ktsPcbSelect: IsActive Checked <<<<<<<<")
         return True     # Command is always active
  
     def Activated(self):
