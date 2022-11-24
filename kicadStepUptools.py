@@ -470,7 +470,7 @@ import time
 import kts_Locator
 
 # This is where we are putting the small "helper" functions
-from kts_utils import *
+from kts_Utils import *
 
 
 if (sys.version_info > (3, 0)):  #py3

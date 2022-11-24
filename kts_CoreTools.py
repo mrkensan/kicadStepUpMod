@@ -56,7 +56,7 @@ __KTS_FILE_NAME__ = "KTS_CORETOOLS"
 from kts_PrefsMgmt import prefs_set_file_version
 prefs_set_file_version(__KTS_FILE_NAME__, __KTS_FILE_VER__)
 
-from kts_utils import *     # Helper utility functions
+from kts_Utils import *     # Helper utility functions
 
 def select_pcb_file():
     from kts_PrefsMgmt import prefs_get
