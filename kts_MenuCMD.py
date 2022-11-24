@@ -69,7 +69,7 @@ class ktsPcbImportOutline(KtsState):
         self.WbGlobal = WbState
  
     def GetResources(self):     # Resources icon for this tool (Icon, menu text, tool tip, etc...)
-        from kts_locator import kts_mod_path_to_icon
+        from kts_Locator import kts_mod_path_to_icon
         return {'Pixmap'  : kts_mod_path_to_icon('PCB_ImportOutline.svg') ,
                 'MenuText': "Create Sketch from PCB Layer" ,
                 'ToolTip' : "Pull KiCAD PCB layer into a Sketch"}
@@ -99,7 +99,7 @@ class ktsPcbSelect(KtsState):
         self.WbGlobal = WbState
  
     def GetResources(self):
-        from kts_locator import kts_mod_path_to_icon
+        from kts_Locator import kts_mod_path_to_icon
 
         return {'Pixmap'  : kts_mod_path_to_icon('PCB_Select.svg') , # Resources icon for this tool
                 'MenuText': "Select PCB File" ,

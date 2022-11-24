@@ -82,7 +82,7 @@ QtWidgets = QtGui
 from pivy import coin
 from threading import Timer
 
-import kts_locator
+import kts_Locator
 # from kicadStepUptools import onLoadBoard, onLoadFootprint
 import math
 from math import sqrt
@@ -194,7 +194,7 @@ def info_msg(msg):
         diag.exec_()
 ##
 
-ksuWBpath = os.path.dirname(kts_locator.__file__)
+ksuWBpath = os.path.dirname(kts_Locator.__file__)
 #sys.path.append(ksuWB + '/Gui')
 ksuWB_icons_path =  os.path.join( ksuWBpath, 'Resources', 'icons')
 

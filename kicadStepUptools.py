@@ -467,7 +467,7 @@ import tempfile, errno
 import re
 import time
 
-import kts_locator
+import kts_Locator
 
 # This is where we are putting the small "helper" functions
 from kts_utils import *
@@ -13335,8 +13335,8 @@ QtWidgets = QtGui
 class Ui_STEP_Preferences(object):
     def setupUi(self, STEP_Preferences):
         import os
-        import kts_locator
-        ksuWBpath = os.path.dirname(kts_locator.__file__)
+        import kts_Locator
+        ksuWBpath = os.path.dirname(kts_Locator.__file__)
         #sys.path.append(ksuWB + '/Gui')
         ksuWB_demo_path =  os.path.join( ksuWBpath, 'demo')
         STEP_Preferences.setObjectName("STEP_Preferences")

@@ -87,7 +87,7 @@ from kicadStepUpCMD import *
 
 
 class KiCadStepUpWB ( FreeCADGui.Workbench ):      # 'Workbench' defined in FreeCADGui
-    from kts_locator import kts_mod_path_to_icon
+    from kts_Locator import kts_mod_path_to_icon
     #!# global myurlKWB, mycommitsKWB, verKSU
     global kSU_MainPrefPage     # Must be declared 'global' for FreeCAD to access
     
@@ -104,7 +104,7 @@ class KiCadStepUpWB ( FreeCADGui.Workbench ):      # 'Workbench' defined in Free
         import FreeCADGui
         from kts_MenuCMD import ktsPcbImportOutline, ktsPcbSelect
 
-        from kts_locator import kts_mod_ui_path, kts_mod_icons_path
+        from kts_Locator import kts_mod_ui_path, kts_mod_icons_path
 
         self.WbState = kts_ModState.KtsState()
         self.WbState.myState()
@@ -180,7 +180,7 @@ class kSU_MainPrefPage:
     def make_help_panel(self):
         # Create the "help" panel in preferences
         import os
-        from kts_locator import kts_mod_path
+        from kts_Locator import kts_mod_path
         from kts_PrefsMgmt import prefs_get_file_version
 
         kts_version = prefs_get_file_version("KTS_WORKBENCH")
