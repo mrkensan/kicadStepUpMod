@@ -112,7 +112,8 @@ class ktsPcbSelect(KtsState):
     def Activated(self):
         import kts_CoreTools
         from kicad_parser import KicadPCB
-        from kts_StackUpEdit import kts_make_stack_edit_tab, KTS_Stackup, KiCAD_Layers
+        from kts_StackUpEdit import kts_make_stack_edit_tab
+        from kts_KiCadPCB import KTS_Stackup, KiCAD_Layers
 
         # User dialog to select and open a PCB file... Checks file validity, fails gracefully
         if (self.WbGlobal.myState('kicad_pcb_filename') != None):             # If we have an active pcb already...
