@@ -40,23 +40,28 @@
 
 
 class KtsState:
-    internal_count = 1  # call counter
-    WbState = dict()    # State Storage
+    WbState = dict()    # Workbench-wide State Storage
 
     def myState(self, item_name=None, item_value=None):
-        if (item_name == None):    # Don't try to look up "None"
+        if (item_name == None):         # Don't try to look up "None"
             return None
 
-        if (item_value != None):
-            self.WbState[item_name] = item_value        # Add/update this item
+        if (item_value != None):        # Add/update this item
+            self.WbState[item_name] = item_value
             return None
-        else:
-            return (self.WbState.get(item_name, None))  # Try to find item, 'None' if not present
+        else:                           # Try to find item, 'None' if not present
+            return (self.WbState.get(item_name, None))
 
 
     def delStateItem(self, item_name):
-        if (item_name != None):    # Don't try to Delete "None"
+        if (item_name != None):         # Don't try to Delete "None"
             self.WbState.pop(item_name, None)
+        return None
+
+
+    def dump(self):         # Dump the dict() for debug purposes
+        import pprint
+        pprint.pprint((self.WbState))
         return None
 
 

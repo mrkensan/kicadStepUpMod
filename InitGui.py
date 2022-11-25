@@ -56,35 +56,9 @@ __KTS_FILE_NAME__ = "INITGUI"
 from kts_PrefsMgmt import prefs_set_file_version
 prefs_set_file_version(__KTS_FILE_NAME__, __KTS_FILE_VER__)
 
-global myurlKWB
-myurlKWB='https://github.com/mrkensan/kicadStepUpModXXX'
-
-#!# from kts_versions import *
-#!# import os
 
 import FreeCADGui
-
 from kicadStepUpCMD import *
-
-#from kts_MenuCMD import *  
-
-
-#!# import ksu_locator, os
-
-#ksuWBpath = os.path.dirname(ksu_locator.__file__)
-#!# ksuWB_ui_path = kts_mod_ui_path()         # QT files for Settings panels
-
-# FreeCADGui.addLanguagePath(ksuWBpath+"/translations")
-
-#!# global main_ksu_Icon
-#!# main_ksu_Icon = os.path.join( kts_mod_icons_path() , 'kicad-StepUp-tools-WB.svg')
-#main_ksu_Icon = kts_mod_path_to_icon('kicad-StepUp-tools-WB.svg')
-#!# print(main_ksu_Icon + '\n')
-#!# icon_path = "nothing"
-#!# icon_path = kts_mod_path_to_icon('kicad-StepUp-tools-WB.svg')
-#!# print(icon_path + '\n')
-#!# print('(InitGui call this file name)' + kts_this_file_name())
-
 
 class KiCadStepUpWB ( FreeCADGui.Workbench ):      # 'Workbench' defined in FreeCADGui
     from kts_Locator import kts_mod_path_to_icon
@@ -102,7 +76,7 @@ class KiCadStepUpWB ( FreeCADGui.Workbench ):      # 'Workbench' defined in Free
     def Initialize(self):
         import kts_ModState
         import FreeCADGui
-        from kts_MenuCMD import ktsPcbImportOutline, ktsPcbSelect
+        from kts_MenuCMD import ktsPcbImportOutline, ktsPcbSelect, ktsPcbForget
 
         from kts_Locator import kts_mod_ui_path, kts_mod_icons_path
 
@@ -112,13 +86,31 @@ class KiCadStepUpWB ( FreeCADGui.Workbench ):      # 'Workbench' defined in Free
         # We add our commands here, because they have to be present in
         # FreeCADGui namespace before they are appended to the toolbar
 
-        # We call them here so that we can add a reference to an object
-        # which holds "state" for the entire Workbench. An object of this
-        # Class is created and maintained as long as the Workbench is active.
-        # "Commands" are created as "new" objects when a UI action is invoked.
+        # We call them here, however, ALSO so that we can add a reference 
+        # to an object which holds "state" for all parts of the Workbench. 
+        # The "Global State" object is a child of this class (KiCadStepUpWB()).
 
-        FreeCADGui.addCommand('ktsPcbImportOutline', ktsPcbImportOutline(self.WbState))
+        # We create the object here, and as long as the workbench is "Active",
+        # this instance remains present in the namespace, and hence also our
+        # "Global State" object. While we call is "Global" state, in fact the
+        # "python scope" is not global, but a passed object reference.
+        
+        # We use this technique for two reasons:
+        #   1. "Commands" are created as "new" objects when a UI action is invoked.
+        #       (they have their own fresh namespace/context, and then are destroyed)
+        #   2. The obvious mess of adding globals to pass shares state around.
+        # Becasue of #1, sharing state between commands is hard, and #2 is obviously bad.
+
+        # One way we use this is to set up our own rules in the kts_MenuCmd module
+        # to create "toggling" or mutually-exclusive command activation. 
+        # Some commands only make sense when the Workbench is in a certain state.
+        # For instance, "deleting" only makes sense when there is something to delete. 
+        # There, we only enable ktsPcbForget() after a PCB has been successfully loaded
+        # with ktsPcbSelect(), and vice-versa.
+
         FreeCADGui.addCommand('ktsPcbSelect', ktsPcbSelect(self.WbState))
+        FreeCADGui.addCommand('ktsPcbForget', ktsPcbForget(self.WbState))
+        FreeCADGui.addCommand('ktsPcbImportOutline', ktsPcbImportOutline(self.WbState))
 
         # Adding KSU Icons to Toolbar
         self.appendToolbar("ksu Tools", ["ksuToolsEditPrefs","ksuToolsOpenBoard",\
@@ -126,7 +118,7 @@ class KiCadStepUpWB ( FreeCADGui.Workbench ):      # 'Workbench' defined in Free
                            "ksuToolsImport3DStep","ksuToolsExport3DStep", "ksuToolsPullPCB"])
 
         # Adding KTS Icons to Toolbar
-        self.appendToolbar("New Tools", ["Separator", "ktsPcbSelect", "ktsPcbImportOutline"])
+        self.appendToolbar("New Tools", ["Separator", "ktsPcbSelect", "ktsPcbForget", "ktsPcbImportOutline"])
 
         # Creating a menu for the Workbench
         self.appendMenu("ksu Tools", ["ksuToolsEditPrefs"])

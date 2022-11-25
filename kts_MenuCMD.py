@@ -1,37 +1,6 @@
 # -*- coding: utf-8 -*-
 #****************************************************************************
 #*                                                                          *
-#*  Kicad STEPUP (TM) (3D kicad board and models to STEP) for FreeCAD       *
-#*  3D exporter for FreeCAD                                                 *
-#*  Kicad STEPUP TOOLS (TM) (3D kicad board and models to STEP) for FreeCAD *
-#*  Copyright (c) 2015                                                      *
-#*  Maurice easyw@katamail.com                                              *
-#*                                                                          *
-#*  Kicad STEPUP (TM) is a TradeMark and cannot be freely usable            *
-#*                                                                          *
-#****************************************************************************
-#*                                                                          *
-#*   This program is free software; you can redistribute it and/or modify   *
-#*   it under the terms of the GNU Affero General Public License            *
-#*   as published by the Free Software Foundation to ensure cooperation     *
-#*   with the community in the case of network server software;             *
-#*   for detail see the LICENCE text file.                                  *
-#*   http://www.gnu.org/licenses/agpl-3.0.en.html                           *
-#*   Moreover you have to include the original author copyright             *
-#*   kicad StepUP made by Maurice easyw@katamail.com                        *
-#*                                                                          *
-#*   This program is distributed in the hope that it will be useful,        *
-#*   but WITHOUT ANY WARRANTY; without even the implied warranty of         *
-#*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
-#*   GNU Library General Public License for more details.                   *
-#*                                                                          *
-#*   You should have received a copy of the GNU Library General Public      *
-#*   License along with this program; if not, write to the Free Software    *
-#*   Foundation, Inc.,                                                      *
-#*   51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA           *
-#*                                                                          *
-#****************************************************************************
-#*                                                                          *
 #*  KiCAD_2STEP - Render KiCAD PCB Models as STEP (No Round Trip, etc...)   *
 #*                                                                          *
 #*   This FreeCAD workbench is derived from the work of the Kicad STEPUP    *
@@ -63,20 +32,19 @@ from kts_ModState import *
 class ktsPcbImportOutline(KtsState):
     """Pull outlines from KiCAD PCB layer into Sketch object"""
     WbGlobal = None     # Reference to our "global" state for this workbook
-    #check_count = 0
+    check_count = 0
 
     def __init__(self, WbState):
         self.WbGlobal = WbState
  
     def GetResources(self):     # Resources icon for this tool (Icon, menu text, tool tip, etc...)
         from kts_Locator import kts_mod_path_to_icon
-        return {'Pixmap'  : kts_mod_path_to_icon('PCB_ImportOutline.svg') ,
-                'MenuText': "Create Sketch from PCB Layer" ,
+        return {'Pixmap'  : kts_mod_path_to_icon('PCB_ImportOutline.svg'),
+                'MenuText': "Create Sketch from PCB Layer",
                 'ToolTip' : "Pull KiCAD PCB layer into a Sketch"}
  
     def IsActive(self):
-        return True     # Command is always active
-
+        return True
         #print(">>>>>>>> ktsPcbImportOutline: IsActive Checked [", self.check_count ,"] <<<<<<<<")
         #self.check_count += 1
         #if (self.check_count < 6):
@@ -101,19 +69,30 @@ class ktsPcbSelect(KtsState):
     def GetResources(self):
         from kts_Locator import kts_mod_path_to_icon
 
-        return {'Pixmap'  : kts_mod_path_to_icon('PCB_Select.svg') , # Resources icon for this tool
-                'MenuText': "Select PCB File" ,
-                'ToolTip' : "All operations are performed with this PCB file"}
+        return {'Pixmap'   : kts_mod_path_to_icon('PCB_Select.svg'), # Resources icon for this tool
+                'MenuText' : "Select PCB File",
+                'ToolTip'  : "All operations are performed with this PCB file"}
  
     def IsActive(self):
+        # This command is only active if NO PCB file is open
+        if (self.WbGlobal.myState('kicad_pcb_filename') == None):
+            return True
+        else:
+            return False
+
         #print(">>>>>>>> ktsPcbSelect: IsActive Checked <<<<<<<<")
-        return True     # Command is always active
- 
+        #filename = ''
+        #filename = self.WbGlobal.myState('kicad_pcb_filename')
+        #print(">>>>>>>> ktsPcbSelect: IsActive Checked <<<<<<<< '", filename, "'")
+        #print("$$$$$$$$ ktsPcbSelect: IsActive State '", self.WbGlobal.delStateItem, "' $$$$$$$$")
+        #return True
+
+
     def Activated(self):
         import kts_CoreTools
         from kicad_parser import KicadPCB
         from kts_StackUpEdit import kts_make_stack_edit_tab
-        from kts_KiCadPCB import KTS_Stackup, KiCAD_Layers
+        from kts_KiCadPCB import KTS_Stackup, KTS_Layers
 
         # User dialog to select and open a PCB file... Checks file validity, fails gracefully
         if (self.WbGlobal.myState('kicad_pcb_filename') != None):             # If we have an active pcb already...
@@ -151,7 +130,7 @@ class ktsPcbSelect(KtsState):
             kts_pcb_stackup = self.WbGlobal.myState('kts_pcb_stackup')  # grab it!
             print("We have a Stackup!!!")
         else:
-            kts_pcb_layers = KiCAD_Layers.load_layers(kicad_pcb_obj)    # Otherwise, make it from the selected file
+            kts_pcb_layers = KTS_Layers.load_layers(kicad_pcb_obj)    # Otherwise, make it from the selected file
             kts_pcb_stackup = KTS_Stackup.load_PCB(kicad_pcb_obj)
 
             if ( (kts_pcb_layers != None) and (kts_pcb_stackup != None) ):
@@ -173,3 +152,35 @@ class ktsPcbSelect(KtsState):
         return
 
 # END class - ktsPcbSelect
+
+
+class ktsPcbForget(KtsState):
+    """Forget PCB File and associated objects"""
+    WbGlobal = None     # Reference to our "global" state for this workbook
+
+    def __init__(self, WbState):
+        self.WbGlobal = WbState
+ 
+    def GetResources(self):
+        from kts_Locator import kts_mod_path_to_icon
+
+        return {'Pixmap'   : kts_mod_path_to_icon('PCB_Forget.svg'),
+                'MenuText' : "Forget PCB",
+                'ToolTip'  : "Forget current PCB and associated items",}
+#                'Checkable': True}
+ 
+    def IsActive(self):
+        # This command is only active if a PCB file is currently open
+        return False if (self.WbGlobal.myState('kicad_pcb_filename') == None) else True
+
+   
+    def Activated(self):
+        self.WbGlobal.delStateItem('kicad_pcb_filename')           
+        self.WbGlobal.delStateItem('kicad_pcb_obj')           
+        self.WbGlobal.delStateItem('kts_pcb_layers')           
+        self.WbGlobal.delStateItem('kts_pcb_stackup')           
+        # Remove kts stackup editor window
+
+        return
+
+# END class - ktsPcbForget
