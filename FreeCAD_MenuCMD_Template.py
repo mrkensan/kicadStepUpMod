@@ -115,7 +115,7 @@ FreeCADGui.addCommand('TemplatePyCheckable',TemplatePyCheckable())
 ##################################################################################################
 
 # The individual command must set the Checkable key to True. 
-# The command must set the Exclusive key to True and it's recommended to set DropDownMenu to False.
+# The group command must set the Exclusive key to True and it's recommended to set DropDownMenu to False.
 
 # If GetDefaultCommand is not there the first command is toggled, 
 # otherwise you can control which other command to toggle. 
