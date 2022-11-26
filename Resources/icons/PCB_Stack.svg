@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="623.623px" height="623.623px" viewBox="39.993 42.438 623.623 623.623"
+	 enable-background="new 39.993 42.438 623.623 623.623" xml:space="preserve">
+<g id="Layer_5">
+	<polygon id="rect4558_1_" fill="#AAC896" stroke="#000000" stroke-width="17.5287" stroke-linejoin="round" points="
+		206.912,425.115 635.268,425.115 496.715,623.54 68.34,623.54 	"/>
+</g>
+<g id="Layer_4">
+	<polygon id="rect4558_2_" fill="#82ABD1" stroke="#000000" stroke-width="17.5286" stroke-linejoin="round" points="
+		206.912,311.729 635.268,311.729 496.715,510.154 68.339,510.154 	"/>
+</g>
+<g id="Layer_3">
+	<polygon id="rect4558_4_" fill="#B38419" stroke="#000000" stroke-width="17.5287" stroke-linejoin="round" points="
+		206.912,198.344 635.268,198.344 496.715,396.769 68.339,396.769 	"/>
+</g>
+<g id="Top_PCB_Layer">
+	<g>
+		<polygon id="rect4558" fill="#71C837" stroke="#000000" stroke-width="17.5287" stroke-linejoin="round" points="206.912,84.958 
+			635.268,84.958 496.715,283.383 68.339,283.383 		"/>
+		<g id="g4599" transform="translate(-1.2430716)">
+			
+				<path id="path307-5" sodipodi:nodetypes="ccc" inkscape:connector-curvature="0" fill="none" stroke="#454545" stroke-width="8.5704" stroke-linecap="round" stroke-linejoin="round" d="
+				M176.734,259.057l64.13-21.267l25.939-35.448"/>
+			
+				<path id="path309-3" sodipodi:nodetypes="ccc" inkscape:connector-curvature="0" fill="none" stroke="#454545" stroke-width="8.5704" stroke-linecap="round" stroke-linejoin="round" d="
+				M315.369,202.342l-33.719,46.081l-32.065,10.634"/>
+			
+				<path id="path311-3" sodipodi:nodetypes="cc" inkscape:connector-curvature="0" fill="none" stroke="#454545" stroke-width="8.5704" stroke-linecap="round" stroke-linejoin="round" d="
+				M363.935,202.342l-41.503,56.714"/>
+			
+				<path id="path313-8" sodipodi:nodetypes="ccc" inkscape:connector-curvature="0" fill="none" stroke="#454545" stroke-width="8.5704" stroke-linecap="round" stroke-linejoin="round" d="
+				M412.502,202.342l-33.721,46.081l11.002,7.089"/>
+			
+				<path id="path331-1" sodipodi:nodetypes="cccc" inkscape:connector-curvature="0" fill="none" stroke="#454545" stroke-width="8.5704" stroke-linecap="round" stroke-linejoin="round" d="
+				M310.884,142.083l12.952-17.724l-22.001-14.178h-48.566"/>
+			
+				<path id="path333-9" sodipodi:nodetypes="cc" inkscape:connector-curvature="0" fill="none" stroke="#454545" stroke-width="8.5704" stroke-linecap="round" stroke-linejoin="round" d="
+				M359.449,142.083l23.329-31.902"/>
+			
+				<path id="path335-0" sodipodi:nodetypes="ccc" inkscape:connector-curvature="0" fill="none" stroke="#454545" stroke-width="8.5704" stroke-linecap="round" stroke-linejoin="round" d="
+				M408.017,142.083l15.547-21.268l32.064-10.634"/>
+			
+				<path id="path337-9" sodipodi:nodetypes="ccc" inkscape:connector-curvature="0" fill="none" stroke="#454545" stroke-width="8.5704" stroke-linecap="round" stroke-linejoin="round" d="
+				M456.582,142.083l12.952-17.724l42.755-14.178"/>
+			
+				<path id="path339-8" sodipodi:nodetypes="cccccc" inkscape:connector-curvature="0" fill="#454545" stroke="#454545" stroke-width="8.5704" stroke-linecap="round" stroke-linejoin="round" d="
+				M154.733,244.878l42.751-14.178l70.019-95.706l-11.015-7.09h-16.189L154.733,244.878z"/>
+			
+				<path id="path341-8" sodipodi:nodetypes="ccccc" inkscape:connector-curvature="0" fill="#454545" stroke="#454545" stroke-width="8.5704" stroke-linecap="round" stroke-linejoin="round" d="
+				M558.262,113.726l-42.754,14.178L440.318,230.7l37.564-7.089L558.262,113.726z"/>
+			
+				<path id="path315-3" sodipodi:nodetypes="cc" inkscape:connector-curvature="0" fill="none" stroke="#454545" stroke-width="17.1407" stroke-linecap="round" stroke-linejoin="round" d="
+				M267.801,200.965l6.768-9.257"/>
+			
+				<path id="path317-7" sodipodi:nodetypes="cc" inkscape:connector-curvature="0" fill="none" stroke="#454545" stroke-width="17.1407" stroke-linecap="round" stroke-linejoin="round" d="
+				M316.366,200.965l6.769-9.257"/>
+			
+				<path id="path319-9" sodipodi:nodetypes="cc" inkscape:connector-curvature="0" fill="none" stroke="#454545" stroke-width="17.1407" stroke-linecap="round" stroke-linejoin="round" d="
+				M364.935,200.965l6.765-9.257"/>
+			
+				<path id="path321-3" sodipodi:nodetypes="cc" inkscape:connector-curvature="0" fill="none" stroke="#454545" stroke-width="17.1407" stroke-linecap="round" stroke-linejoin="round" d="
+				M413.502,200.965l6.769-9.257"/>
+			
+				<path id="path323-7" sodipodi:nodetypes="cc" inkscape:connector-curvature="0" fill="none" stroke="#454545" stroke-width="17.1407" stroke-linecap="round" stroke-linejoin="round" d="
+				M446.205,156.262l6.768-9.26"/>
+			
+				<path id="path325-8" sodipodi:nodetypes="cc" inkscape:connector-curvature="0" fill="none" stroke="#454545" stroke-width="17.1407" stroke-linecap="round" stroke-linejoin="round" d="
+				M397.638,156.262l6.769-9.26"/>
+			
+				<path id="path327-7" sodipodi:nodetypes="cc" inkscape:connector-curvature="0" fill="none" stroke="#454545" stroke-width="17.1407" stroke-linecap="round" stroke-linejoin="round" d="
+				M349.074,156.262l6.767-9.26"/>
+			
+				<path id="path329-4" sodipodi:nodetypes="cc" inkscape:connector-curvature="0" fill="none" stroke="#454545" stroke-width="17.1407" stroke-linecap="round" stroke-linejoin="round" d="
+				M300.507,156.262l6.768-9.26"/>
+		</g>
+	</g>
+</g>
+</svg>

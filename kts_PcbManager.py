@@ -70,7 +70,7 @@
 #*      layer_region: region of PCB project layer is used on {flex, rigid}  *
 #*                                                                          *
 #*  Dictionaries                                                            *
-#*    KiCAD_Layers: KTS layer definition & purpose for PCBA                 *
+#*    KTS_Layers: KTS layer definition & purpose for PCBA                   *
 #*                                                                          *
 #*  Array (dataclass)                                                       *
 #*    kts_dscr:   User-defined name from KTS domain                         *
@@ -90,11 +90,75 @@
 #****************************************************************************
 
 __KTS_FILE_VER__  = "1.0.0"
-__KTS_FILE_NAME__ = "KTS_KICADPCB"
+__KTS_FILE_NAME__ = "KTS_PCBMANAGER"
 
 from kts_PrefsMgmt import prefs_set_file_version
 prefs_set_file_version(__KTS_FILE_NAME__, __KTS_FILE_VER__)
 
+from kts_ModState import *
+
+class KTS_PcbMgr:
+    """Class representing the open and parsed PCB"""
+
+    KiCadPCB = None                         # Reference to the S-Expr parser Object
+    Layers   = None                         # Reference to our KTS_Layers Object
+    Stackup  = None                         # Reference to our KTS_Stackup Object
+    BoardOpenSuccess = False                # Local Flag inidcates we successfully fully parsed PCB
+    filename = ""                           # Our copy of PCB filename from LoadBoard()
+
+    def __init__(self):
+        self.Layers    = KTS_Layers()
+        self.Stackup   = KTS_Stackup()
+        return
+
+    def FilenameGet(self):
+        import os
+        pcb_file = os.path.basename(self.filename)
+        pcb_folder = os.path.dirname(self.filename)
+        return (pcb_file, pcb_folder)
+
+    def StackupGet(self):
+        return (self.Stackup)
+
+    def BoardLoad(self, filename: str):
+        """Load and parse a KiCAD PCB from a filename.
+           Filename must be absolute path to file.
+           Returns pointer to KTS_PcbMgr on success, None on Fail."""
+
+        # We've already got an open a board.
+        # Name does not matter, we can only have one open board at a time.
+        if (self.BoardOpenSuccess): return self
+
+        self.filename = filename
+
+        # Parse KiCAD PCB S-Exp Data structure
+        #   Expected that file was previously 
+        #   validated as error-free PCB file. 
+        from kicad_parser import KicadPCB                       # S-Expr Parser to read-in the PCB file from KiCAD format
+        self.KiCadPCB = KicadPCB.load(filename)                 # Parse S-Expr, return List-of-Lists representation
+
+        self.Layers = KTS_Layers.load_layers(self.KiCadPCB)     # Extract drawing-layers
+        self.Stackup = KTS_Stackup.load_PCB(self.KiCadPCB)      # Infer stackup from loaded board
+
+        if  ((self.Layers == None) or (self.Stackup == None)):  # Not expected if S-Expr parser loads error-free
+            self.BoardOpenSuccess = False
+            KtsGblState.delStateItem("BoardOpenSuccess")
+            KtsGblState.delStateItem("KTS_Active_PCB")
+            return None
+        
+        # Board Load was Successful
+        self.BoardOpenSuccess = True
+        print(">>> Global State Obj Ref: ", KtsGblState)
+        KtsGblState.myState("BoardOpenSuccess", True)           # Let the world know this went well
+        KtsGblState.myState("KTS_Active_PCB", self)             # Let the world know how to find the PCB
+        return self
+
+    def BoardForget(self):
+        self.BoardOpenSuccess = False
+        KtsGblState.delStateItem("BoardOpenSuccess")
+        KtsGblState.delStateItem("KTS_Active_PCB")
+        return None
+        
 
 #****************************************************************************
 #*                                                                          *
@@ -407,7 +471,7 @@ class KTS_Stackup:
 
 #****************************************************************************
 #*                                                                          *
-#*  KiCAD_Layers - KTS layer definition & purpose for PCBA                  *
+#*  KTS_Layers - KTS layer definition & purpose for PCBA                    *
 #*                                                                          *
 #*    This is a class which implements and provides access to a dictionary  *
 #*    allowing for cross-reference between the ACTIVE layers of the loaded  *
@@ -437,7 +501,7 @@ class KTS_Stackup:
 #*                                                                          *
 #****************************************************************************
 
-class KiCAD_Layers:
+class KTS_Layers:
     """Create and maintain a dictionary of the activated layers
        in the selected PCB. Methods to look up layer info by
        either KiCAD layer number or layer Mnemonic."""
@@ -447,10 +511,10 @@ class KiCAD_Layers:
     def load_layers(kicad_pcb):
         if not hasattr(kicad_pcb, 'layers'):
             # ToDo: Make this into an "Alert"
-            print("KiCAD_Layers.init: No Layers found in PCB file." )
+            print("KTS_Layers.init: No Layers found in PCB file." )
             return None
         else:
-            print("KiCAD_Layers.init: Found ", len(kicad_pcb.layers), " drawing layers." )
+            print("KTS_Layers.init: Found ", len(kicad_pcb.layers), " drawing layers." )
 
             for lyr in kicad_pcb.layers:
                 layer_mnemonic = unquote((kicad_pcb.layers[lyr])[0])
@@ -462,21 +526,21 @@ class KiCAD_Layers:
 
                 # Add KiCAD mnemonic -> layer_given_name
                 # If no given name, will just map to the KiCAD mnemonic
-                KiCAD_Layers.layer_dict[layer_mnemonic] = layer_given_name
+                KTS_Layers.layer_dict[layer_mnemonic] = layer_given_name
 
                 # Add layer_given_name -> KiCAD mnemonic
                 if (len(kicad_pcb.layers[lyr]) > 2):
-                    KiCAD_Layers.layer_dict[layer_given_name] = layer_mnemonic
+                    KTS_Layers.layer_dict[layer_given_name] = layer_mnemonic
 
                 # Add number -> KiCAD mnemonic
                 # Note: lyr is type str, despite it looking like a number
-                KiCAD_Layers.layer_dict[lyr] = layer_mnemonic
+                KTS_Layers.layer_dict[lyr] = layer_mnemonic
 
-        return (KiCAD_Layers.layer_dict)
+        return (KTS_Layers.layer_dict)
 
 
     def get(lyr:str) -> str:
-        return KiCAD_Layers.layer_dict.get(lyr, "")
+        return KTS_Layers.layer_dict.get(lyr, "")
 
 
     # Return list of candidate outline layers
@@ -484,8 +548,8 @@ class KiCAD_Layers:
         outline_list = []
 
         for idx in range(0, 64):
-            mnemonic   = KiCAD_Layers.get(str(idx))
-            given_name = KiCAD_Layers.get(mnemonic)
+            mnemonic   = KTS_Layers.get(str(idx))
+            given_name = KTS_Layers.get(mnemonic)
 
             if (""    == mnemonic): continue        # Numbered layer not present
             if ("B."  in mnemonic): continue        # KiCAD 'B.' don't have outlines
@@ -509,7 +573,7 @@ class KiCAD_Layers:
 
         return outline_list
 
-# END - class KiCAD_Layers
+# END - class KTS_Layers
 
 
 def unquote(item: str) -> str:
@@ -675,4 +739,4 @@ class KtsColor:
 
 # END - class KtsColor
 
-# END_MODULE - kts_KiCadPCB
+# END_MODULE - kts_PcbManager

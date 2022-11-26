@@ -56,7 +56,6 @@ __KTS_FILE_NAME__ = "INITGUI"
 from kts_PrefsMgmt import prefs_set_file_version
 prefs_set_file_version(__KTS_FILE_NAME__, __KTS_FILE_VER__)
 
-
 import FreeCADGui
 from kicadStepUpCMD import *
 
@@ -74,14 +73,14 @@ class KiCadStepUpWB ( FreeCADGui.Workbench ):      # 'Workbench' defined in Free
         return "Gui::PythonWorkbench"
 
     def Initialize(self):
-        import kts_ModState
         import FreeCADGui
-        from kts_MenuCMD import ktsPcbImportOutline, ktsPcbSelect, ktsPcbForget
-
+        from kts_MenuCMD import ktsPcbOutlineDraw, ktsPcbSelect, ktsPcbForget, ktsPcbStackEdit, ktsRefreshToolbar
         from kts_Locator import kts_mod_ui_path, kts_mod_icons_path
+        import kts_ModState
 
+        # Initialize global workbench state object
         self.WbState = kts_ModState.KtsState()
-        self.WbState.myState()
+        kts_ModState.KtsGblState = self.WbState
 
         # We add our commands here, because they have to be present in
         # FreeCADGui namespace before they are appended to the toolbar
@@ -110,7 +109,11 @@ class KiCadStepUpWB ( FreeCADGui.Workbench ):      # 'Workbench' defined in Free
 
         FreeCADGui.addCommand('ktsPcbSelect', ktsPcbSelect(self.WbState))
         FreeCADGui.addCommand('ktsPcbForget', ktsPcbForget(self.WbState))
-        FreeCADGui.addCommand('ktsPcbImportOutline', ktsPcbImportOutline(self.WbState))
+        FreeCADGui.addCommand('ktsPcbStackEdit', ktsPcbStackEdit(self.WbState))
+        FreeCADGui.addCommand('ktsPcbOutlineDraw', ktsPcbOutlineDraw(self.WbState))
+        FreeCADGui.addCommand('ktsRefreshToolbar', ktsRefreshToolbar())
+
+        
 
         # Adding KSU Icons to Toolbar
         self.appendToolbar("ksu Tools", ["ksuToolsEditPrefs","ksuToolsOpenBoard",\
@@ -118,7 +121,7 @@ class KiCadStepUpWB ( FreeCADGui.Workbench ):      # 'Workbench' defined in Free
                            "ksuToolsImport3DStep","ksuToolsExport3DStep", "ksuToolsPullPCB"])
 
         # Adding KTS Icons to Toolbar
-        self.appendToolbar("New Tools", ["Separator", "ktsPcbSelect", "ktsPcbForget", "ktsPcbImportOutline"])
+        self.appendToolbar("New Tools", ["ktsPcbSelect", "ktsPcbForget", "Separator", "ktsPcbStackEdit", "ktsPcbOutlineDraw"])
 
         # Creating a menu for the Workbench
         self.appendMenu("ksu Tools", ["ksuToolsEditPrefs"])

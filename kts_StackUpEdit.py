@@ -46,52 +46,81 @@ __KTS_FILE_NAME__ = "KTS_STACKUPEDIT"
 from kts_PrefsMgmt import prefs_set_file_version
 prefs_set_file_version(__KTS_FILE_NAME__, __KTS_FILE_VER__)
 
-from kts_KiCadPCB import *
+from kts_PcbManager import *
+from kts_ModState import *
+
 
 def _getComboView(main_window):
     from PySide import QtGui
 
     dock_widgets = main_window.findChildren(QtGui.QDockWidget)
     for i in dock_widgets:
-        #print(str(i.objectName()))
+        print(str(i.objectName()))
         if str(i.objectName()) == "Combo View":
             return i.findChild(QtGui.QTabWidget)
-        elif str(i.objectName()) == "Python Console":
-            return i.findChild(QtGui.QTabWidget)
-    raise Exception ("'Combo View' widget found")
+    return None
+    #raise Exception ("'Combo View' widget found")
 
 
-#### ToDo: Only open Window when it's time to Edit stackup
 #### ToDo: Make OK & Cancel (and a Save button) do the "right thing"
-#### ToDo: Make an Edit-Stackup command button to show our editor
 
 def kts_make_stack_edit_tab(stackup: KTS_Stackup):
     import FreeCADGui
     from PySide import QtGui
 
-    combo_view_tabs = _getComboView(FreeCADGui.getMainWindow())
+    combo_view_obj = _getComboView(FreeCADGui.getMainWindow())
 
-    if (combo_view_tabs == None):
+    if (combo_view_obj == None):
         print("Combo View Not Found")
-        return None
+        return (None, None)
 
-    our_new_tab = StackUpEditDialog(stackup)
-    tab_index = combo_view_tabs.addTab(our_new_tab,"Stackup Editor")
-    print("Tab Index = "+str(tab_index))
-    print("Index of 'our_new_tab' = "+str(combo_view_tabs.indexOf(our_new_tab)))
-    print("Text of 'our_new_tab' = "+str(combo_view_tabs.tabText(tab_index)))
+    # Add content to a new QDialog object
+    stack_editor_dialog = StackUpEditDialog(stackup)
 
-    dw=combo_view_tabs.findChildren(QtGui.QDialog)
+    # Add this QDialog object to be displayed in a new "Combo View" Tab
+    tab_index = combo_view_obj.addTab(stack_editor_dialog,"Stackup Editor")
+
+    print("Returned Tab Index = ", str(tab_index))
+    print("Index of our QDialog object in 'Combo View' = ", str(combo_view_obj.indexOf(stack_editor_dialog)))
+    print("Title Text on our Tab = "+str(combo_view_obj.tabText(tab_index)))
+
+    dw=combo_view_obj.findChildren(QtGui.QDialog)
     for i in dw:
        print(str(i.objectName()))
 
-    return combo_view_tabs, tab_index;
+    KtsGblState.myState("kts_stackup_edit_tab", [combo_view_obj, tab_index])
+    return (combo_view_obj, tab_index)
 # END - kts_make_stack_edit_tab()
+
+
+def kts_get_stack_edit_tab():
+    if (KtsGblState.stack_editor_is_active()):
+        return KtsGblState.get('kts_stackup_edit_tab')
+    else:
+        return (None, None)
+# END - kts_get_stack_edit_tab()
+
+
+def kts_stack_edit_tab_remove():
+    import FreeCADGui
+
+    if (KtsGblState.stack_editor_is_active()):
+        (combo_view_obj, tab_index) = KtsGblState.myState("kts_stackup_edit_tab")
+        combo_view_obj.setCurrentIndex(0)                 # Bring "Model" tab to Front in Combo-View
+        combo_view_obj.removeTab(tab_index)               # Remove "Stackup Editor" from Combo View
+                                                          #   (deletes dialog object as well)
+        KtsGblState.delStateItem("kts_stackup_edit_tab")  # Remove our references to the "Stackup Editor"
+        if (KtsGblState.stack_editor_is_active()):
+            print ("StackUpEditDialog: Warning: Stackup Editor state not removed!") 
+
+        FreeCADGui.runCommand('ktsRefreshToolbar')        # Null command refreshes toolbar icon 'isActive' status
+    return
+# END - kts_stack_edit_tab_remove()
 
 
 from PySide.QtGui import QComboBox
 
-class CutOutlineSelector(QComboBox):
+class CutOutlineSelector(QComboBox):    # ComboBox is Qt-speak for a drop-down list
     this_layer = ""
 
     def __init__(self, layer):
@@ -134,7 +163,7 @@ class StackUpEditDialog(QDialog):
         super().__init__()
 
         # Create buttons to accept or reject the changes
-        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Save | QDialogButtonBox.Cancel
 
         self.buttonBox = QDialogButtonBox(QBtn)
         self.buttonBox.accepted.connect(self.accept)
@@ -220,17 +249,17 @@ class StackUpEditDialog(QDialog):
                      KtsColor.to_QColor(layer.color))  
 
         # Create view object for rectangle and set display params 
-        rect_view = QGraphicsView(rect)             # Add view containing rectangle
-        rect_view.setFrameStyle(QFrame.NoFrame)     # Remove "frame" around view
-        rect_view.setFixedHeight(self.item_box_ht)  # Adjust Height...
-        rect_view.setFixedWidth(self.item_horz_wd)  # ... and width to absolute
-        items.append(rect_view)                     # Add column for view containing rectangle
+        rect_view = QGraphicsView(rect)                 # Add view containing rectangle
+        rect_view.setFrameStyle(QFrame.NoFrame)         # Remove "frame" around view
+        rect_view.setFixedHeight(self.item_box_ht)      # Adjust Height...
+        rect_view.setFixedWidth(self.item_horz_wd)      # ... and width to absolute
+        items.append(rect_view)                         # Add column for view containing rectangle
 
         # Drop-down list for user selection of drawing-layer to associate with stackup-layer
         if (('Dielec' in layer.content) or ('Polyimide' in layer.material)):
             outline_menu = CutOutlineSelector(layer)    # Init object for this particular stackup layer
         
-            outline_menu.PopulateList("Three", KiCAD_Layers.get_outline_items())
+            outline_menu.PopulateList("Three", KTS_Layers.get_outline_items())
 
             font = outline_menu.font()
             font.setPointSize(7)                            # Set font to fit in our row without clipping
@@ -275,14 +304,38 @@ class StackUpEditDialog(QDialog):
         
         row_layout.addStretch()         # Required to allow colums to respect their fixed spacing
 
+        # ToDo: Set the total width to a minimum size, 
+        #   so the editor doesn't start out squished
+
         return (row_layout)
     # END - _build_stackup_row()
 
 
     # Overrides the builtin accept() method
-    def accept(stuff):
-        print("Accepted", stuff)
-        pprint.pprint(stuff)
+    def accept(self):
+        print("Accepted", self)
+
+
+    # Overrides the builtin accept() method
+    def done(self):
+        print("Done", self)
+
+
+    # Overrides the builtin accept() method
+    def reject(self):
+        print("Rejected", self)
+        kts_stack_edit_tab_remove()
+    # END - reject()
+
+
+    # Overrides the builtin accept() method
+    def open(self):
+        print("Opened", self)
+
+
+    # Overrides the builtin accept() method
+    def finished(self):
+        print("Finished", self)
 
 # END - class StackUpEditDialog
 

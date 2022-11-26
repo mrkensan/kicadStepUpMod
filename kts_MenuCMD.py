@@ -25,46 +25,96 @@ __KTS_FILE_NAME__ = "KTS_MENUCMD"
 from kts_PrefsMgmt import prefs_set_file_version
 prefs_set_file_version(__KTS_FILE_NAME__, __KTS_FILE_VER__)
 
-#import FreeCADGui
-from kts_ModState import *
+from kts_ModState import KtsState
 
 
-class ktsPcbImportOutline(KtsState):
-    """Pull outlines from KiCAD PCB layer into Sketch object"""
-    WbGlobal = None     # Reference to our "global" state for this workbook
+class ktsRefreshToolbar():
+    """Null command which causes all Toolbar Icons' IsActive() to be re-evaluated"""
+
+    def GetResources(self):
+        return {}
+ 
+    def IsActive(self):
+        print("%%%%%%%%%%%%%% ktsRefreshToolbar Checking IsActive()")
+        return True
+
+    def Activated(self):
+        pass
+# END class - ktsRefreshToolbar
+
+
+class ktsPcbOutlineDraw(KtsState):
+    """Draws outlines from KiCAD PCB layer into Sketch object"""
+    KtsState = None     # Reference to our "global" state for this workbook
     check_count = 0
 
     def __init__(self, WbState):
-        self.WbGlobal = WbState
+        self.KtsState = WbState
  
     def GetResources(self):     # Resources icon for this tool (Icon, menu text, tool tip, etc...)
         from kts_Locator import kts_mod_path_to_icon
         return {'Pixmap'  : kts_mod_path_to_icon('PCB_ImportOutline.svg'),
-                'MenuText': "Create Sketch from PCB Layer",
-                'ToolTip' : "Pull KiCAD PCB layer into a Sketch"}
+                'MenuText': "Create Outline Sketch",
+                'ToolTip' : "Create layer outline sketch from KiCAD PCB layer drawing"}
  
     def IsActive(self):
-        return True
-        #print(">>>>>>>> ktsPcbImportOutline: IsActive Checked [", self.check_count ,"] <<<<<<<<")
-        #self.check_count += 1
-        #if (self.check_count < 6):
-        #    return True     # Command is always active
-        #else:
-        #    return False
+        # This command is only active if a PCB file is currently open
+        print("%%%%%%%%%%%%%% ktsPcbOutlineDraw Checking IsActive()")
+        return (self.KtsState.pcb_is_loaded())
 
     def Activated(self):
         import kicadStepUptools
         kicadStepUptools.PullPCB()
+# END class - ktsPcbOutlineDraw
 
-# END class - ktsPcbImportOutline
+
+class ktsPcbStackEdit(KtsState):
+    """Stackup Editor. Assigns outline drawings to Stackup-layers."""
+    KtsState = None     # Reference to our "global" state for this workbook
+    check_count = 0
+
+    def __init__(self, WbState):
+        self.KtsState = WbState
+ 
+    def GetResources(self):     # Resources icon for this tool (Icon, menu text, tool tip, etc...)
+        from kts_Locator import kts_mod_path_to_icon
+        return {'Pixmap'  : kts_mod_path_to_icon('PCB_Stack.svg'),
+                'MenuText': "Stackup Editor",
+                'ToolTip' : "Assign outline drawings to Stackup-layers"}
+ 
+    def IsActive(self):
+        print("%%%%%%%%%%%%%% ktsPcbStackEdit Checking IsActive()")
+
+        return ((self.KtsState.pcb_is_loaded()) and 
+                (not self.KtsState.stack_editor_is_active()))
+
+    def Activated(self):
+        from kts_StackUpEdit import kts_make_stack_edit_tab, kts_get_stack_edit_tab
+
+        # Create new Combo View tab for Stackup Editor, if we don't already have one
+        UserPCB = self.KtsState.myState('KTS_Active_PCB')
+
+        if (not self.KtsState.stack_editor_is_active()):
+            (combo_view_obj, tab_index) = kts_make_stack_edit_tab(UserPCB.StackupGet())
+        else:
+            (combo_view_obj, tab_index) = kts_get_stack_edit_tab(UserPCB.StackupGet())
+
+        if (combo_view_obj != None):
+            #print("Title of 'stack_edit_tab' = "+str(combo_view_obj.tabText(tab_index)))
+            combo_view_obj.setCurrentIndex(tab_index)   # Bring our tab to Front in Combo-View
+        else:
+            print("Unable to open Stack Editor Tab in Combo View")
+
+        return
+# END class - ktsPcbStackEdit
 
 
 class ktsPcbSelect(KtsState):
     """Select PCB File we will use for our operations"""
-    WbGlobal = None     # Reference to our "global" state for this workbook
+    KtsState = None     # Reference to our "global" state for this Workbench
 
     def __init__(self, WbState):
-        self.WbGlobal = WbState
+        self.KtsState = WbState
  
     def GetResources(self):
         from kts_Locator import kts_mod_path_to_icon
@@ -75,91 +125,48 @@ class ktsPcbSelect(KtsState):
  
     def IsActive(self):
         # This command is only active if NO PCB file is open
-        if (self.WbGlobal.myState('kicad_pcb_filename') == None):
-            return True
-        else:
-            return False
+        print("%%%%%%%%%%%%%% ktsPcbSelect Checking IsActive()")
 
-        #print(">>>>>>>> ktsPcbSelect: IsActive Checked <<<<<<<<")
-        #filename = ''
-        #filename = self.WbGlobal.myState('kicad_pcb_filename')
-        #print(">>>>>>>> ktsPcbSelect: IsActive Checked <<<<<<<< '", filename, "'")
-        #print("$$$$$$$$ ktsPcbSelect: IsActive State '", self.WbGlobal.delStateItem, "' $$$$$$$$")
-        #return True
-
+        return (not self.KtsState.pcb_is_loaded())
 
     def Activated(self):
         import kts_CoreTools
-        from kicad_parser import KicadPCB
-        from kts_StackUpEdit import kts_make_stack_edit_tab
-        from kts_KiCadPCB import KTS_Stackup, KTS_Layers
+        from kts_PcbManager import KTS_PcbMgr
 
-        # User dialog to select and open a PCB file... Checks file validity, fails gracefully
-        if (self.WbGlobal.myState('kicad_pcb_filename') != None):             # If we have an active pcb already...
-            kicad_pcb_filename = self.WbGlobal.myState('kicad_pcb_filename')  #   just grab name from global state
-            print("We have already read in a PCB!!! >> ", kicad_pcb_filename)
-        else:
-            self.WbGlobal.delStateItem('kicad_pcb_obj')           
-            self.WbGlobal.delStateItem('kts_pcb_layers')           
-            self.WbGlobal.delStateItem('kts_pcb_stackup')           
-            kicad_pcb_filename = kts_CoreTools.select_pcb_file()    # Otherwise, prompt user to open PCB
-            if (kicad_pcb_filename != None):
-                self.WbGlobal.myState('kicad_pcb_filename', kicad_pcb_filename)
-            else:
-                print("No PCB File Selected. Cancelling...")
-                return None
+        if (self.KtsState.pcb_is_loaded()):
+            print("We have already read in a PCB!!!")
+            return None
 
-        # Parse/grab KiCAD PCB S-Exp Data structure  
-        if (self.WbGlobal.myState('kicad_pcb_obj') != None):        # If we have an active pcb already...
-            kicad_pcb_obj = self.WbGlobal.myState('kicad_pcb_obj')  #   just grab is from global state
-            print("We have already parsed the PCB!!!")
-        else:
-            self.WbGlobal.delStateItem('kts_pcb_layers')           
-            self.WbGlobal.delStateItem('kts_pcb_stackup')
-            kicad_pcb_obj = KicadPCB.load(kicad_pcb_filename)
-            if (kicad_pcb_obj != None):
-                self.WbGlobal.myState('kicad_pcb_obj', kicad_pcb_obj)
-            else:
-                print("PCB File is Damaged. Cancelling...")
-                return None
-        
-        # Parse the loaded PCB into KTS_Stackup & KTS_Layers
-        if ( (self.WbGlobal.myState('kts_pcb_layers') != None) and
-             (self.WbGlobal.myState('kts_pcb_stackup') != None) ):      # If we have already built a stackup...
-            kts_pcb_layers = self.WbGlobal.myState('kts_pcb_layers')    # grab it!
-            kts_pcb_stackup = self.WbGlobal.myState('kts_pcb_stackup')  # grab it!
-            print("We have a Stackup!!!")
-        else:
-            kts_pcb_layers = KTS_Layers.load_layers(kicad_pcb_obj)    # Otherwise, make it from the selected file
-            kts_pcb_stackup = KTS_Stackup.load_PCB(kicad_pcb_obj)
+        # User dialog to select and open a PCB file... 
+        #   Checks file validity, fails gracefully
+        kicad_pcb_filename = kts_CoreTools.select_pcb_file()
+        if (kicad_pcb_filename == None):
+            print("No PCB File Selected. Cancelling...")
+            return None
 
-            if ( (kts_pcb_layers != None) and (kts_pcb_stackup != None) ):
-                self.WbGlobal.myState('kts_pcb_layers', kts_pcb_layers)
-                self.WbGlobal.myState('kts_pcb_stackup', kts_pcb_stackup)
-            else:
-                print ("PCB Stackup Creation Failed")
-                return None
-        
-        # Create new Combo View tab for Stackup Editor
-        if (self.WbGlobal.myState('kts_stackup_edit_tab') != None):
-            our_new_tab, tab_index = self.WbGlobal.myState('kts_stackup_edit_tab')
-            print ("We already have an open stackup editor tab!")
-        else:
-            our_new_tab, tab_index = kts_make_stack_edit_tab(kts_pcb_stackup)
-            self.WbGlobal.myState('kts_stackup_edit_tab', [our_new_tab, tab_index])
+        # Parse the PCB file
+        UserPCB = KTS_PcbMgr()
+        UserPCB.BoardLoad(kicad_pcb_filename)
+        pcb_name = UserPCB.FilenameGet()
 
-        print("Title of 'our_new_tab' = "+str(our_new_tab.tabText(tab_index)))
+        if (self.KtsState.pcb_is_loaded()):
+            print (">>>>>>>> ktsPcbSelect: BoardLoad Success <<<<<<<< '", pcb_name[0], "'")
+            #print ("   Our PCB Object: ", UserPCB)
+            #print ("Stored PCB Object: ", self.KtsState.myState('KTS_Active_PCB'))
+            #import sys
+            #print ("PCB Object RefCnt: ", sys.getrefcount(self.KtsState.myState('KTS_Active_PCB')))
+        else:
+            print("!!!!!!!! ktsPcbSelect: BoardLoad FAIL !!!!!!!! '", kicad_pcb_filename, "'")
         return
-
 # END class - ktsPcbSelect
 
 
 class ktsPcbForget(KtsState):
     """Forget PCB File and associated objects"""
-    WbGlobal = None     # Reference to our "global" state for this workbook
+    KtsState = None     # Reference to our "global" state for this workbook
 
     def __init__(self, WbState):
-        self.WbGlobal = WbState
+        self.KtsState = WbState
  
     def GetResources(self):
         from kts_Locator import kts_mod_path_to_icon
@@ -171,16 +178,25 @@ class ktsPcbForget(KtsState):
  
     def IsActive(self):
         # This command is only active if a PCB file is currently open
-        return False if (self.WbGlobal.myState('kicad_pcb_filename') == None) else True
+        print("%%%%%%%%%%%%%% ktsPcbForget Checking IsActive()")
 
+        return (self.KtsState.pcb_is_loaded())
    
     def Activated(self):
-        self.WbGlobal.delStateItem('kicad_pcb_filename')           
-        self.WbGlobal.delStateItem('kicad_pcb_obj')           
-        self.WbGlobal.delStateItem('kts_pcb_layers')           
-        self.WbGlobal.delStateItem('kts_pcb_stackup')           
-        # Remove kts stackup editor window
+        from kts_StackUpEdit import kts_stack_edit_tab_remove
+
+        UserPCB = self.KtsState.myState('KTS_Active_PCB')
+        pcb_name = UserPCB.FilenameGet()
+
+        print(">>>>>>>> ktsPcbForget: ", pcb_name[0], " <<<<<<<<")
+        #print ("   Our PCB Object: ", UserPCB)
+        #import sys
+        #print ("PCB Object RefCnt (before): ", sys.getrefcount(UserPCB))
+        UserPCB.BoardForget()
+        #print ("PCB Object RefCnt (after): ", sys.getrefcount(UserPCB))
+
+        # Remove kts stackup editor window (if present)
+        kts_stack_edit_tab_remove()
 
         return
-
 # END class - ktsPcbForget

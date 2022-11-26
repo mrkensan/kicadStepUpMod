@@ -37,7 +37,7 @@
 #*                                                                          *
 #****************************************************************************
 
-
+global KtsGblState
 
 class KtsState:
     WbState = dict()    # Workbench-wide State Storage
@@ -63,6 +63,16 @@ class KtsState:
         import pprint
         pprint.pprint((self.WbState))
         return None
+
+    def pcb_is_loaded(self):
+        return (self.WbState.get('BoardOpenSuccess', False))
+
+    def stack_editor_is_active(self):
+        return True if (self.WbState.get('kts_stackup_edit_tab', False)) else False
+
+
+
+# END - class KtsState
 
 
 
