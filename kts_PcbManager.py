@@ -97,12 +97,23 @@ prefs_set_file_version(__KTS_FILE_NAME__, __KTS_FILE_VER__)
 
 from kts_ModState import *
 
+#****************************************************************************
+#*                                                                          *
+#*  KTS_PcbMgr - Manage overall loaded PCB while PCB is "active"            *
+#*                                                                          *
+#*      Here we hold all state for the loaded PCB and provide methods for   *
+#*      initializing, accessing, saving, and destroying the loaded PCB      *
+#*      within the Workbench.                                               *
+#*                                                                          *
+#****************************************************************************
+
 class KTS_PcbMgr:
     """Class representing the open and parsed PCB"""
 
     KiCadPCB = None                         # Reference to the S-Expr parser Object
     Layers   = None                         # Reference to our KTS_Layers Object
     Stackup  = None                         # Reference to our KTS_Stackup Object
+    KTS_Vars = None                         # Reference to KTS vars stored in PCB or Project file
     BoardOpenSuccess = False                # Local Flag inidcates we successfully fully parsed PCB
     filename = ""                           # Our copy of PCB filename from LoadBoard()
 
@@ -119,6 +130,9 @@ class KTS_PcbMgr:
 
     def StackupGet(self):
         return (self.Stackup)
+
+    def LayersGet(self):
+        return (self.Layers)
 
     def BoardLoad(self, filename: str):
         """Load and parse a KiCAD PCB from a filename.
@@ -137,7 +151,15 @@ class KTS_PcbMgr:
         from kicad_parser import KicadPCB                       # S-Expr Parser to read-in the PCB file from KiCAD format
         self.KiCadPCB = KicadPCB.load(filename)                 # Parse S-Expr, return List-of-Lists representation
 
-        self.Layers = KTS_Layers.load_layers(self.KiCadPCB)     # Extract drawing-layers
+        self.KTSvars = KTS_Vars()
+        self.KTSvars.project_vars_load(self)                    # Read KTS-vars from Proj file
+        self.KTSvars.project_vars_save(self)                    # Save KTS-vars to Proj file
+
+        self.Layers  = KTS_Layers()
+        self.Layers.load_layers(self.KiCadPCB)                  # Extract drawing-layers
+
+        print("The List of Outline Layers is: ", self.Layers.outline_layers_get())
+
         self.Stackup = KTS_Stackup.load_PCB(self.KiCadPCB)      # Infer stackup from loaded board
 
         if  ((self.Layers == None) or (self.Stackup == None)):  # Not expected if S-Expr parser loads error-free
@@ -159,6 +181,118 @@ class KTS_PcbMgr:
         KtsGblState.delStateItem("KTS_Active_PCB")
         return None
         
+
+
+
+#****************************************************************************
+#*                                                                          *
+#*  KTS_Vars - User-specified parameters for use by KTS                     *
+#*                                                                          *
+#*    This class implements and provides access to a dictionary of          *
+#*    user-specified paramters about the PCB which are particular to the    *
+#*    KiCAD-to-STEP workbench. These parameters are stored in so-called     *
+#*    'KiCAD User Vars'. In KiCAD these vars are used for various text      *
+#*    constants and substitutions to allow paramterization a project.       *
+#*    In the context of KiCAD-to-Step, we implement our own vars which are  *
+#*    interpreted only by this Workbench, but not used by KiCAD.            *
+#*                                                                          *
+#*    The parameters augment the standard info inferred from the PCB, as    *
+#*    stored by KiCAD in the PCB file, allowing KiCAD-to-STEP to render a   *
+#*    solid model of the PCB according to the intentions of the User.       *
+#*    Most significantly these paramters help define which PCB areas        *
+#*    correspond to "Rigid" vs. "Flex" construction.                        *
+#*                                                                          *
+#*    This class is responsible for finding user-paramters in either/both   *
+#*    the loaded 'kicad_pcb' and the 'kicad_pro' files.                     *
+#*    File-path and base-name are considered identical between these files  *
+#*    (ie. they are in the same folder) and only the extension differs.     *
+#*                                                                          *
+#*    The files are searched in order, first the PCB, then the Project, in  *
+#*    accordance with the way these "user-vars" are migrated from Project   *
+#*    to PCB-file by the KiCAD project manager. We use this sequence to     *
+#*    find changes in the Project which are not migrated to PCB because     *
+#*    User has not yet re-opened the PCB via the KiCAD Project Viewer.      *
+#*                                                                          *
+#*    The configuration information is merged into the Stackup object as    *
+#*    it is constructed, augmented by the info availble in KTS_Vars.        *
+#*    Any paramters not present are "defaulted" and later stored in the     *
+#*    Project file. We keep a copy of the entire Project file, and merge    *
+#*    our vars into this data, then re-write the Project file when User     *
+#*    indicates to save. We do not save any info into the PCB file because  *
+#*    the file is constructued not strictly conformant to S-Expr rules, so  *
+#*    the S-Expr class would not be able to re-write portions of the file   *
+#*    in a manner recognized by KiCAD. We rely on migration of this data    *
+#*    to the PCB file by the KiCAD Project Viewer.                          *
+#*                                                                          *
+#****************************************************************************
+
+class KTS_Vars():
+    """Create and maintain a dictionary of User-vars stored
+       in the selected PCB/Project. File load & save methods.
+       Methods to look up vars by name & KiCAD layer Mnemonic."""
+
+    kts_vars_dict  = None
+    kicad_prj_dict = None
+
+    def __init__(self):
+        self.kts_vars_dict  = None
+        self.kicad_prj_dict = None
+
+
+    def project_vars_load(self, pcb: KTS_PcbMgr):
+        import json
+        import pprint
+
+        try:
+            proj_filename = pcb.filename.replace('.kicad_pcb', '.kicad_pro')
+            prj_file = open(proj_filename, 'r', encoding='utf-8')
+            self.kicad_prj_dict = json.load(prj_file)
+        except:
+            print (">>>>>>>>>>> Project file ", proj_filename, " does not exist. Aborting...")
+            self.kicad_prj_dict = None
+        else:
+            print (">>>>>>>>>>> Loading Vars from: ", proj_filename)
+        finally:
+            prj_file.close()
+            if (self.kicad_prj_dict == None): return None
+
+        self.kts_vars_dict = self.kicad_prj_dict['text_variables']  # Pull the vars section into a dict() for our use
+
+        if ("KTS_Outlines_dict" not in self.kts_vars_dict):
+            self.kts_vars_dict["KTS_Outlines_dict"] = dict()    # Assure our key is there for later
+
+        ##pprint.pprint(kicad_prj)
+        ##print(type(kicad_prj))
+        #print("~~~~~~~~~~~~~~~~~~~")
+        #print(self.kts_vars_dict)
+        #print(type(self.kts_vars_dict))
+        #print(self.kts_vars_dict.keys())
+        #print(json.dumps(self.kts_vars_dict))
+        self.kts_vars_dict['KTS_var2'] = "my new string stuff"
+        #print("~~~~~~~~~~~~~~~~~~~")
+
+
+    def project_vars_save(self, pcb: KTS_PcbMgr):
+        import json
+
+        proj_filename = pcb.filename.replace('.kicad_pcb', '.kicad_pro')+".new"
+
+        del self.kicad_prj_dict['text_variables']                   # Delete the read-in version of the vars section
+        self.kicad_prj_dict['text_variables'] = self.kts_vars_dict  # Replace it with our new version
+
+        try:
+            prj_file = open(proj_filename, 'w', encoding='utf-8')
+            json.dump(self.kicad_prj_dict, prj_file, indent=2)
+        except:
+            print (">>>>>>>>>>> Project file ", proj_filename, " unable to write. Aborting...")
+        finally:
+            prj_file.close()
+
+        return 
+
+# END - class KTS_Vars
+
+
 
 #****************************************************************************
 #*                                                                          *
@@ -238,7 +372,7 @@ class KTS_StackUpRecord:    # Definition of PCBA Stackup-layer Record
    #position:       # (topmost=0, etc...) # this is just list order (index)
     content:  str   # PCB layer with "content" (tracks, mask, silk, ...) ---------> Exactly from PCB
     outline:  str   # PCB layer ID with region outlines (flex, rigid, ...) -------> Read from KTS vars in Project File
-    oln_asgn: str   # Outline is assigned from PCB or USER -----------------------> Read from KTS Vars in Project File
+    oln_asgn: str   # Outline is assigned from: DEFAULT, PCB or USER -------------> Read from KTS Vars in Project File
     lyr_type: str   # From kts_LayerTypes enum {Silk, Adhes, SolMask, ...} -------> Mapped by us on PCB Import
     thkness:  float # Finished thickness of layer in millimeters (mm) ------------> Exactly from PCB
     material: str   # Layer material type (FR4, Polyimide, Prepreg, ...) ---------> Mapped by us on PCB Import
@@ -455,8 +589,6 @@ class KTS_Stackup:
         stack_this.color = kts_guess_layer_color(raw_color + raw_type + stack_this.material + stack_this.lyr_type + stack_this.lyr_func)
 
         # Look at Dielectric types to guess what kind of PCBA this is
-        #print('Layer Func is: ', stack_this.lyr_func)
-
         lyr_has_flex   = True if ('Flex'  in stack_this.lyr_func) else False
         lyr_has_rigid  = True if ('Rigid' in stack_this.lyr_func) else False
 
@@ -506,9 +638,12 @@ class KTS_Layers:
        in the selected PCB. Methods to look up layer info by
        either KiCAD layer number or layer Mnemonic."""
 
-    layer_dict = dict()     # Init empty class-local dictionary
+    layer_name_dict = dict()
+    layer_num_dict  = dict()
+    outline_list    = []
 
-    def load_layers(kicad_pcb):
+    # Construct dictionaries from loaded PCB
+    def load_layers(self, kicad_pcb):
         if not hasattr(kicad_pcb, 'layers'):
             # ToDo: Make this into an "Alert"
             print("KTS_Layers.init: No Layers found in PCB file." )
@@ -516,62 +651,80 @@ class KTS_Layers:
         else:
             print("KTS_Layers.init: Found ", len(kicad_pcb.layers), " drawing layers." )
 
-            for lyr in kicad_pcb.layers:
-                layer_mnemonic = unquote((kicad_pcb.layers[lyr])[0])
+            for lyr_num in kicad_pcb.layers:
+                layer_mnemonic = unquote((kicad_pcb.layers[lyr_num])[0])
 
-                if (len(kicad_pcb.layers[lyr]) > 2):
-                    layer_given_name = unquote((kicad_pcb.layers[lyr])[2])
+                if (len(kicad_pcb.layers[lyr_num]) > 2):
+                    layer_given_name = unquote((kicad_pcb.layers[lyr_num])[2])
                 else:
                     layer_given_name = layer_mnemonic
 
                 # Add KiCAD mnemonic -> layer_given_name
                 # If no given name, will just map to the KiCAD mnemonic
-                KTS_Layers.layer_dict[layer_mnemonic] = layer_given_name
+                KTS_Layers.layer_name_dict[layer_mnemonic] = layer_given_name
 
                 # Add layer_given_name -> KiCAD mnemonic
-                if (len(kicad_pcb.layers[lyr]) > 2):
-                    KTS_Layers.layer_dict[layer_given_name] = layer_mnemonic
+                if (len(kicad_pcb.layers[lyr_num]) > 2):
+                    KTS_Layers.layer_name_dict[layer_given_name] = layer_mnemonic
 
                 # Add number -> KiCAD mnemonic
-                # Note: lyr is type str, despite it looking like a number
-                KTS_Layers.layer_dict[lyr] = layer_mnemonic
+                # Note: lyr_num is type str, despite it looking like a number
+                KTS_Layers.layer_name_dict[lyr_num] = layer_mnemonic
 
-        return (KTS_Layers.layer_dict)
+                # Add KiCAD mnemonic -> number
+                # Note: lyr_num is type str, despite it looking like a number
+                KTS_Layers.layer_num_dict[layer_mnemonic] = lyr_num
 
+                # Add KiCAD layer_given_name -> number
+                if (len(kicad_pcb.layers[lyr_num]) > 2):
+                    KTS_Layers.layer_num_dict[layer_given_name] = lyr_num
 
-    def get(lyr:str) -> str:
-        return KTS_Layers.layer_dict.get(lyr, "")
+            # Build list of drawing-layers for cut-outline assignment by user
+            self.outline_list_create()
 
+        return
+
+    # Retrieve the mnemonic or given name of a drawing layer
+    def get_name(self, lyr:str) -> str:
+        return self.layer_name_dict.get(lyr, "")
+
+    # Retrieve the "number" of a drawing layer
+    def get_num(self, lyr:str) -> str:
+        return self.layer_num_dict.get(lyr, "")
 
     # Return list of candidate outline layers
-    def get_outline_items():
-        outline_list = []
+    def outline_layers_get(self):
+        return self.outline_list
+
+    # Generate list of candidate outline layers
+    def outline_list_create(self):
+        self.outline_list = []
 
         for idx in range(0, 64):
-            mnemonic   = KTS_Layers.get(str(idx))
-            given_name = KTS_Layers.get(mnemonic)
+            mnemonic   = self.get_name(str(idx))
+            given_name = self.get_name(mnemonic)
 
             if (""    == mnemonic): continue        # Numbered layer not present
             if ("B."  in mnemonic): continue        # KiCAD 'B.' don't have outlines
             if ("F."  in mnemonic): continue        # KiCAD 'F.' don't have outlines
             if ("cut" in mnemonic.lower()):         # A layer that spec's 'cut' could be an outline
-                outline_list.append(mnemonic)
+                self.outline_list.append(mnemonic)
                 continue
             if ("cut" in mnemonic.lower()):         # A layer that spec's 'cut' could be an outline
-                outline_list.append(given_name)     # in case user renamed "Edge.Cuts"
+                self.outline_list.append(given_name)# in case user renamed "Edge.Cuts"
                 continue
             if ("cut" in given_name.lower()):       # A layer that spec's 'cut' could be an outline
-                outline_list.append(given_name)
+                self.outline_list.append(given_name)
                 continue
             if ("out" in given_name):               # A layer that spec's 'out' could be an outline
-                outline_list.append(given_name)
+                self.outline_list.append(given_name)
                 continue
             if ("user." in mnemonic.lower()):       # A 'user' layer could be an outline
-                outline_list.append(given_name)
+                self.outline_list.append(given_name)
                 continue
             if (".Cu" in mnemonic): continue        # Copper layers don't have outlines
-
-        return outline_list
+        print("The List we made is: ", self.outline_list)
+        return
 
 # END - class KTS_Layers
 

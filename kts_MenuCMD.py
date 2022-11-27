@@ -95,9 +95,9 @@ class ktsPcbStackEdit(KtsState):
         UserPCB = self.KtsState.myState('KTS_Active_PCB')
 
         if (not self.KtsState.stack_editor_is_active()):
-            (combo_view_obj, tab_index) = kts_make_stack_edit_tab(UserPCB.StackupGet())
+            (combo_view_obj, tab_index) = kts_make_stack_edit_tab(UserPCB)
         else:
-            (combo_view_obj, tab_index) = kts_get_stack_edit_tab(UserPCB.StackupGet())
+            (combo_view_obj, tab_index) = kts_get_stack_edit_tab(UserPCB)
 
         if (combo_view_obj != None):
             #print("Title of 'stack_edit_tab' = "+str(combo_view_obj.tabText(tab_index)))

@@ -64,7 +64,7 @@ def _getComboView(main_window):
 
 #### ToDo: Make OK & Cancel (and a Save button) do the "right thing"
 
-def kts_make_stack_edit_tab(stackup: KTS_Stackup):
+def kts_make_stack_edit_tab(PCB_obj: KTS_PcbMgr):
     import FreeCADGui
     from PySide import QtGui
 
@@ -75,7 +75,7 @@ def kts_make_stack_edit_tab(stackup: KTS_Stackup):
         return (None, None)
 
     # Add content to a new QDialog object
-    stack_editor_dialog = StackUpEditDialog(stackup)
+    stack_editor_dialog = StackUpEditDialog(PCB_obj)
 
     # Add this QDialog object to be displayed in a new "Combo View" Tab
     tab_index = combo_view_obj.addTab(stack_editor_dialog,"Stackup Editor")
@@ -157,10 +157,13 @@ class StackUpEditDialog(QDialog):
     layer_spacing = 4
 
 
-    def __init__(self, stackup: KTS_Stackup):
+    def __init__(self, PCB_obj: KTS_PcbMgr):
         from PySide.QtGui import QDialogButtonBox, QVBoxLayout
 
         super().__init__()
+        stackup = PCB_obj.StackupGet()
+        LayersObj = PCB_obj.LayersGet()
+        outline_list = LayersObj.outline_layers_get()
 
         # Create buttons to accept or reject the changes
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Save | QDialogButtonBox.Cancel
@@ -180,7 +183,7 @@ class StackUpEditDialog(QDialog):
         # Add header first, then content row for each physical stackup-layer
         self.layout.addLayout(stackup_header_row)
         for lyr in stackup:
-            self.layout.addLayout(self._build_stackup_row(lyr))
+            self.layout.addLayout(self._build_stackup_row(lyr, outline_list))
 
         self.layout.addStretch()                    # Required to allow rows above to "relax" to assigned spacing
         self.layout.addWidget(self.buttonBox)       # These will be stuck to the lower right corner
@@ -225,7 +228,8 @@ class StackUpEditDialog(QDialog):
     # END - _build_stackup_row_header()
 
 
-    def _build_stackup_row(self, layer: KTS_StackUpRecord): # Returns a QHBoxLayout element
+    def _build_stackup_row(self, layer: KTS_StackUpRecord,  # Returns a QHBoxLayout element
+                           outline_list: List): 
         from PySide.QtGui import QLabel, QHBoxLayout, QGraphicsScene, QGraphicsView, QFrame
         from PySide.QtCore import Qt
 
@@ -259,7 +263,7 @@ class StackUpEditDialog(QDialog):
         if (('Dielec' in layer.content) or ('Polyimide' in layer.material)):
             outline_menu = CutOutlineSelector(layer)    # Init object for this particular stackup layer
         
-            outline_menu.PopulateList("Three", KTS_Layers.get_outline_items())
+            outline_menu.PopulateList("Three", outline_list)
 
             font = outline_menu.font()
             font.setPointSize(7)                            # Set font to fit in our row without clipping
