@@ -160,7 +160,11 @@ class KTS_PcbMgr:
 
         print("The List of Outline Layers is: ", self.Layers.outline_layers_get())
 
-        self.Stackup = KTS_Stackup.load_PCB(self.KiCadPCB)      # Infer stackup from loaded board
+        self.Stackup = KTS_Stackup.load_PCB(self.KiCadPCB,      # Infer stackup from loaded board
+                                            self.Layers)
+
+        print("The Layers Dict is: ", self.Layers.layer_num_dict)
+
 
         if  ((self.Layers == None) or (self.Stackup == None)):  # Not expected if S-Expr parser loads error-free
             self.BoardOpenSuccess = False
@@ -181,7 +185,7 @@ class KTS_PcbMgr:
         KtsGblState.delStateItem("KTS_Active_PCB")
         return None
         
-
+# END - class KTS_PcbMgr
 
 
 #****************************************************************************
@@ -293,6 +297,142 @@ class KTS_Vars():
 # END - class KTS_Vars
 
 
+#****************************************************************************
+#*                                                                          *
+#*  KTS_Layers - KTS layer definition & purpose for PCBA                    *
+#*                                                                          *
+#*    This is a class which implements and provides access to a dictionary  *
+#*    allowing for cross-reference between the ACTIVE layers of the loaded  *
+#*    KiCAD PCB. Because various facets of the KiCAD to STEP workbench must *
+#*    interoperate and reference layers using a number means to identify    *
+#*    PCB layers/sheets, this cross-ref gives a single place to accoplish   *
+#*    the lookup.                                                           *
+#*                                                                          *
+#*    All possible "keys" are added to the dictionary:                      *
+#*      kicad_num:  Absolute numeric ID of layer from kicad app             *
+#*      kicad_enum: Symbolic enum used for each layer                       *
+#*      kicad_dscr: User-defined name from KiCAD PCB file                   *
+#*                                                                          *
+#*    These keys allow us to get to the places we need in the PCB file to   *
+#*    extract info used in rendering the PCB here in FreeCAD.               *
+#*                                                                          *
+#*    The dictionary is "read only" and we don't change any of the data     *
+#*    items used to construct the dictionary from the PCB file.             * 
+#*                                                                          *
+#*    The init() method is called with a S-Expr object containing the PCB   *
+#*    file data. The dictionary is constructed from this data, and a single *
+#*    method kts_layer_get() is used to look up items. All fields from the  *
+#*    "layers" section of the PCB are indexed, so all can be looked up to   *
+#*    find their "mate". The only caveat is that all layers must be named   *
+#*    uniquely (including user-defined names) within the PCB file.          *
+#*    We don't check for collisions, user is expected manage this.          *
+#*                                                                          *
+#****************************************************************************
+
+class KTS_Layers:
+    """Create and maintain a dictionary of the activated layers
+       in the selected PCB. Methods to look up layer info by
+       either KiCAD layer number or layer Mnemonic."""
+
+    layer_name_dict = dict()
+    layer_num_dict  = dict()
+    outline_list    = []
+
+    # Construct dictionaries from loaded PCB
+    def load_layers(self, kicad_pcb):
+        if not hasattr(kicad_pcb, 'layers'):
+            # ToDo: Make this into an "Alert"
+            print("KTS_Layers.init: No Layers found in PCB file." )
+            return None
+        else:
+            print("KTS_Layers.init: Found ", len(kicad_pcb.layers), " drawing layers." )
+
+            for lyr_num in kicad_pcb.layers:
+                layer_mnemonic = unquote((kicad_pcb.layers[lyr_num])[0])
+
+                if (len(kicad_pcb.layers[lyr_num]) > 2):
+                    layer_given_name = unquote((kicad_pcb.layers[lyr_num])[2])
+                else:
+                    layer_given_name = layer_mnemonic
+
+                # Add KiCAD mnemonic -> layer_given_name
+                # If no given name, will just map to the KiCAD mnemonic
+                self.layer_name_dict[layer_mnemonic] = layer_given_name
+
+                # Add layer_given_name -> KiCAD mnemonic
+                if (len(kicad_pcb.layers[lyr_num]) > 2):
+                    self.layer_name_dict[layer_given_name] = layer_mnemonic
+
+                # Add number -> KiCAD mnemonic
+                # Note: lyr_num is type str, despite it looking like a number
+                self.layer_name_dict[lyr_num] = layer_mnemonic
+
+                # Add KiCAD mnemonic -> number
+                # Note: lyr_num is type str, despite it looking like a number
+                self.layer_num_dict[layer_mnemonic] = lyr_num
+
+                # Add KiCAD layer_given_name -> number
+                if (len(kicad_pcb.layers[lyr_num]) > 2):
+                    self.layer_num_dict[layer_given_name] = lyr_num
+
+            # Build list of drawing-layers for cut-outline assignment by user
+            self.outline_list_create()
+
+        return
+
+    # Add layer dict items for Dielectric layers
+    def dielectric_add(self, name: str):
+        if (not "Dielec_" in name): return
+
+        num = name.replace("Dielec", "D")
+        self.layer_name_dict[num] = name    # Add number -> mnemonic
+        self.layer_num_dict[name] = num     # Add mnemonic -> number
+        return
+
+    # Retrieve the mnemonic or given name of a drawing layer
+    def get_name(self, lyr:str) -> str:
+        return self.layer_name_dict.get(lyr, "")
+
+    # Retrieve the "number" of a drawing layer
+    def get_num(self, lyr:str) -> str:
+        return self.layer_num_dict.get(lyr, "")
+
+    # Return list of candidate outline layers
+    def outline_layers_get(self):
+        return self.outline_list
+
+    # Generate list of candidate outline layers
+    def outline_list_create(self):
+        self.outline_list = []
+
+        for idx in range(0, 64):
+            mnemonic   = self.get_name(str(idx))
+            given_name = self.get_name(mnemonic)
+
+            if (""    == mnemonic): continue        # Numbered layer not present
+            if ("B."  in mnemonic): continue        # KiCAD 'B.' don't have outlines
+            if ("F."  in mnemonic): continue        # KiCAD 'F.' don't have outlines
+            if ("cut" in mnemonic.lower()):         # A layer that spec's 'cut' could be an outline
+                self.outline_list.append(mnemonic)
+                continue
+            if ("cut" in mnemonic.lower()):         # A layer that spec's 'cut' could be an outline
+                self.outline_list.append(given_name)# in case user renamed "Edge.Cuts"
+                continue
+            if ("cut" in given_name.lower()):       # A layer that spec's 'cut' could be an outline
+                self.outline_list.append(given_name)
+                continue
+            if ("out" in given_name):               # A layer that spec's 'out' could be an outline
+                self.outline_list.append(given_name)
+                continue
+            if ("user." in mnemonic.lower()):       # A 'user' layer could be an outline
+                self.outline_list.append(given_name)
+                continue
+            if (".Cu" in mnemonic): continue        # Copper layers don't have outlines
+        print("The List we made is: ", self.outline_list)
+        return
+
+# END - class KTS_Layers
+
 
 #****************************************************************************
 #*                                                                          *
@@ -395,7 +535,7 @@ class KTS_Stackup:
 
     kts_stackup: List[KTS_StackUpRecord] = []   # Init empty class-local layer list
 
-    def load_PCB(kicad_pcb):
+    def load_PCB(kicad_pcb, LayersObj: KTS_Layers):
         # Init empty layer list each time we init()
         # so we don't accumulate multiple copies of board
         KTS_Stackup.kts_stackup: List[KTS_StackUpRecord] = []
@@ -480,16 +620,16 @@ class KTS_Stackup:
                 # we'll pull multiple KTS-layers from this one KiCAD-layer.
                 if ((type([*lyr][-1]) is int) and ("addsublayer" in lyr[[*lyr][-1]])):
                     print (">>>>>> Found ", [*lyr][-1], " sublayer(s)")
-                    # Iterate over what should be the number of total layers here
+                    # Iterate over what should be the number of total sub-layers here
                     for idx in range([*lyr][-1]+1):
                         layer_data = _extract_layer(lyr, idx)
-                        layer_data['ID'] = layer_data['ID'].replace('dielectric ', 'Dielec_')
-                        lyr_has_flex, lyr_has_rigid = KTS_Stackup._parse_stackup_layer(layer_data, copper_finish)
+                        #layer_data['ID'] = layer_data['ID'].replace('dielectric ', 'Dielec_')
+                        lyr_has_flex, lyr_has_rigid = KTS_Stackup._parse_stackup_layer(layer_data, copper_finish, LayersObj)
                 else:
                     # Process as a single KiCAD-layer which maps to one KTS-layer
                     layer_data = _extract_layer(lyr)
-                    layer_data['ID'] = layer_data['ID'].replace('dielectric ', 'Dielec_')
-                    lyr_has_flex, lyr_has_rigid = KTS_Stackup._parse_stackup_layer(layer_data, copper_finish)
+                    #layer_data['ID'] = layer_data['ID'].replace('dielectric ', 'Dielec_')
+                    lyr_has_flex, lyr_has_rigid = KTS_Stackup._parse_stackup_layer(layer_data, copper_finish, LayersObj)
                 
                 # Running tally of entire stackup
                 stack_has_flex  = True if lyr_has_flex else stack_has_flex
@@ -552,7 +692,7 @@ class KTS_Stackup:
     # Here we extract the primary information from the KiCAD Stackup
     # We only are called if there is a valid layer to parse.
 
-    def _parse_stackup_layer(lyr, copper_finish) -> Tuple[bool, bool]:
+    def _parse_stackup_layer(lyr, copper_finish, LayersObj: KTS_Layers) -> Tuple[bool, bool]:
         # Make new row in our KTS Physical Stackup...
         # ...and grab reference to the newly added row
         KTS_Stackup.kts_stackup.append(KTS_StackUpRecord("", "", "", "", 0, "", "", "", "", "", ""))
@@ -560,8 +700,14 @@ class KTS_Stackup:
 
         # Get KiCAD-assigned stackup-layer/drawing-layer & guess a stackup-layer "type".
         # We will refine this later in the next step.
-        stack_this.content = lyr['ID']
+        #lyr['ID'] = lyr['ID'].replace('dielectric ', 'Dielec_')
+        #stack_this.content = lyr['ID']
+        stack_this.content = lyr['ID'].replace('dielectric ', 'Dielec_')
         stack_this.lyr_type = kts_guess_layer_type(stack_this.content)
+
+        # Add any dielectric layers found to the layer dictionary
+        if ('Dielec_' in stack_this.content):
+            LayersObj.dielectric_add(stack_this.content)
 
         if (stack_this.lyr_type == 'Copper'):
             stack_this.finish = copper_finish
@@ -599,134 +745,6 @@ class KTS_Stackup:
         return (KTS_Stackup.kts_stackup)
 
 # END - class KTS_Stackup
-
-
-#****************************************************************************
-#*                                                                          *
-#*  KTS_Layers - KTS layer definition & purpose for PCBA                    *
-#*                                                                          *
-#*    This is a class which implements and provides access to a dictionary  *
-#*    allowing for cross-reference between the ACTIVE layers of the loaded  *
-#*    KiCAD PCB. Because various facets of the KiCAD to STEP workbench must *
-#*    interoperate and reference layers using a number means to identify    *
-#*    PCB layers/sheets, this cross-ref gives a single place to accoplish   *
-#*    the lookup.                                                           *
-#*                                                                          *
-#*    All possible "keys" are added to the dictionary:                      *
-#*      kicad_num:  Absolute numeric ID of layer from kicad app             *
-#*      kicad_enum: Symbolic enum used for each layer                       *
-#*      kicad_dscr: User-defined name from KiCAD PCB file                   *
-#*                                                                          *
-#*    These keys allow us to get to the places we need in the PCB file to   *
-#*    extract info used in rendering the PCB here in FreeCAD.               *
-#*                                                                          *
-#*    The dictionary is "read only" and we don't change any of the data     *
-#*    items used to construct the dictionary from the PCB file.             * 
-#*                                                                          *
-#*    The init() method is called with a S-Expr object containing the PCB   *
-#*    file data. The dictionary is constructed from this data, and a single *
-#*    method kts_layer_get() is used to look up items. All fields from the  *
-#*    "layers" section of the PCB are indexed, so all can be looked up to   *
-#*    find their "mate". The only caveat is that all layers must be named   *
-#*    uniquely (including user-defined names) within the PCB file.          *
-#*    We don't check for collisions, user is expected manage this.          *
-#*                                                                          *
-#****************************************************************************
-
-class KTS_Layers:
-    """Create and maintain a dictionary of the activated layers
-       in the selected PCB. Methods to look up layer info by
-       either KiCAD layer number or layer Mnemonic."""
-
-    layer_name_dict = dict()
-    layer_num_dict  = dict()
-    outline_list    = []
-
-    # Construct dictionaries from loaded PCB
-    def load_layers(self, kicad_pcb):
-        if not hasattr(kicad_pcb, 'layers'):
-            # ToDo: Make this into an "Alert"
-            print("KTS_Layers.init: No Layers found in PCB file." )
-            return None
-        else:
-            print("KTS_Layers.init: Found ", len(kicad_pcb.layers), " drawing layers." )
-
-            for lyr_num in kicad_pcb.layers:
-                layer_mnemonic = unquote((kicad_pcb.layers[lyr_num])[0])
-
-                if (len(kicad_pcb.layers[lyr_num]) > 2):
-                    layer_given_name = unquote((kicad_pcb.layers[lyr_num])[2])
-                else:
-                    layer_given_name = layer_mnemonic
-
-                # Add KiCAD mnemonic -> layer_given_name
-                # If no given name, will just map to the KiCAD mnemonic
-                KTS_Layers.layer_name_dict[layer_mnemonic] = layer_given_name
-
-                # Add layer_given_name -> KiCAD mnemonic
-                if (len(kicad_pcb.layers[lyr_num]) > 2):
-                    KTS_Layers.layer_name_dict[layer_given_name] = layer_mnemonic
-
-                # Add number -> KiCAD mnemonic
-                # Note: lyr_num is type str, despite it looking like a number
-                KTS_Layers.layer_name_dict[lyr_num] = layer_mnemonic
-
-                # Add KiCAD mnemonic -> number
-                # Note: lyr_num is type str, despite it looking like a number
-                KTS_Layers.layer_num_dict[layer_mnemonic] = lyr_num
-
-                # Add KiCAD layer_given_name -> number
-                if (len(kicad_pcb.layers[lyr_num]) > 2):
-                    KTS_Layers.layer_num_dict[layer_given_name] = lyr_num
-
-            # Build list of drawing-layers for cut-outline assignment by user
-            self.outline_list_create()
-
-        return
-
-    # Retrieve the mnemonic or given name of a drawing layer
-    def get_name(self, lyr:str) -> str:
-        return self.layer_name_dict.get(lyr, "")
-
-    # Retrieve the "number" of a drawing layer
-    def get_num(self, lyr:str) -> str:
-        return self.layer_num_dict.get(lyr, "")
-
-    # Return list of candidate outline layers
-    def outline_layers_get(self):
-        return self.outline_list
-
-    # Generate list of candidate outline layers
-    def outline_list_create(self):
-        self.outline_list = []
-
-        for idx in range(0, 64):
-            mnemonic   = self.get_name(str(idx))
-            given_name = self.get_name(mnemonic)
-
-            if (""    == mnemonic): continue        # Numbered layer not present
-            if ("B."  in mnemonic): continue        # KiCAD 'B.' don't have outlines
-            if ("F."  in mnemonic): continue        # KiCAD 'F.' don't have outlines
-            if ("cut" in mnemonic.lower()):         # A layer that spec's 'cut' could be an outline
-                self.outline_list.append(mnemonic)
-                continue
-            if ("cut" in mnemonic.lower()):         # A layer that spec's 'cut' could be an outline
-                self.outline_list.append(given_name)# in case user renamed "Edge.Cuts"
-                continue
-            if ("cut" in given_name.lower()):       # A layer that spec's 'cut' could be an outline
-                self.outline_list.append(given_name)
-                continue
-            if ("out" in given_name):               # A layer that spec's 'out' could be an outline
-                self.outline_list.append(given_name)
-                continue
-            if ("user." in mnemonic.lower()):       # A 'user' layer could be an outline
-                self.outline_list.append(given_name)
-                continue
-            if (".Cu" in mnemonic): continue        # Copper layers don't have outlines
-        print("The List we made is: ", self.outline_list)
-        return
-
-# END - class KTS_Layers
 
 
 def unquote(item: str) -> str:
