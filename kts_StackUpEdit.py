@@ -120,23 +120,27 @@ def kts_stack_edit_tab_remove():
 
 from PySide.QtGui import QComboBox
 
-class CutOutlineSelector(QComboBox):    # ComboBox is Qt-speak for a drop-down list
+class OutlineSelector(QComboBox):    # ComboBox is Qt-speak for a drop-down list
     this_layer = ""
+    get_layer_num = None
 
-    def __init__(self, layer):
+    def __init__(self, layer, get_layer_num):
         super().__init__()
-        self.this_layer = layer
+        self.this_layer    = layer
+        self.get_layer_num = get_layer_num
 
     def PopulateList(self, selected, outline_layers):
-        print("Making a combo layer: ", self.this_layer.content, ". Defaulting to: ", selected)
+        print("Making a combo layer: ", self.this_layer.content, ". Defaulting to: ", selected, ". Set by: ", self.this_layer.oln_asgn)
         self.addItems(outline_layers)
         self.setCurrentText(selected)
         self.currentTextChanged.connect(self._user_selection)
 
     def _user_selection(self, selected):
-        print("Outline drawing for:", self.this_layer.content, " is :", selected)
+        print("Outline drawing for:", self.this_layer.content, " is :", selected, " == Layer # ", self.get_layer_num(selected))
+        self.this_layer.outline = self.get_layer_num(selected)
+        self.this_layer.oln_asgn = "USER"
         return 
-# END - class CutOutlineSelector
+# END - class OutlineSelector
 
 
 # We subclass QDialog here in order override some
@@ -156,17 +160,15 @@ class StackUpEditDialog(QDialog):
     drop_down_ht = item_vert_ht + 3
     layer_spacing = 4
 
-
     def __init__(self, PCB_obj: KTS_PcbMgr):
         from PySide.QtGui import QDialogButtonBox, QVBoxLayout
 
         super().__init__()
-        stackup = PCB_obj.StackupGet()
-        LayersObj = PCB_obj.LayersGet()
-        outline_list = LayersObj.outline_layers_get()
+        self.KTS_Layers = PCB_obj.LayersGet()       # KTS_Layers obj used by this PCB Mgr instance
+        self.KTS_Stackup  = PCB_obj.StackupGet()    # Reference to our KTS_Stackup Object
 
         # Create buttons to accept or reject the changes
-        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Save | QDialogButtonBox.Cancel
+        QBtn = QDialogButtonBox.Save | QDialogButtonBox.Cancel
 
         self.buttonBox = QDialogButtonBox(QBtn)
         self.buttonBox.accepted.connect(self.accept)
@@ -182,11 +184,12 @@ class StackUpEditDialog(QDialog):
 
         # Add header first, then content row for each physical stackup-layer
         self.layout.addLayout(stackup_header_row)
-        for lyr in stackup:
-            self.layout.addLayout(self._build_stackup_row(lyr, outline_list))
+        for lyr in self.KTS_Stackup.get():
+            self.layout.addLayout(self._build_stackup_row(lyr, self.KTS_Layers.outline_layers_get()))
 
         self.layout.addStretch()                    # Required to allow rows above to "relax" to assigned spacing
         self.layout.addWidget(self.buttonBox)       # These will be stuck to the lower right corner
+        #self.setMinimumWidth(2000)
         self.setLayout(self.layout)                 # Commit the layout to our new tab in the "Combo View"
 
         return None
@@ -212,7 +215,8 @@ class StackUpEditDialog(QDialog):
             headers[-1].setFixedHeight(self.header_vert_ht)
             headers[-1].setFixedWidth(self.header_horz_wd)
 
-            headers[-1].setStyleSheet(headers[-1].styleSheet() + "background-color: #EDF0F5; ")
+            ## Just for debugging use to check alignments
+            #headers[-1].setStyleSheet(headers[-1].styleSheet() + "background-color: #EDF0F5; ")
         
         # Create row object
         row_layout = QHBoxLayout()
@@ -261,9 +265,12 @@ class StackUpEditDialog(QDialog):
 
         # Drop-down list for user selection of drawing-layer to associate with stackup-layer
         if (('Dielec' in layer.content) or ('Polyimide' in layer.material)):
-            outline_menu = CutOutlineSelector(layer)    # Init object for this particular stackup layer
+            outline_menu = OutlineSelector(layer, self.KTS_Layers.get_num)    # Init object for this particular stackup layer
         
-            outline_menu.PopulateList("Three", outline_list)
+            default_outline = self.KTS_Layers.get_name(layer.outline)     # finds the mnemonic
+            default_outline = self.KTS_Layers.get_name(default_outline)   # finds the "given name"
+
+            outline_menu.PopulateList(default_outline, outline_list)
 
             font = outline_menu.font()
             font.setPointSize(7)                            # Set font to fit in our row without clipping
@@ -272,7 +279,8 @@ class StackUpEditDialog(QDialog):
             outline_menu.setFixedWidth(self.item_horz_wd)   # ... and width to absolute
             items.append(outline_menu)                      # Add column for view containing Drop-down list
         else:
-            # Add a "Blank Spot" instead of the drop-down for this stackup-layer
+            # Add a "Blank Spot" instead of the drop-down 
+            # for non-dielectric stackup-layers
             items.append(QLabel())
             items[-1].setFixedHeight(self.item_vert_ht)
             items[-1].setFixedWidth(self.item_horz_wd)
@@ -289,7 +297,9 @@ class StackUpEditDialog(QDialog):
                 items[-1].setStyleSheet("background-color: #FFEC22; font-weight: bold; ")
             items[-1].setFixedHeight(self.item_vert_ht)
             items[-1].setFixedWidth(self.item_horz_wd)
-            #items[-1].setStyleSheet(items[-1].styleSheet() + "background-color: #EDF0F5; ")    # Just for debugging use to check alignments
+
+            ## Just for debugging use to check alignments
+            #items[-1].setStyleSheet(items[-1].styleSheet() + "background-color: #EDF0F5; ")    
 
         # Create an empty row object
         row_layout = QHBoxLayout()
@@ -316,31 +326,74 @@ class StackUpEditDialog(QDialog):
 
 
     # Overrides the builtin accept() method
+    # Here we save the User updates to the KiCAD Project file.
     def accept(self):
         print("Accepted", self)
+        #print("My Stackup is: ", hex(id(self.pcb_stackup)))
+        #print("My Stackup is: ", self.pcb_stackup)
+        #print("Stackup Object instantiated by PCB Mgr: ", hex(id(self.KtsStackupObj))) # the class Object instantiated by PCB Mgr (PCB_obj.StackupObj)
+        #print("List in Stackup Object: ", hex(id(self.KtsStackupObj.kts_stackup))) # the class Object instantiated by PCB Mgr (PCB_obj.StackupObj)
+        #print("List existing in PCB Mgr: ", hex(id(self.KtsStackup)))  # PCB_obj.Stackup
+
+    # END - accept()
 
 
-    # Overrides the builtin accept() method
-    def done(self):
-        print("Done", self)
+        #self.pcb_stackup = PCB_obj.StackupGet()  # the list stored in the StackupObject.
+        #self.KTS_Layers = PCB_obj.LayersGet()
+        #self.pcb_outline_list = self.KTS_Layers.outline_layers_get()
+        #self.PcbVarsObj = PCB_obj.KTSvars
+        #self.KtsStackup = PCB_obj.Stackup   # the List returned from PCB Mgr
+        #self.KtsStackupObj = PCB_obj.StackupObj   # the Object instantiated by PCB Mgr
 
 
-    # Overrides the builtin accept() method
+    # Overrides the builtin reject() method
+    # Here we destroy the tab and its objects. 
+    # Any changes made by the user are retained.
+    # To clear all settings made, user should forget board and reload.
+    # ToDo: Better behavior here.... what should it be?
     def reject(self):
         print("Rejected", self)
         kts_stack_edit_tab_remove()
     # END - reject()
 
-
-    # Overrides the builtin accept() method
-    def open(self):
-        print("Opened", self)
-
-
-    # Overrides the builtin accept() method
-    def finished(self):
-        print("Finished", self)
-
 # END - class StackUpEditDialog
+
+
+
+
+#****************************************************************************
+#*                                                                          *
+#*  KtsColor - Map KTS colors to Qt colors for rendering                    *
+#*                                                                          *
+#*    Here we create a dict() then provide the function to query. We take   *
+#*    this approach for two reasons:                                        *
+#*      1. Return value is a QColor object                                  *
+#*      2. We would like to overwrite this list with stored values,         *
+#*         either from the PCB or Workbench defaults.                       *
+#*    By allowing update of the dict() we only look in one place for colors.*
+#****************************************************************************
+
+class KtsColor:
+    from PySide.QtGui import QColor
+
+    kts_layer_color_map = { "Kapton"  : '#B38419', #C4911C
+                            "Coverlay": '#D9A01E',
+                            "Red"     : '#A2161E',
+                            "Green"   : '#008700',
+                            "Blue"    : '#164191',
+                            "Yellow"  : '#FFD439',
+                            "Purple"  : '#542D70',
+                            "Black"   : '#1A2127',
+                            "White"   : '#EDF0F5',
+                            "FR4"     : '#82AA8A',
+                            "PrePreg" : '#9FD0A9',
+                            "Copper"  : '#EF8E76'}  #EFB18F
+
+    def to_QColor(color: str) -> QColor:
+        """Translate the 'layer-color' to Qt Colors"""
+        return (KtsColor.QColor(KtsColor.kts_layer_color_map.get(color, '#808080')))
+
+# END - class KtsColor
+
 
 # END_MODULE - kts_StackUpEdit

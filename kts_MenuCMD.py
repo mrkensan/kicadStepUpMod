@@ -35,7 +35,7 @@ class ktsRefreshToolbar():
         return {}
  
     def IsActive(self):
-        print("%%%%%%%%%%%%%% ktsRefreshToolbar Checking IsActive()")
+        #print("%%%%%%%%%%%%%% ktsRefreshToolbar Checking IsActive()")
         return True
 
     def Activated(self):
@@ -59,7 +59,7 @@ class ktsPcbOutlineDraw(KtsState):
  
     def IsActive(self):
         # This command is only active if a PCB file is currently open
-        print("%%%%%%%%%%%%%% ktsPcbOutlineDraw Checking IsActive()")
+        #print("%%%%%%%%%%%%%% ktsPcbOutlineDraw Checking IsActive()")
         return (self.KtsState.pcb_is_loaded())
 
     def Activated(self):
@@ -83,7 +83,7 @@ class ktsPcbStackEdit(KtsState):
                 'ToolTip' : "Assign outline drawings to Stackup-layers"}
  
     def IsActive(self):
-        print("%%%%%%%%%%%%%% ktsPcbStackEdit Checking IsActive()")
+        #print("%%%%%%%%%%%%%% ktsPcbStackEdit Checking IsActive()")
 
         return ((self.KtsState.pcb_is_loaded()) and 
                 (not self.KtsState.stack_editor_is_active()))
@@ -92,7 +92,7 @@ class ktsPcbStackEdit(KtsState):
         from kts_StackUpEdit import kts_make_stack_edit_tab, kts_get_stack_edit_tab
 
         # Create new Combo View tab for Stackup Editor, if we don't already have one
-        UserPCB = self.KtsState.myState('KTS_Active_PCB')
+        UserPCB = self.KtsState.myState('KTS_PcbMgr')
 
         if (not self.KtsState.stack_editor_is_active()):
             (combo_view_obj, tab_index) = kts_make_stack_edit_tab(UserPCB)
@@ -102,6 +102,7 @@ class ktsPcbStackEdit(KtsState):
         if (combo_view_obj != None):
             #print("Title of 'stack_edit_tab' = "+str(combo_view_obj.tabText(tab_index)))
             combo_view_obj.setCurrentIndex(tab_index)   # Bring our tab to Front in Combo-View
+            combo_view_obj.updateGeometry()
         else:
             print("Unable to open Stack Editor Tab in Combo View")
 
@@ -125,7 +126,7 @@ class ktsPcbSelect(KtsState):
  
     def IsActive(self):
         # This command is only active if NO PCB file is open
-        print("%%%%%%%%%%%%%% ktsPcbSelect Checking IsActive()")
+        #print("%%%%%%%%%%%%%% ktsPcbSelect Checking IsActive()")
 
         return (not self.KtsState.pcb_is_loaded())
 
@@ -145,16 +146,16 @@ class ktsPcbSelect(KtsState):
             return None
 
         # Parse the PCB file
-        UserPCB = KTS_PcbMgr()
-        UserPCB.BoardLoad(kicad_pcb_filename)
+        UserPCB = KTS_PcbMgr(kicad_pcb_filename)
+        #UserPCB.BoardLoad(kicad_pcb_filename)
         pcb_name = UserPCB.FilenameGet()
 
         if (self.KtsState.pcb_is_loaded()):
             print (">>>>>>>> ktsPcbSelect: BoardLoad Success <<<<<<<< '", pcb_name[0], "'")
             #print ("   Our PCB Object: ", UserPCB)
-            #print ("Stored PCB Object: ", self.KtsState.myState('KTS_Active_PCB'))
+            #print ("Stored PCB Object: ", self.KtsState.myState('KTS_PcbMgr'))
             #import sys
-            #print ("PCB Object RefCnt: ", sys.getrefcount(self.KtsState.myState('KTS_Active_PCB')))
+            #print ("PCB Object RefCnt: ", sys.getrefcount(self.KtsState.myState('KTS_PcbMgr')))
         else:
             print("!!!!!!!! ktsPcbSelect: BoardLoad FAIL !!!!!!!! '", kicad_pcb_filename, "'")
         return
@@ -178,14 +179,14 @@ class ktsPcbForget(KtsState):
  
     def IsActive(self):
         # This command is only active if a PCB file is currently open
-        print("%%%%%%%%%%%%%% ktsPcbForget Checking IsActive()")
+        #print("%%%%%%%%%%%%%% ktsPcbForget Checking IsActive()")
 
         return (self.KtsState.pcb_is_loaded())
    
     def Activated(self):
         from kts_StackUpEdit import kts_stack_edit_tab_remove
 
-        UserPCB = self.KtsState.myState('KTS_Active_PCB')
+        UserPCB = self.KtsState.myState('KTS_PcbMgr')
         pcb_name = UserPCB.FilenameGet()
 
         print(">>>>>>>> ktsPcbForget: ", pcb_name[0], " <<<<<<<<")
